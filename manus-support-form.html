@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manus Support &amp; Grievance Form</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .card {
+      background: #1a1d27;
+      border: 1px solid #2d3148;
+      border-radius: 12px;
+      max-width: 720px;
+      width: 100%;
+      padding: 2rem 2.5rem;
+    }
+
+    .card-header {
+      border-bottom: 1px solid #2d3148;
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .card-header h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #a78bfa;
+      letter-spacing: 0.02em;
+    }
+
+    .card-header p {
+      margin-top: 0.4rem;
+      font-size: 0.85rem;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+
+    .card-header a {
+      color: #7c3aed;
+      text-decoration: underline;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      margin: 1.5rem 0 0.75rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 0.35rem;
+    }
+
+    label .req { color: #f87171; margin-left: 2px; }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="url"],
+    select,
+    textarea {
+      width: 100%;
+      background: #0f1117;
+      border: 1px solid #2d3148;
+      border-radius: 7px;
+      color: #e2e8f0;
+      font-size: 0.88rem;
+      padding: 0.55rem 0.75rem;
+      transition: border-color 0.2s;
+      outline: none;
+      font-family: inherit;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #7c3aed;
+    }
+
+    textarea { resize: vertical; min-height: 90px; }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      margin-top: 0.25rem;
+    }
+
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-weight: 400;
+      font-size: 0.84rem;
+      color: #cbd5e1;
+      cursor: pointer;
+    }
+
+    input[type="checkbox"] {
+      accent-color: #7c3aed;
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-top: 0.3rem;
+    }
+
+    .submit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .submit-row .note {
+      font-size: 0.75rem;
+      color: #64748b;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .submit-row .note a {
+      color: #7c3aed;
+    }
+
+    button[type="submit"] {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 0.65rem 1.6rem;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    button[type="submit"]:hover { background: #6d28d9; }
+
+    .success-banner {
+      display: none;
+      background: #14532d;
+      border: 1px solid #166534;
+      border-radius: 8px;
+      color: #bbf7d0;
+      padding: 0.85rem 1rem;
+      font-size: 0.88rem;
+      margin-top: 1.5rem;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 540px) {
+      .card { padding: 1.5rem 1.25rem; }
+      .row-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <div class="card-header">
+    <h1>Manus Support &amp; Grievance Form</h1>
+    <p>
+      Use this form to document issues, credit waste, or unexpected agent behavior.
+      All submissions are compiled for review and forwarded to
+      <a href="https://help.manus.im" target="_blank" rel="noopener">help.manus.im</a>.
+      Fields marked <span style="color:#f87171">*</span> are required.
+    </p>
+  </div>
+
+  <form id="supportForm" novalidate>
+
+    <!-- ── CONTACT ── -->
+    <div class="section-label">Your Info</div>
+    <div class="row-2">
+      <div class="form-group">
+        <label for="name">Name <span class="req">*</span></label>
+        <input type="text" id="name" name="name" placeholder="Display name or handle" required />
+      </div>
+      <div class="form-group">
+        <label for="email">Email <span class="req">*</span></label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required />
+      </div>
+    </div>
+
+    <!-- ── SESSION CONTEXT ── -->
+    <div class="section-label">Session Context</div>
+    <div class="row-2">
+      <div class="form-group">
+        <label for="taskId">Task / Session ID</label>
+        <input type="text" id="taskId" name="taskId" placeholder="Paste from Manus URL or header" />
+        <p class="hint">Found in the browser URL while the task is open.</p>
+      </div>
+      <div class="form-group">
+        <label for="date">Date &amp; Time of Incident <span class="req">*</span></label>
+        <input type="text" id="date" name="date" placeholder="e.g. 2026-04-17 14:30 PDT" required />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="taskUrl">Task URL</label>
+      <input type="url" id="taskUrl" name="taskUrl" placeholder="https://manus.im/..." />
+    </div>
+
+    <!-- ── ISSUE CLASSIFICATION ── -->
+    <div class="section-label">Issue Classification</div>
+    <div class="row-2">
+      <div class="form-group">
+        <label for="issueType">Issue Type <span class="req">*</span></label>
+        <select id="issueType" name="issueType" required>
+          <option value="" disabled selected>Select one…</option>
+          <option>Unnecessary / duplicate code execution</option>
+          <option>Ignored user instruction</option>
+          <option>Excessive credit consumption</option>
+          <option>Incorrect or hallucinated output</option>
+          <option>Task loop / stalled progress</option>
+          <option>Wrong tool used</option>
+          <option>Data loss or overwrite</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="severity">Severity</label>
+        <select id="severity" name="severity">
+          <option value="" disabled selected>Select one…</option>
+          <option>Low — minor inconvenience</option>
+          <option>Medium — wasted credits or time</option>
+          <option>High — significant credit loss</option>
+          <option>Critical — data loss or security concern</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ── CREDIT IMPACT ── -->
+    <div class="section-label">Credit Impact</div>
+    <div class="row-2">
+      <div class="form-group">
+        <label for="creditsLost">Estimated Credits Wasted</label>
+        <input type="text" id="creditsLost" name="creditsLost" placeholder="e.g. ~50 or unknown" />
+      </div>
+      <div class="form-group">
+        <label for="planType">Current Plan</label>
+        <select id="planType" name="planType">
+          <option value="" disabled selected>Select one…</option>
+          <option>Free</option>
+          <option>Starter</option>
+          <option>Pro</option>
+          <option>Enterprise</option>
+          <option>Prefer not to say</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ── DESCRIPTION ── -->
+    <div class="section-label">Description</div>
+    <div class="form-group">
+      <label for="instruction">Instruction Given to Agent <span class="req">*</span></label>
+      <textarea id="instruction" name="instruction" placeholder="Paste or summarize the exact instruction you gave…" required></textarea>
+    </div>
+    <div class="form-group">
+      <label for="agentAction">What the Agent Actually Did <span class="req">*</span></label>
+      <textarea id="agentAction" name="agentAction" placeholder="Describe the unexpected or wasteful behavior…" required></textarea>
+    </div>
+    <div class="form-group">
+      <label for="expectedAction">What You Expected</label>
+      <textarea id="expectedAction" name="expectedAction" placeholder="Describe the correct or expected behavior…"></textarea>
+    </div>
+
+    <!-- ── EVIDENCE ── -->
+    <div class="section-label">Evidence &amp; Links</div>
+    <div class="form-group">
+      <label for="screenshotUrl">Screenshot / Recording URL</label>
+      <input type="url" id="screenshotUrl" name="screenshotUrl" placeholder="https://…  (Imgur, Drive, etc.)" />
+      <p class="hint">Upload to a free host and paste the link here.</p>
+    </div>
+    <div class="form-group">
+      <label for="repoUrl">Related Repository URL</label>
+      <input type="url" id="repoUrl" name="repoUrl" placeholder="https://github.com/…" />
+    </div>
+    <div class="form-group">
+      <label for="additionalLinks">Additional Links</label>
+      <textarea id="additionalLinks" name="additionalLinks" style="min-height:60px"
+        placeholder="Any other relevant URLs, one per line…"></textarea>
+    </div>
+
+    <!-- ── PRIOR ATTEMPTS ── -->
+    <div class="section-label">Prior Resolution Attempts</div>
+    <div class="form-group">
+      <label>Did you attempt to correct the agent mid-task?</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" name="attempt" value="told_agent"> Told the agent to stop / redo</label>
+        <label><input type="checkbox" name="attempt" value="restarted"> Restarted the task</label>
+        <label><input type="checkbox" name="attempt" value="help_center"> Checked help.manus.im</label>
+        <label><input type="checkbox" name="attempt" value="none"> None — first report</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="additionalContext">Anything Else Support Should Know</label>
+      <textarea id="additionalContext" name="additionalContext"
+        placeholder="Patterns, frequency, workarounds tried, etc."></textarea>
+    </div>
+
+    <!-- ── SUBMIT ── -->
+    <div class="submit-row">
+      <p class="note">
+        Submitting this form compiles your report locally. To escalate,
+        copy the summary and paste it at
+        <a href="https://help.manus.im" target="_blank" rel="noopener">help.manus.im</a>.
+      </p>
+      <button type="submit">Generate Report</button>
+    </div>
+
+    <div class="success-banner" id="successBanner"></div>
+
+  </form>
+</div>
+
+<script>
+  document.getElementById('supportForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const f = e.target;
+
+    // Basic required-field check
+    const required = f.querySelectorAll('[required]');
+    let missing = [];
+    required.forEach(el => {
+      if (!el.value.trim()) missing.push(el.previousElementSibling?.textContent?.replace('*','').trim() || el.name);
+    });
+    if (missing.length) {
+      alert('Please fill in required fields:\n• ' + missing.join('\n• '));
+      return;
+    }
+
+    // Collect checkbox values
+    const attempts = [...f.querySelectorAll('input[name="attempt"]:checked')].map(c => c.value).join(', ') || 'none';
+
+    // Build plain-text report
+    const report = [
+      '=== MANUS SUPPORT REPORT ===',
+      `Date Generated : ${new Date().toLocaleString()}`,
+      '',
+      '--- CONTACT ---',
+      `Name           : ${f.name.value}`,
+      `Email          : ${f.email.value}`,
+      '',
+      '--- SESSION ---',
+      `Task/Session ID: ${f.taskId.value || 'N/A'}`,
+      `Incident Date  : ${f.date.value}`,
+      `Task URL       : ${f.taskUrl.value || 'N/A'}`,
+      '',
+      '--- CLASSIFICATION ---',
+      `Issue Type     : ${f.issueType.value}`,
+      `Severity       : ${f.severity.value || 'Not specified'}`,
+      `Credits Wasted : ${f.creditsLost.value || 'Unknown'}`,
+      `Plan           : ${f.planType.value || 'Not specified'}`,
+      '',
+      '--- DESCRIPTION ---',
+      `Instruction Given:\n${f.instruction.value}`,
+      '',
+      `Agent Behavior:\n${f.agentAction.value}`,
+      '',
+      `Expected Behavior:\n${f.expectedAction.value || 'N/A'}`,
+      '',
+      '--- EVIDENCE ---',
+      `Screenshot URL : ${f.screenshotUrl.value || 'N/A'}`,
+      `Repo URL       : ${f.repoUrl.value || 'N/A'}`,
+      `Other Links    :\n${f.additionalLinks.value || 'N/A'}`,
+      '',
+      '--- PRIOR ATTEMPTS ---',
+      `Attempts       : ${attempts}`,
+      `Additional Notes:\n${f.additionalContext.value || 'N/A'}`,
+      '',
+      '=== END OF REPORT ===',
+      'Submit at: https://help.manus.im'
+    ].join('\n');
+
+    // Download as .txt
+    const blob = new Blob([report], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'manus-support-report.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    // Show banner
+    const banner = document.getElementById('successBanner');
+    banner.style.display = 'block';
+    banner.innerHTML = `
+      <strong>Report generated and downloaded.</strong><br>
+      Open <a href="https://help.manus.im" target="_blank" rel="noopener">help.manus.im</a>,
+      paste or attach the downloaded <code>manus-support-report.txt</code>, and submit.
+    `;
+  });
+</script>
+</body>
+</html>
