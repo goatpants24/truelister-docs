@@ -15,43 +15,82 @@
       display: flex;
       align-items: flex-start;
       justify-content: center;
-      padding: 2rem 1rem;
+      padding: 2rem 1rem 4rem;
     }
 
     .card {
       background: #1a1d27;
       border: 1px solid #2d3148;
       border-radius: 12px;
-      max-width: 720px;
+      max-width: 740px;
       width: 100%;
       padding: 2rem 2.5rem;
     }
 
+    /* ── HEADER ── */
     .card-header {
       border-bottom: 1px solid #2d3148;
       padding-bottom: 1.25rem;
-      margin-bottom: 1.75rem;
+      margin-bottom: 1.5rem;
     }
+    .card-header h1 { font-size: 1.4rem; font-weight: 700; color: #a78bfa; letter-spacing: 0.02em; }
+    .card-header p  { margin-top: 0.4rem; font-size: 0.84rem; color: #94a3b8; line-height: 1.55; }
+    .card-header a  { color: #7c3aed; text-decoration: underline; }
 
-    .card-header h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #a78bfa;
-      letter-spacing: 0.02em;
+    /* ── PROFILE BANNER ── */
+    #profileBanner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      background: #12172a;
+      border: 1px solid #2d3148;
+      border-radius: 8px;
+      padding: 0.65rem 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
     }
-
-    .card-header p {
-      margin-top: 0.4rem;
-      font-size: 0.85rem;
+    #profileBanner .profile-info { font-size: 0.82rem; color: #94a3b8; }
+    #profileBanner .profile-info strong { color: #c4b5fd; }
+    #profileBanner .profile-actions { display: flex; gap: 0.5rem; }
+    #profileBanner button {
+      background: transparent;
+      border: 1px solid #3b3f5c;
+      border-radius: 6px;
       color: #94a3b8;
-      line-height: 1.5;
+      font-size: 0.75rem;
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #profileBanner button:hover { border-color: #7c3aed; color: #c4b5fd; }
+
+    /* ── SESSION PILL ── */
+    #sessionPill {
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      background: #0d1f12;
+      border: 1px solid #166534;
+      border-radius: 6px;
+      padding: 0.45rem 0.85rem;
+      font-size: 0.78rem;
+      color: #86efac;
+      margin-bottom: 1.25rem;
+    }
+    #sessionPill .dot {
+      width: 7px; height: 7px;
+      background: #4ade80;
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.35; }
     }
 
-    .card-header a {
-      color: #7c3aed;
-      text-decoration: underline;
-    }
-
+    /* ── SECTION LABELS ── */
     .section-label {
       font-size: 0.7rem;
       font-weight: 700;
@@ -61,18 +100,10 @@
       margin: 1.5rem 0 0.75rem;
     }
 
-    .form-group {
-      margin-bottom: 1.1rem;
-    }
+    /* ── FORM ELEMENTS ── */
+    .form-group { margin-bottom: 1.1rem; }
 
-    label {
-      display: block;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: #cbd5e1;
-      margin-bottom: 0.35rem;
-    }
-
+    label { display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.35rem; }
     label .req { color: #f87171; margin-left: 2px; }
 
     input[type="text"],
@@ -91,95 +122,73 @@
       outline: none;
       font-family: inherit;
     }
-
-    input:focus, select:focus, textarea:focus {
-      border-color: #7c3aed;
-    }
-
+    input:focus, select:focus, textarea:focus { border-color: #7c3aed; }
     textarea { resize: vertical; min-height: 90px; }
 
-    .row-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
+    /* read-only auto-filled fields */
+    input[readonly] {
+      background: #12172a;
+      color: #86efac;
+      border-color: #1e3a2a;
+      cursor: default;
     }
 
-    .checkbox-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem 1rem;
-      margin-top: 0.25rem;
-    }
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin-top: 0.25rem; }
     .checkbox-group label {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      font-weight: 400;
-      font-size: 0.84rem;
-      color: #cbd5e1;
-      cursor: pointer;
+      display: flex; align-items: center; gap: 0.4rem;
+      font-weight: 400; font-size: 0.84rem; color: #cbd5e1; cursor: pointer;
     }
+    input[type="checkbox"] { accent-color: #7c3aed; width: 15px; height: 15px; cursor: pointer; }
 
-    input[type="checkbox"] {
-      accent-color: #7c3aed;
-      width: 15px;
-      height: 15px;
-      cursor: pointer;
-    }
+    .hint { font-size: 0.75rem; color: #64748b; margin-top: 0.3rem; }
+    .hint.green { color: #4ade80; }
 
-    .hint {
-      font-size: 0.75rem;
-      color: #64748b;
-      margin-top: 0.3rem;
-    }
-
+    /* ── SUBMIT ROW ── */
     .submit-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-top: 2rem;
-      flex-wrap: wrap;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; margin-top: 2rem; flex-wrap: wrap;
     }
-
-    .submit-row .note {
-      font-size: 0.75rem;
-      color: #64748b;
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .submit-row .note a {
-      color: #7c3aed;
-    }
+    .submit-row .note { font-size: 0.75rem; color: #64748b; flex: 1; min-width: 200px; }
+    .submit-row .note a { color: #7c3aed; }
 
     button[type="submit"] {
-      background: #7c3aed;
-      color: #fff;
-      border: none;
-      border-radius: 7px;
-      padding: 0.65rem 1.6rem;
-      font-size: 0.9rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
-      white-space: nowrap;
+      background: #7c3aed; color: #fff; border: none; border-radius: 7px;
+      padding: 0.65rem 1.6rem; font-size: 0.9rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s; white-space: nowrap;
     }
-
     button[type="submit"]:hover { background: #6d28d9; }
 
+    /* ── SUCCESS BANNER ── */
     .success-banner {
       display: none;
-      background: #14532d;
-      border: 1px solid #166534;
-      border-radius: 8px;
-      color: #bbf7d0;
-      padding: 0.85rem 1rem;
-      font-size: 0.88rem;
-      margin-top: 1.5rem;
-      line-height: 1.5;
+      background: #14532d; border: 1px solid #166534; border-radius: 8px;
+      color: #bbf7d0; padding: 0.85rem 1rem; font-size: 0.88rem;
+      margin-top: 1.5rem; line-height: 1.5;
     }
+
+    /* ── PROFILE MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1a1d27; border: 1px solid #2d3148; border-radius: 12px;
+      padding: 1.75rem 2rem; max-width: 420px; width: 90%;
+    }
+    .modal h2 { font-size: 1.05rem; color: #a78bfa; margin-bottom: 1rem; }
+    .modal .form-group { margin-bottom: 0.85rem; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.25rem; }
+    .modal-actions button {
+      border-radius: 7px; padding: 0.5rem 1.1rem; font-size: 0.85rem;
+      font-weight: 600; cursor: pointer; border: none;
+    }
+    #modalCancel { background: #2d3148; color: #94a3b8; }
+    #modalSave   { background: #7c3aed; color: #fff; }
+    #modalSave:hover { background: #6d28d9; }
 
     @media (max-width: 540px) {
       .card { padding: 1.5rem 1.25rem; }
@@ -188,16 +197,63 @@
   </style>
 </head>
 <body>
+
+<!-- ── PROFILE MODAL ── -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Your Profile</h2>
+    <div class="form-group">
+      <label for="pName">Name</label>
+      <input type="text" id="pName" placeholder="Display name or handle" />
+    </div>
+    <div class="form-group">
+      <label for="pEmail">Email</label>
+      <input type="email" id="pEmail" placeholder="you@example.com" />
+    </div>
+    <div class="form-group">
+      <label for="pPlan">Plan</label>
+      <select id="pPlan">
+        <option value="">Select…</option>
+        <option>Free</option>
+        <option>Starter</option>
+        <option>Pro</option>
+        <option>Enterprise</option>
+        <option>Prefer not to say</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button id="modalCancel">Cancel</button>
+      <button id="modalSave">Save Profile</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN CARD ── -->
 <div class="card">
 
   <div class="card-header">
     <h1>Manus Support &amp; Grievance Form</h1>
     <p>
-      Use this form to document issues, credit waste, or unexpected agent behavior.
-      All submissions are compiled for review and forwarded to
+      Document issues, credit waste, or unexpected agent behavior.
+      Reports are compiled locally and forwarded to
       <a href="https://help.manus.im" target="_blank" rel="noopener">help.manus.im</a>.
       Fields marked <span style="color:#f87171">*</span> are required.
     </p>
+  </div>
+
+  <!-- Profile banner -->
+  <div id="profileBanner">
+    <span class="profile-info" id="profileLabel">No profile saved.</span>
+    <div class="profile-actions">
+      <button id="btnEditProfile">Edit Profile</button>
+      <button id="btnClearProfile" style="display:none">Clear</button>
+    </div>
+  </div>
+
+  <!-- Session auto-detect pill -->
+  <div id="sessionPill">
+    <span class="dot"></span>
+    <span id="sessionPillText">Session context detected from URL.</span>
   </div>
 
   <form id="supportForm" novalidate>
@@ -220,18 +276,19 @@
     <div class="row-2">
       <div class="form-group">
         <label for="taskId">Task / Session ID</label>
-        <input type="text" id="taskId" name="taskId" placeholder="Paste from Manus URL or header" />
-        <p class="hint">Found in the browser URL while the task is open.</p>
+        <input type="text" id="taskId" name="taskId" placeholder="Auto-detected or paste manually" />
+        <p class="hint" id="taskIdHint">Found in the Manus task URL.</p>
       </div>
       <div class="form-group">
         <label for="date">Date &amp; Time of Incident <span class="req">*</span></label>
-        <input type="text" id="date" name="date" placeholder="e.g. 2026-04-17 14:30 PDT" required />
+        <input type="text" id="date" name="date" placeholder="Auto-filled" required />
+        <p class="hint" id="dateHint"></p>
       </div>
     </div>
-
     <div class="form-group">
       <label for="taskUrl">Task URL</label>
-      <input type="url" id="taskUrl" name="taskUrl" placeholder="https://manus.im/..." />
+      <input type="url" id="taskUrl" name="taskUrl" placeholder="Auto-detected or paste manually" />
+      <p class="hint" id="taskUrlHint"></p>
     </div>
 
     <!-- ── ISSUE CLASSIFICATION ── -->
@@ -287,22 +344,26 @@
     <div class="section-label">Description</div>
     <div class="form-group">
       <label for="instruction">Instruction Given to Agent <span class="req">*</span></label>
-      <textarea id="instruction" name="instruction" placeholder="Paste or summarize the exact instruction you gave…" required></textarea>
+      <textarea id="instruction" name="instruction"
+        placeholder="Paste or summarize the exact instruction you gave…" required></textarea>
     </div>
     <div class="form-group">
       <label for="agentAction">What the Agent Actually Did <span class="req">*</span></label>
-      <textarea id="agentAction" name="agentAction" placeholder="Describe the unexpected or wasteful behavior…" required></textarea>
+      <textarea id="agentAction" name="agentAction"
+        placeholder="Describe the unexpected or wasteful behavior…" required></textarea>
     </div>
     <div class="form-group">
       <label for="expectedAction">What You Expected</label>
-      <textarea id="expectedAction" name="expectedAction" placeholder="Describe the correct or expected behavior…"></textarea>
+      <textarea id="expectedAction" name="expectedAction"
+        placeholder="Describe the correct or expected behavior…"></textarea>
     </div>
 
     <!-- ── EVIDENCE ── -->
     <div class="section-label">Evidence &amp; Links</div>
     <div class="form-group">
       <label for="screenshotUrl">Screenshot / Recording URL</label>
-      <input type="url" id="screenshotUrl" name="screenshotUrl" placeholder="https://…  (Imgur, Drive, etc.)" />
+      <input type="url" id="screenshotUrl" name="screenshotUrl"
+        placeholder="https://… (Imgur, Drive, etc.)" />
       <p class="hint">Upload to a free host and paste the link here.</p>
     </div>
     <div class="form-group">
@@ -335,9 +396,8 @@
     <!-- ── SUBMIT ── -->
     <div class="submit-row">
       <p class="note">
-        Submitting this form compiles your report locally. To escalate,
-        copy the summary and paste it at
-        <a href="https://help.manus.im" target="_blank" rel="noopener">help.manus.im</a>.
+        Submitting compiles your report locally and downloads it as a .txt file.
+        Attach it at <a href="https://help.manus.im" target="_blank" rel="noopener">help.manus.im</a>.
       </p>
       <button type="submit">Generate Report</button>
     </div>
@@ -348,82 +408,225 @@
 </div>
 
 <script>
-  document.getElementById('supportForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const f = e.target;
+/* ─────────────────────────────────────────────
+   PROFILE — localStorage persistence
+───────────────────────────────────────────── */
+const PROFILE_KEY = 'manus_support_profile';
 
-    // Basic required-field check
-    const required = f.querySelectorAll('[required]');
-    let missing = [];
-    required.forEach(el => {
-      if (!el.value.trim()) missing.push(el.previousElementSibling?.textContent?.replace('*','').trim() || el.name);
-    });
-    if (missing.length) {
-      alert('Please fill in required fields:\n• ' + missing.join('\n• '));
-      return;
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function saveProfile(p) {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
+}
+
+function applyProfile() {
+  const p = loadProfile();
+  const hasProfile = p.name || p.email;
+
+  // Fill form fields
+  if (p.name)  document.getElementById('name').value  = p.name;
+  if (p.email) document.getElementById('email').value = p.email;
+  if (p.plan) {
+    const sel = document.getElementById('planType');
+    [...sel.options].forEach(o => { if (o.text === p.plan) o.selected = true; });
+  }
+
+  // Update banner
+  const label = document.getElementById('profileLabel');
+  const clearBtn = document.getElementById('btnClearProfile');
+  if (hasProfile) {
+    label.innerHTML = `Signed in as <strong>${p.name || p.email}</strong>${p.plan ? ' &middot; ' + p.plan : ''}`;
+    clearBtn.style.display = 'inline-block';
+  } else {
+    label.textContent = 'No profile saved — click Edit Profile to persist your info.';
+    clearBtn.style.display = 'none';
+  }
+}
+
+// Open modal pre-filled
+document.getElementById('btnEditProfile').addEventListener('click', () => {
+  const p = loadProfile();
+  document.getElementById('pName').value  = p.name  || '';
+  document.getElementById('pEmail').value = p.email || '';
+  const pSel = document.getElementById('pPlan');
+  [...pSel.options].forEach(o => { o.selected = o.text === (p.plan || ''); });
+  document.getElementById('modalOverlay').classList.add('open');
+});
+
+document.getElementById('modalCancel').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('open');
+});
+
+document.getElementById('modalSave').addEventListener('click', () => {
+  const p = {
+    name:  document.getElementById('pName').value.trim(),
+    email: document.getElementById('pEmail').value.trim(),
+    plan:  document.getElementById('pPlan').value
+  };
+  saveProfile(p);
+  applyProfile();
+  document.getElementById('modalOverlay').classList.remove('open');
+});
+
+document.getElementById('btnClearProfile').addEventListener('click', () => {
+  localStorage.removeItem(PROFILE_KEY);
+  document.getElementById('name').value  = '';
+  document.getElementById('email').value = '';
+  applyProfile();
+});
+
+/* ─────────────────────────────────────────────
+   SESSION AUTO-DETECT — URL + timestamp
+───────────────────────────────────────────── */
+function detectSession() {
+  const url      = window.location.href;
+  const referrer = document.referrer;
+  const source   = referrer || url;
+
+  let detectedId  = null;
+  let detectedUrl = null;
+
+  // Try to extract a Manus task ID from URL patterns like /task/abc123 or ?task=abc123
+  const patterns = [
+    /[?&]task[_=]([a-zA-Z0-9_-]{6,})/i,
+    /\/task\/([a-zA-Z0-9_-]{6,})/i,
+    /\/tasks\/([a-zA-Z0-9_-]{6,})/i,
+    /\/session\/([a-zA-Z0-9_-]{6,})/i,
+    /#([a-zA-Z0-9_-]{8,})/
+  ];
+
+  for (const re of patterns) {
+    const m = source.match(re);
+    if (m) { detectedId = m[1]; detectedUrl = source; break; }
+  }
+
+  // If opened from a manus.im domain, capture the full referrer URL
+  if (!detectedUrl && referrer && referrer.includes('manus.im')) {
+    detectedUrl = referrer;
+    // Try to grab last path segment as ID
+    const parts = referrer.replace(/\/$/, '').split('/');
+    const last  = parts[parts.length - 1];
+    if (last && last.length >= 6) detectedId = last;
+  }
+
+  const now = new Date();
+  const ts  = now.toLocaleString('en-US', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+  });
+
+  // Always auto-fill timestamp
+  const dateField = document.getElementById('date');
+  dateField.value = ts;
+  document.getElementById('dateHint').textContent = 'Auto-filled — edit if needed.';
+
+  if (detectedId || detectedUrl) {
+    if (detectedId) {
+      const idField = document.getElementById('taskId');
+      idField.value = detectedId;
+      idField.setAttribute('readonly', true);
+      document.getElementById('taskIdHint').textContent = 'Auto-detected from URL.';
+      document.getElementById('taskIdHint').className = 'hint green';
+    }
+    if (detectedUrl) {
+      const urlField = document.getElementById('taskUrl');
+      urlField.value = detectedUrl;
+      urlField.setAttribute('readonly', true);
+      document.getElementById('taskUrlHint').textContent = 'Auto-detected from browser context.';
+      document.getElementById('taskUrlHint').className = 'hint green';
     }
 
-    // Collect checkbox values
-    const attempts = [...f.querySelectorAll('input[name="attempt"]:checked')].map(c => c.value).join(', ') || 'none';
+    const pill = document.getElementById('sessionPill');
+    pill.style.display = 'flex';
+    document.getElementById('sessionPillText').textContent =
+      `Session context auto-detected${detectedId ? ' — ID: ' + detectedId : ''}.`;
+  }
+}
 
-    // Build plain-text report
-    const report = [
-      '=== MANUS SUPPORT REPORT ===',
-      `Date Generated : ${new Date().toLocaleString()}`,
-      '',
-      '--- CONTACT ---',
-      `Name           : ${f.name.value}`,
-      `Email          : ${f.email.value}`,
-      '',
-      '--- SESSION ---',
-      `Task/Session ID: ${f.taskId.value || 'N/A'}`,
-      `Incident Date  : ${f.date.value}`,
-      `Task URL       : ${f.taskUrl.value || 'N/A'}`,
-      '',
-      '--- CLASSIFICATION ---',
-      `Issue Type     : ${f.issueType.value}`,
-      `Severity       : ${f.severity.value || 'Not specified'}`,
-      `Credits Wasted : ${f.creditsLost.value || 'Unknown'}`,
-      `Plan           : ${f.planType.value || 'Not specified'}`,
-      '',
-      '--- DESCRIPTION ---',
-      `Instruction Given:\n${f.instruction.value}`,
-      '',
-      `Agent Behavior:\n${f.agentAction.value}`,
-      '',
-      `Expected Behavior:\n${f.expectedAction.value || 'N/A'}`,
-      '',
-      '--- EVIDENCE ---',
-      `Screenshot URL : ${f.screenshotUrl.value || 'N/A'}`,
-      `Repo URL       : ${f.repoUrl.value || 'N/A'}`,
-      `Other Links    :\n${f.additionalLinks.value || 'N/A'}`,
-      '',
-      '--- PRIOR ATTEMPTS ---',
-      `Attempts       : ${attempts}`,
-      `Additional Notes:\n${f.additionalContext.value || 'N/A'}`,
-      '',
-      '=== END OF REPORT ===',
-      'Submit at: https://help.manus.im'
-    ].join('\n');
+/* ─────────────────────────────────────────────
+   REPORT GENERATION
+───────────────────────────────────────────── */
+document.getElementById('supportForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const f = e.target;
 
-    // Download as .txt
-    const blob = new Blob([report], { type: 'text/plain' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'manus-support-report.txt';
-    a.click();
-    URL.revokeObjectURL(url);
-
-    // Show banner
-    const banner = document.getElementById('successBanner');
-    banner.style.display = 'block';
-    banner.innerHTML = `
-      <strong>Report generated and downloaded.</strong><br>
-      Open <a href="https://help.manus.im" target="_blank" rel="noopener">help.manus.im</a>,
-      paste or attach the downloaded <code>manus-support-report.txt</code>, and submit.
-    `;
+  const required = f.querySelectorAll('[required]');
+  let missing = [];
+  required.forEach(el => {
+    if (!el.value.trim()) {
+      missing.push(el.labels?.[0]?.textContent?.replace('*','').trim() || el.name);
+    }
   });
+  if (missing.length) {
+    alert('Please fill in required fields:\n• ' + missing.join('\n• '));
+    return;
+  }
+
+  const attempts = [...f.querySelectorAll('input[name="attempt"]:checked')]
+    .map(c => c.value).join(', ') || 'none';
+
+  const report = [
+    '=== MANUS SUPPORT REPORT ===',
+    `Date Generated : ${new Date().toLocaleString()}`,
+    '',
+    '--- CONTACT ---',
+    `Name           : ${f.name.value}`,
+    `Email          : ${f.email.value}`,
+    '',
+    '--- SESSION ---',
+    `Task/Session ID: ${f.taskId.value || 'N/A'}`,
+    `Incident Date  : ${f.date.value}`,
+    `Task URL       : ${f.taskUrl.value || 'N/A'}`,
+    '',
+    '--- CLASSIFICATION ---',
+    `Issue Type     : ${f.issueType.value}`,
+    `Severity       : ${f.severity.value || 'Not specified'}`,
+    `Credits Wasted : ${f.creditsLost.value || 'Unknown'}`,
+    `Plan           : ${f.planType.value || 'Not specified'}`,
+    '',
+    '--- DESCRIPTION ---',
+    `Instruction Given:\n${f.instruction.value}`,
+    '',
+    `Agent Behavior:\n${f.agentAction.value}`,
+    '',
+    `Expected Behavior:\n${f.expectedAction.value || 'N/A'}`,
+    '',
+    '--- EVIDENCE ---',
+    `Screenshot URL : ${f.screenshotUrl.value || 'N/A'}`,
+    `Repo URL       : ${f.repoUrl.value || 'N/A'}`,
+    `Other Links    :\n${f.additionalLinks.value || 'N/A'}`,
+    '',
+    '--- PRIOR ATTEMPTS ---',
+    `Attempts       : ${attempts}`,
+    `Additional Notes:\n${f.additionalContext.value || 'N/A'}`,
+    '',
+    '=== END OF REPORT ===',
+    'Submit at: https://help.manus.im'
+  ].join('\n');
+
+  const blob = new Blob([report], { type: 'text/plain' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'manus-support-report.txt'; a.click();
+  URL.revokeObjectURL(url);
+
+  const banner = document.getElementById('successBanner');
+  banner.style.display = 'block';
+  banner.innerHTML = `
+    <strong>Report downloaded.</strong><br>
+    Open <a href="https://help.manus.im" target="_blank" rel="noopener">help.manus.im</a>,
+    attach <code>manus-support-report.txt</code>, and submit your ticket.
+  `;
+});
+
+/* ─────────────────────────────────────────────
+   INIT — run both in parallel on load
+───────────────────────────────────────────── */
+applyProfile();
+detectSession();
 </script>
 </body>
 </html>
