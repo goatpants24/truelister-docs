@@ -44,6 +44,12 @@ export async function clearDrafts(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEYS.DRAFT_ITEMS);
 }
 
+/** Alias for getDraftItems — used by DraftsScreen */
+export const getDrafts = getDraftItems;
+
+/** Delete a single draft by item number */
+export const deleteDraft = removeDraftItem;
+
 /**
  * Track pending photo uploads (originals waiting to go to Drive)
  */
