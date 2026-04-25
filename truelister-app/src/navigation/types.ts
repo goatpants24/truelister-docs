@@ -6,9 +6,11 @@ import { CatalogItem } from '../types';
 // ── Root Stack ────────────────────────────────────────────────────────────────
 export type RootStackParamList = {
   Main: undefined;
+  // ItemForm: modal sheet on iOS, card slide on Android
+  // Camera and TagScanner are rendered inline inside ItemFormScreen
+  // (they are sub-views, not separate routes) to avoid passing callbacks
+  // through navigation params (which React Navigation does not support).
   ItemForm: { item?: CatalogItem; existingItems: CatalogItem[] };
-  Camera: { onCapture: (uri: string) => void };
-  TagScanner: { onResult: (fields: Partial<CatalogItem>) => void };
 };
 
 // ── Bottom Tab Navigator ──────────────────────────────────────────────────────
