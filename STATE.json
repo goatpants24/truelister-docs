@@ -1,7 +1,7 @@
 {
   "project": "c-goldfish-termination-suite",
-  "checkpoint": "2026-04-26T02:34:49.927186+00:00",
-  "status": "Integration Suite Live \u2014 3/4 integrations active",
+  "checkpoint": "2026-04-26T02:45:00Z",
+  "status": "Integration Suite Live — 3/4 integrations active",
   "milestones": [
     "Defined ProjectForge v1.3 standards",
     "Developed clipboard daemon (forge_watcher.py)",
@@ -14,7 +14,9 @@
     "Gmail notification integration live",
     "forge_watcher.py clipboard daemon built",
     "archive_parser.py history scrubber built",
-    "state_sync.py agent-side utility built"
+    "state_sync.py agent-side utility built",
+    "Full suite committed to goatpants24/truelister-docs",
+    "Full suite backed up to Google Drive ProjectForge/"
   ],
   "active_variables": {
     "sync_interval": "10 messages",
@@ -22,14 +24,12 @@
     "visual_cue": "\ud83d\udcbe"
   },
   "pending_tasks": [
-    "User verification of skill implementation",
-    "Deployment of local file-watchers (user-side)",
-    "LINE userId configuration (requires user LINE Official Account setup)",
-    "User deployment of forge_watcher.py as local daemon"
+    "LINE userId configuration (requires user LINE Official Account setup in MCP server env)",
+    "User deployment of forge_watcher.py as local daemon on their machine"
   ],
   "logic_tombstones": [
     "Rejected direct browser extension due to lack of evergreen cross-platform support",
     "Paused hashing during development to speed up iteration",
-    "LINE broadcast \u2014 401 Unauthorized (channel token not configured in MCP server)"
+    "LINE broadcast — 401 Unauthorized (channel token not configured in MCP server env vars)"
   ]
 }
