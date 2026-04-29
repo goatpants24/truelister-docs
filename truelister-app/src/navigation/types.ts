@@ -6,17 +6,15 @@ import { CatalogItem } from '../types';
 // ── Root Stack ────────────────────────────────────────────────────────────────
 export type RootStackParamList = {
   Main: undefined;
-  // ItemForm: modal sheet on iOS, card slide on Android
-  // Camera and TagScanner are rendered inline inside ItemFormScreen
-  // (they are sub-views, not separate routes) to avoid passing callbacks
-  // through navigation params (which React Navigation does not support).
   ItemForm: { item?: CatalogItem; existingItems: CatalogItem[] };
+  Publish: { item: CatalogItem };
 };
 
 // ── Bottom Tab Navigator ──────────────────────────────────────────────────────
 export type TabParamList = {
   Inventory: undefined;
   Drafts: undefined;
+  Marketplaces: undefined;
   Settings: undefined;
 };
 
@@ -30,3 +28,4 @@ export type TabNavProp<T extends keyof TabParamList> = CompositeNavigationProp<
 >;
 
 export type ItemFormRouteProp = RouteProp<RootStackParamList, 'ItemForm'>;
+export type PublishRouteProp = RouteProp<RootStackParamList, 'Publish'>;
