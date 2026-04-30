@@ -11,7 +11,7 @@ export interface CatalogItem {
   saleStatus: string;
   price: string;
   photoUrl: string;
-  marketplace: string;
+  marketplace: string; // Comma-separated for multiple markets
   dateListed: string;
   notes: string;
 

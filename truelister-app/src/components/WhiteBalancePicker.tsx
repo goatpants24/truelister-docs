@@ -16,9 +16,13 @@ const WB_OPTIONS: { mode: WhiteBalanceMode; label: string; icon: string }[] = [
 ];
 
 export default function WhiteBalancePicker({ selected, onSelect }: Props) {
+  const isLocked = selected !== 'auto';
+
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>White Balance</Text>
+      <Text style={styles.label}>
+        White Balance {isLocked ? '(LOCKED)' : '(AUTO)'}
+      </Text>
       <View style={styles.options}>
         {WB_OPTIONS.map(({ mode, label, icon }) => (
           <TouchableOpacity
