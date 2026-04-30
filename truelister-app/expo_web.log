@@ -1,0 +1,13 @@
+Starting project at /app/truelister-app
+Starting Metro Bundler
+Waiting on http://localhost:19006
+Logs for your project will appear below.
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 3103ms index.ts (643 modules)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 43ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 38ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console

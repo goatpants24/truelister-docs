@@ -145,7 +145,12 @@ export default function ItemFormScreen() {
 
     uploadToDrive(originalUri, fileName, item.itemNumber).then((uploadResult) => {
       if (uploadResult.success && uploadResult.driveUrl) {
-        setItem({ ...item, [fieldName]: uploadResult.driveUrl }, true);
+        const updates: Partial<CatalogItem> = { [fieldName]: uploadResult.driveUrl };
+        // Use the card photo as the main thumbnail if not already set
+        if (fieldName === 'photoUrlCard' || !item.photoUrl) {
+          updates.photoUrl = uploadResult.driveUrl;
+        }
+        setItem({ ...item, ...updates }, true);
       } else {
         addPendingUpload({
           itemNumber: item.itemNumber,

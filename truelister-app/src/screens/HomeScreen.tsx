@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,14 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackNavProp } from '../navigation/types';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system/src/legacy';
 
 import { CatalogItem } from '../types';
 import { fetchInventory } from '../services/sheets';
+import { getDraftItems } from '../services/localStorage';
 
 type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
@@ -27,12 +28,26 @@ export default function HomeScreen() {
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchInventory().then((inventory) => {
-      setItems(inventory);
-      setLoading(false);
-    });
+  const loadItems = useCallback(async () => {
+    try {
+      const [sheetItems, draftItems] = await Promise.all([
+        fetchInventory(),
+        getDraftItems(),
+      ]);
+      const sheetNumbers = new Set(sheetItems.map(i => i.itemNumber));
+      const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
+      setItems([...sheetItems, ...uniqueDrafts]);
+    } catch (error) {
+      console.error('Error loading items:', error);
+    }
+    setLoading(false);
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadItems();
+    }, [loadItems])
+  );
 
   const renderGridItem = ({ item }: { item: CatalogItem }) => {
     const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
