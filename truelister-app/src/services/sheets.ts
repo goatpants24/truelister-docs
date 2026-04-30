@@ -81,21 +81,47 @@ function itemToRow(item: CatalogItem): string[] {
 }
 
 export async function fetchInventory(): Promise<CatalogItem[]> {
+  const url = SHEETS_CSV_URL(SHEET_NAME);
+  console.log(`[Sheets] Fetching inventory from: ${url}`);
   try {
-    const response = await fetch(SHEETS_CSV_URL(SHEET_NAME));
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.error(`[Sheets] Inventory fetch failed with status ${response.status}: ${response.statusText}`);
+      if (response.status === 404) {
+        console.error('[Sheets] 404 Error: Please check your SPREADSHEET_ID in config/index.ts and ensure the sheet is "Published to the Web".');
+      }
+      return [];
+    }
+
     const csv = await response.text();
     const rows = parseCSV(csv);
     // Skip header row
     return rows.slice(1).map(rowToItem).filter(item => item.itemNumber || item.title);
   } catch (error) {
-    console.error('Error fetching inventory:', error);
+    console.error('[Sheets] Network error fetching inventory:', error);
     return [];
   }
 }
 
 export async function fetchDropdowns(): Promise<DropdownOptions> {
+  const url = SHEETS_CSV_URL(DROPDOWNS_SHEET);
+  console.log(`[Sheets] Fetching dropdowns from: ${url}`);
   try {
-    const response = await fetch(SHEETS_CSV_URL(DROPDOWNS_SHEET));
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.error(`[Sheets] Dropdowns fetch failed with status ${response.status}: ${response.statusText}`);
+      return {
+        categories: [],
+        conditions: [],
+        saleStatuses: [],
+        marketplaces: [],
+        colors: [],
+        sizes: [],
+      };
+    }
+
     const csv = await response.text();
     const rows = parseCSV(csv);
     // Skip header row, transpose columns
