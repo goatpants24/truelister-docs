@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute, usePreventRemove } from '@react-navigation/native';
+import * as Linking from 'expo-linking';
 import { Picker } from '@react-native-picker/picker';
 import { CatalogItem, DropdownOptions, ImageResult, PhotoField } from '../types';
 import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
@@ -38,6 +39,7 @@ const EMPTY_ITEM = (existingItems: CatalogItem[]): CatalogItem => ({
   color: '',
   saleStatus: 'Draft',
   price: '',
+  photoUrl: '',
   marketplace: '',
   dateListed: new Date().toISOString().split('T')[0],
   notes: '',
@@ -198,6 +200,36 @@ export default function ItemFormScreen() {
     setSaving(false);
   };
 
+  // ── Research & AI helpers ──────────────────────────────────────────────────
+  const handleMarketResearch = () => {
+    const query = [item.designerBrand, item.title, item.category].filter(Boolean).join(' ');
+    if (!query) {
+      Alert.alert('Research', 'Please enter a title or brand first.');
+      return;
+    }
+    const url = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&LH_Sold=1&LH_Complete=1`;
+    Linking.openURL(url);
+  };
+
+  const handleLabelResearch = () => {
+    const query = [item.designerBrand, item.title, 'tag labeling labels'].filter(Boolean).join(' ');
+    if (!query) {
+      Alert.alert('Research', 'Please enter a title or brand first.');
+      return;
+    }
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`;
+    Linking.openURL(url);
+  };
+
+  const handleAISuggest = () => {
+    // In a real app, this would call an LLM API to suggest title/price
+    Alert.alert(
+      'AI Assistant',
+      'AI suggestion feature would analyze your photos and OCR text to recommend optimal title and price. (Coming Soon)',
+      [{ text: 'Sounds Good' }]
+    );
+  };
+
   // ── Photo capture helpers ──────────────────────────────────────────────────
   const handleCapture = (field: PhotoField) => () => {
     setPhotoField(field);
@@ -315,9 +347,14 @@ export default function ItemFormScreen() {
         <Text style={styles.sectionLabel}>Item Details</Text>
 
         <View style={styles.field}>
-          <Text style={styles.label}>
-            Title <Text style={styles.required}>*</Text>
-          </Text>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>
+              Title <Text style={styles.required}>*</Text>
+            </Text>
+            <TouchableOpacity onPress={handleAISuggest} style={styles.aiBadge}>
+              <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={styles.input}
             value={item.title}
@@ -332,7 +369,12 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Designer / Brand</Text>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Designer / Brand</Text>
+            <TouchableOpacity onPress={handleLabelResearch} style={styles.researchLink}>
+              <Text style={styles.researchLinkText}>🔍 Label Research</Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={[
               styles.input,
@@ -481,7 +523,12 @@ export default function ItemFormScreen() {
 
         <View style={styles.row}>
           <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Price</Text>
+            <View style={styles.labelRow}>
+              <Text style={styles.label}>Price</Text>
+              <TouchableOpacity onPress={handleMarketResearch} style={styles.researchLink}>
+                <Text style={styles.researchLinkText}>📈 Market Sold</Text>
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={styles.input}
               value={item.price}
@@ -526,48 +573,51 @@ export default function ItemFormScreen() {
                 updateField('marketplace', v as string, true)
               }
               style={styles.picker}
-              dropdownIconColor="#94a3b8"            {dropdowns.marketplaces.map((m) => (
-              <Picker.Item key={m} label={m} value={m} color="#e2e8f0" />
-            ))}
-          </Picker>
+              dropdownIconColor="#94a3b8"
+            >
+              {dropdowns.marketplaces.map((m) => (
+                <Picker.Item key={m} label={m} value={m} color="#e2e8f0" />
+              ))}
+            </Picker>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Notes</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={item.notes}
-          onChangeText={(v) => updateField('notes', v)}
-          placeholder="Care instructions, flaws, measurements…"
-          placeholderTextColor="#4a5568"
-          multiline
-          numberOfLines={3}
-        />
-      </View>
+        <View style={styles.field}>
+          <Text style={styles.label}>Notes</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={item.notes}
+            onChangeText={(v) => updateField('notes', v)}
+            placeholder="Care instructions, flaws, measurements…"
+            placeholderTextColor="#4a5568"
+            multiline
+            numberOfLines={3}
+          />
+        </View>
 
-      {/* Save button */}
-      <TouchableOpacity
-        style={[styles.saveButton, saving && { opacity: 0.5 }]}
-        onPress={handleSave}
-        disabled={saving}
-      >
-        <Text style={styles.saveButtonText}>
-          {saving ? 'Saving…' : 'Save Item'}
-        </Text>
-      </TouchableOpacity>
+        {/* Save button */}
+        <TouchableOpacity
+          style={[styles.saveButton, saving && { opacity: 0.5 }]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          <Text style={styles.saveButtonText}>
+            {saving ? 'Saving…' : 'Save Item'}
+          </Text>
+        </TouchableOpacity>
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
+        <View style={{ height: 40 }} />
+      </ScrollView>
 
-    {/* Undo / Redo bar — always visible at bottom */}
-    <UndoRedoBar
-      canUndo={canUndo}
-      canRedo={canRedo}
-      onUndo={undo}
-      onRedo={redo}
-      historyLength={historyLength}
-    />
+      {/* Undo / Redo bar — always visible at bottom */}
+      <UndoRedoBar
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
+        historyLength={historyLength}
+      />
+    </KeyboardAvoidingView>
   );
 }
 
@@ -655,7 +705,21 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   field: { marginBottom: 14 },
-  label: { color: '#cbd5e1', fontSize: 13, fontWeight: '600', marginBottom: 6 },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  label: { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
+  aiBadge: {
+    backgroundColor: 'rgba(124, 58, 237, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 58, 237, 0.3)',
+  },
+  aiBadgeText: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
+  researchLink: {
+    paddingVertical: 2,
+  },
+  researchLinkText: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
   required: { color: '#f87171' },
   input: {
     backgroundColor: '#1a1d27',
@@ -696,4 +760,3 @@ const styles = StyleSheet.create({
   saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
   errorText: { color: '#f87171', fontSize: 12, marginTop: 4 },
 });
-

@@ -1,4 +1,3 @@
-```tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
@@ -619,4 +618,3 @@ const styles = StyleSheet.create({
   saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
   errorText: { color: '#f87171', fontSize: 12, marginTop: 4 },
 });
-

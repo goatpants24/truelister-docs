@@ -6,8 +6,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
 
 import { RootStackParamList, TabParamList } from './types';
-import HomeScreen from '../screens/HomeScreen';
-import ItemFormScreen from '../screens/ItemFormScreen';
+import HomeScreen from '../screens/HomeScreen3';
+import ItemFormScreen from '../screens/itemFormScreen3';
 import DraftsScreen from '../screens/DraftsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 

@@ -1,0 +1,11 @@
+
+> truelister-app@1.0.0 web
+> expo start --web
+
+Starting project at /app/truelister-app
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 1382ms index.ts (647 modules)
+ LOG  [web] Logs will appear in the browser console

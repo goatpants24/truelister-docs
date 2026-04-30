@@ -1,4 +1,3 @@
-```tsx
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,8 +9,10 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackNavProp } from '../navigation/types';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 import { CatalogItem } from '../types';
 import { fetchInventory } from '../services/sheets';
@@ -20,6 +21,7 @@ type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
 
 export default function HomeScreen() {
+  const navigation = useNavigation<RootStackNavProp<'Main'>>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
   const [items, setItems] = useState<CatalogItem[]>([]);
@@ -36,7 +38,10 @@ export default function HomeScreen() {
     const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
 
     return (
-      <View style={[styles.gridItem, { width: size + 32, height: size + 64 }]}>
+      <TouchableOpacity
+        style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
+        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
+      >
         {item.photoUrl ? (
           <Image
             source={{ uri: item.photoUrl }}
@@ -67,13 +72,16 @@ export default function HomeScreen() {
             {item.marketplace}
           </Text>
         ) : null}
-      </View>
+      </TouchableOpacity>
     );
   };
 
   const renderListItem = ({ item }: { item: CatalogItem }) => {
     return (
-      <View style={styles.listItem}>
+      <TouchableOpacity
+        style={styles.listItem}
+        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
+      >
         {item.photoUrl && (
           <Image
             source={{ uri: item.photoUrl }}
@@ -95,7 +103,7 @@ export default function HomeScreen() {
             <Text style={styles.listMarketplace}>{item.marketplace}</Text>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -202,6 +210,16 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
+
+      {/* FAB */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate('ItemForm', { existingItems: items })}
+        accessibilityLabel="Add new item"
+        accessibilityRole="button"
+      >
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -498,11 +516,6 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     color: '#e8eaf6',
-    fontSize
-
-Sources
-  itemTitle: {
-    color: '#e8eaf6',
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
@@ -558,4 +571,21 @@ Sources
     fontSize: 12,
     marginTop: 2,
   },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#4f6ef7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#4f6ef7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  fabText: { color: '#fff', fontSize: 28, fontWeight: '300', marginTop: -2 },
 });

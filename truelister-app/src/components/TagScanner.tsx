@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import WhiteBalancePicker from './WhiteBalancePicker';
 import { scanTag } from '../services/ocrService';
 import { compressImage } from '../services/imageProcessor';
 import { CatalogItem } from '../types';
@@ -21,6 +22,7 @@ interface Props {
 
 export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
+  const [whiteBalance, setWhiteBalance] = useState<any>('auto');
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState<{
     rawText: string;
@@ -161,7 +163,12 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
         <View style={{ width: 60 }} />
       </View>
 
-      <CameraView ref={cameraRef} style={styles.camera} facing="back">
+      <CameraView
+        ref={cameraRef}
+        style={styles.camera}
+        facing="back"
+        {...({ whiteBalance } as any)}
+      >
         {/* Tag alignment guide */}
         <View style={styles.guideOverlay}>
           <View style={styles.guideBox}>
@@ -178,6 +185,7 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
       </CameraView>
 
       <View style={styles.controls}>
+        <WhiteBalancePicker selected={whiteBalance} onSelect={setWhiteBalance} />
         <View style={styles.captureRow}>
           <TouchableOpacity style={styles.libraryButton} onPress={handlePickImage}>
             <Text style={styles.libraryIcon}>🖼</Text>
