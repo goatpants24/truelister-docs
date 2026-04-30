@@ -12,7 +12,7 @@ import {
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackNavProp } from '../navigation/types';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/src/legacy';
+import * as FileSystem from 'expo-file-system/legacy';
 
 import { CatalogItem } from '../types';
 import { fetchInventory } from '../services/sheets';
