@@ -4,12 +4,14 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { RootStackParamList, TabParamList } from './types';
 import HomeScreen from '../screens/HomeScreen';
 import ItemFormScreen from '../screens/ItemFormScreen';
 import DraftsScreen from '../screens/DraftsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 const AppTheme = {
@@ -91,9 +93,21 @@ function MainTabs() {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
+  const [initialRoute, setInitialRoute] = React.useState<keyof RootStackParamList | null>(null);
+
+  React.useEffect(() => {
+    (async () => {
+      const onboarded = await AsyncStorage.getItem('has_onboarded');
+      setInitialRoute(onboarded === 'true' ? 'Main' : 'Onboarding');
+    })();
+  }, []);
+
+  if (!initialRoute) return null;
+
   return (
     <NavigationContainer theme={AppTheme}>
       <Stack.Navigator
+        initialRouteName={initialRoute}
         screenOptions={{
           headerStyle: { backgroundColor: '#1a1d27' },
           headerTintColor: '#e8eaf6',
@@ -105,6 +119,13 @@ export default function RootNavigator() {
           contentStyle: { backgroundColor: '#0f1117' },
         }}
       >
+        {/* Onboarding */}
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
+
         {/* Main tabs — no header (tabs have their own) */}
         <Stack.Screen
           name="Main"

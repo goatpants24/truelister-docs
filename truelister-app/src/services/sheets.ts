@@ -2,14 +2,16 @@ import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
+const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
+
+async function getSpreadsheetId(): Promise<string> {
+  const saved = await AsyncStorage.getItem('settings_spreadsheet_id');
+  return saved || DEFAULT_SPREADSHEET_ID;
+}
 
 // Public CSV export URL (no API key needed for sheets shared with "anyone with link")
-const SHEETS_CSV_URL = (sheet: string) =>
-  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
-
-// Google Sheets API v4 URL (needs API key for read, OAuth for write)
-const SHEETS_API_URL = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}`;
+const SHEETS_CSV_URL = (id: string, sheet: string) =>
+  `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
 
 function parseCSVRow(row: string): string[] {
   const result: string[] = [];
@@ -82,7 +84,8 @@ function itemToRow(item: CatalogItem): string[] {
 }
 
 export async function fetchInventory(): Promise<CatalogItem[]> {
-  const url = SHEETS_CSV_URL(SHEET_NAME);
+  const id = await getSpreadsheetId();
+  const url = SHEETS_CSV_URL(id, SHEET_NAME);
   console.log(`[Sheets] Fetching inventory from: ${url}`);
   try {
     const response = await fetch(url);
@@ -106,7 +109,8 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 }
 
 export async function fetchDropdowns(): Promise<DropdownOptions> {
-  const url = SHEETS_CSV_URL(DROPDOWNS_SHEET);
+  const id = await getSpreadsheetId();
+  const url = SHEETS_CSV_URL(id, DROPDOWNS_SHEET);
   console.log(`[Sheets] Fetching dropdowns from: ${url}`);
   try {
     const response = await fetch(url);
@@ -151,7 +155,8 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
 export async function testConnection(type: 'sheet' | 'script'): Promise<{ success: boolean; error?: string }> {
   if (type === 'sheet') {
     try {
-      const response = await fetch(SHEETS_CSV_URL(SHEET_NAME));
+      const id = await getSpreadsheetId();
+      const response = await fetch(SHEETS_CSV_URL(id, SHEET_NAME));
       if (response.ok) return { success: true };
       if (response.status === 404) return { success: false, error: 'Sheet not found. Ensure it is "Published to web" as CSV.' };
       return { success: false, error: `Error ${response.status}: ${response.statusText}` };

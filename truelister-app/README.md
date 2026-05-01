@@ -22,23 +22,24 @@ Cross-platform catalog and inventory management app for marketplace sellers. Bui
 
 ---
 
-## Quick Start
+## Quick Start (Turnkey Setup)
 
-### 1. Install Expo Go on your phone
-
-- **iOS**: [App Store](https://apps.apple.com/app/expo-go/id982107779)
-- **Android**: [Google Play](https://play.google.com/store/apps/details?id=host.exp.exponent)
-
-### 2. Clone and run
-
+### 1. Run the App
+- **Install Expo Go** on your [iPhone](https://apps.apple.com/app/expo-go/id982107779) or [Android](https://play.google.com/store/apps/details?id=host.exp.exponent).
+- Run the following in your terminal:
 ```bash
 git clone https://github.com/goatpants24/truelister-docs.git
 cd truelister-app
 npm install
 npx expo start
 ```
+- Scan the QR code. The app will open in **Demo Mode** instantly.
 
-Scan the QR code with Expo Go on your phone, or press **w** to open in your web browser.
+### 2. Connect Your Own Catalog
+TruCatLog now features an **Onboarding Wizard**:
+- Simply paste your **Google Sheet URL** into the app when prompted.
+- The app automatically extracts the ID and connects your inventory.
+- To enable saving, follow the **Connectivity Health Check** in Settings to deploy your Apps Script.
 
 ---
 

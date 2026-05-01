@@ -17,6 +17,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { CatalogItem } from '../types';
 import { fetchInventory } from '../services/sheets';
 import { getDraftItems } from '../services/localStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
@@ -44,7 +45,17 @@ export default function HomeScreen() {
 
       const sheetNumbers = new Set(sheetItems.map(i => i.itemNumber));
       const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
-      setItems([...sheetItems, ...uniqueDrafts]);
+      const combined = [...sheetItems, ...uniqueDrafts];
+
+      if (combined.length === 0) {
+        // Show demo items if list is empty and user hasn't configured a private sheet
+        const id = await AsyncStorage.getItem('settings_spreadsheet_id');
+        if (!id || id === '1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI') {
+           // We could add hardcoded sample items here if we wanted "instant" turnkey
+        }
+      }
+
+      setItems(combined);
     } catch (err) {
       console.error('Error loading items:', err);
       setError('Failed to connect to Google Sheets. Please check your settings.');
