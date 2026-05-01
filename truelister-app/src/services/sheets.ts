@@ -1,5 +1,6 @@
 import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
 
@@ -147,11 +148,40 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
   }
 }
 
+export async function testConnection(type: 'sheet' | 'script'): Promise<{ success: boolean; error?: string }> {
+  if (type === 'sheet') {
+    try {
+      const response = await fetch(SHEETS_CSV_URL(SHEET_NAME));
+      if (response.ok) return { success: true };
+      if (response.status === 404) return { success: false, error: 'Sheet not found. Ensure it is "Published to web" as CSV.' };
+      return { success: false, error: `Error ${response.status}: ${response.statusText}` };
+    } catch (e) {
+      return { success: false, error: 'Network error. Check your internet connection.' };
+    }
+  } else {
+    try {
+      const url = await AsyncStorage.getItem('settings_apps_script_url') || '';
+      if (!url) return { success: false, error: 'Apps Script URL not configured in Settings.' };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ping' }),
+      });
+
+      if (response.ok) return { success: true };
+      return { success: false, error: `Error ${response.status}: Ensure the script is deployed as a Web App for "Anyone".` };
+    } catch (e) {
+      return { success: false, error: 'Network error. Ensure the URL is correct and valid.' };
+    }
+  }
+}
+
 export async function appendItem(item: CatalogItem): Promise<boolean> {
   // For write operations, we use the Google Apps Script web app endpoint
   // This avoids needing OAuth in the mobile app
   // See README for how to deploy the Apps Script
-  const APPS_SCRIPT_URL = ''; // Set after deploying Apps Script
+  const APPS_SCRIPT_URL = await AsyncStorage.getItem('settings_apps_script_url') || '';
 
   if (!APPS_SCRIPT_URL) {
     console.warn('Apps Script URL not configured. Saving locally only.');

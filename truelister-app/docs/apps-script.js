@@ -32,6 +32,8 @@ function doPost(e) {
     const payload = JSON.parse(e.postData.contents);
 
     switch (payload.action) {
+      case 'ping':
+        return jsonResponse({ success: true, message: 'pong' });
       case 'append':
         return appendRow(payload.data);
       case 'uploadPhoto':

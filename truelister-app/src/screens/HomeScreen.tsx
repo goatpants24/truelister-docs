@@ -22,23 +22,32 @@ type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
 
 export default function HomeScreen() {
-  const navigation = useNavigation<RootStackNavProp<'Main'>>();
+  const navigation = useNavigation<any>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const loadItems = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
       const [sheetItems, draftItems] = await Promise.all([
         fetchInventory(),
         getDraftItems(),
       ]);
+
+      // If we got no sheet items but there was no network exception,
+      // fetchInventory might have logged a 404 internally.
+      // We'll trust its logging but also show a hint here if list is empty.
+
       const sheetNumbers = new Set(sheetItems.map(i => i.itemNumber));
       const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
       setItems([...sheetItems, ...uniqueDrafts]);
-    } catch (error) {
-      console.error('Error loading items:', error);
+    } catch (err) {
+      console.error('Error loading items:', err);
+      setError('Failed to connect to Google Sheets. Please check your settings.');
     }
     setLoading(false);
   }, []);
@@ -213,6 +222,33 @@ export default function HomeScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4f6ef7" />
           <Text style={{ color: '#94a3b8', marginTop: 12 }}>Loading catalog…</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>Connection Issue</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={loadItems}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.settingsLink}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Text style={styles.settingsLinkText}>Go to Settings</Text>
+          </TouchableOpacity>
+        </View>
+      ) : items.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>📦</Text>
+          <Text style={styles.emptyTitle}>No Items Found</Text>
+          <Text style={styles.emptyText}>Add your first item or check your Google Sheet connection.</Text>
+          <TouchableOpacity
+            style={styles.settingsLink}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Text style={styles.settingsLinkText}>Check Connection Settings</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -516,6 +552,18 @@ const styles = StyleSheet.create({
   },
   listContainer: { padding: 16 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  errorIcon: { fontSize: 48, marginBottom: 16 },
+  errorTitle: { color: '#e8eaf6', fontSize: 20, fontWeight: '700', marginBottom: 8 },
+  errorText: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  retryButton: { backgroundColor: '#4f6ef7', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, marginBottom: 12 },
+  retryButtonText: { color: 'white', fontWeight: '700' },
+  settingsLink: { padding: 10 },
+  settingsLinkText: { color: '#4f6ef7', fontWeight: '600' },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  emptyIcon: { fontSize: 48, marginBottom: 16, opacity: 0.5 },
+  emptyTitle: { color: '#e8eaf6', fontSize: 20, fontWeight: '700', marginBottom: 8 },
+  emptyText: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginBottom: 24 },
   gridItem: {
     backgroundColor: '#1a1d27',
     marginHorizontal: 8,
