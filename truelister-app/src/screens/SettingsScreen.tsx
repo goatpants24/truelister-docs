@@ -16,25 +16,31 @@ const KEYS = {
   APPS_SCRIPT_URL: 'settings_apps_script_url',
   DRIVE_FOLDER_ID: 'settings_drive_folder_id',
   VISION_API_KEY: 'settings_vision_api_key',
+  WORKFLOW_MODE: 'settings_workflow_mode',
 };
+
+export type WorkflowMode = 'full' | 'display' | 'measurements';
 
 export default function SettingsScreen() {
   const [appsScriptUrl, setAppsScriptUrl] = useState('');
   const [driveFolderId, setDriveFolderId] = useState('');
   const [visionApiKey, setVisionApiKey] = useState('');
+  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>('full');
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [url, folder, key] = await Promise.all([
+      const [url, folder, key, mode] = await Promise.all([
         AsyncStorage.getItem(KEYS.APPS_SCRIPT_URL),
         AsyncStorage.getItem(KEYS.DRIVE_FOLDER_ID),
         AsyncStorage.getItem(KEYS.VISION_API_KEY),
+        AsyncStorage.getItem(KEYS.WORKFLOW_MODE),
       ]);
       if (url) setAppsScriptUrl(url);
       if (folder) setDriveFolderId(folder);
       if (key) setVisionApiKey(key);
+      if (mode) setWorkflowMode(mode as WorkflowMode);
     })();
   }, []);
 
@@ -43,6 +49,7 @@ export default function SettingsScreen() {
       AsyncStorage.setItem(KEYS.APPS_SCRIPT_URL, appsScriptUrl.trim()),
       AsyncStorage.setItem(KEYS.DRIVE_FOLDER_ID, driveFolderId.trim()),
       AsyncStorage.setItem(KEYS.VISION_API_KEY, visionApiKey.trim()),
+      AsyncStorage.setItem(KEYS.WORKFLOW_MODE, workflowMode),
     ]);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -71,6 +78,34 @@ export default function SettingsScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.pageTitle}>Settings</Text>
+
+      {/* Workflow Mode */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Workflow Role</Text>
+        <Text style={styles.sectionDesc}>
+          Select your current role to silence irrelevant alerts and prioritize relevant photo fields.
+        </Text>
+        <View style={styles.workflowRow}>
+          <TouchableOpacity
+            style={[styles.workflowBtn, workflowMode === 'display' && styles.workflowBtnActive]}
+            onPress={() => setWorkflowMode('display')}
+          >
+            <Text style={[styles.workflowBtnText, workflowMode === 'display' && styles.workflowBtnTextActive]}>📸 Display Only</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.workflowBtn, workflowMode === 'measurements' && styles.workflowBtnActive]}
+            onPress={() => setWorkflowMode('measurements')}
+          >
+            <Text style={[styles.workflowBtnText, workflowMode === 'measurements' && styles.workflowBtnTextActive]}>📏 Measures Only</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.workflowBtn, workflowMode === 'full' && styles.workflowBtnActive]}
+            onPress={() => setWorkflowMode('full')}
+          >
+            <Text style={[styles.workflowBtnText, workflowMode === 'full' && styles.workflowBtnTextActive]}>♾ Full Pro</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* Google Sheet */}
       <View style={styles.section}>
@@ -234,6 +269,24 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 15, fontWeight: '700', color: '#e8eaf6', marginBottom: 6 },
   sectionDesc: { fontSize: 13, color: '#6b7280', lineHeight: 19, marginBottom: 12 },
   code: { fontFamily: 'Courier', color: '#a0a8c0', fontSize: 12 },
+  workflowRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
+  workflowBtn: {
+    backgroundColor: '#0f1117',
+    borderWidth: 1,
+    borderColor: '#2a2d3a',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    flex: 1,
+    minWidth: '30%',
+    alignItems: 'center',
+  },
+  workflowBtnActive: {
+    backgroundColor: 'rgba(79, 110, 247, 0.15)',
+    borderColor: '#4f6ef7',
+  },
+  workflowBtnText: { color: '#94a3b8', fontSize: 11, fontWeight: '600' },
+  workflowBtnTextActive: { color: '#4f6ef7' },
   buttonRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
   testBtn: {
     paddingHorizontal: 12,

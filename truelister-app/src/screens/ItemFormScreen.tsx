@@ -24,6 +24,8 @@ import CameraScreen from './CameraScreen';
 import TagScanner from '../components/TagScanner';
 import UndoRedoBar from '../components/UndoRedoBar';
 import { useUndoRedo } from '../hooks/useUndoRedo';
+import { WorkflowMode } from './SettingsScreen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type FormMode = 'form' | 'camera' | 'tagScan';
 
@@ -74,6 +76,7 @@ export default function ItemFormScreen() {
   const [processing, setProcessing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [ocrRawText, setOcrRawText] = useState('');
+  const [workflowMode, setWorkflowMode] = useState<WorkflowMode>('full');
   const [graphicTextDetected, setGraphicTextDetected] = useState(false);
   const [pendingGraphic, setPendingGraphic] = useState<{
     result: any;
@@ -120,6 +123,9 @@ export default function ItemFormScreen() {
 
   useEffect(() => {
     fetchDropdowns().then(setDropdowns);
+    AsyncStorage.getItem('settings_workflow_mode').then((m) => {
+      if (m) setWorkflowMode(m as WorkflowMode);
+    });
   }, []);
 
   const updateField = useCallback(
@@ -167,7 +173,8 @@ export default function ItemFormScreen() {
         }
 
         // ── Graphic/Logo OCR for Front/Back photos ──
-        if (fieldName === 'photoUrlFront' || fieldName === 'photoUrlBack') {
+    // Suppress AI banners if in 'measurements' mode
+    if (workflowMode !== 'measurements' && (fieldName === 'photoUrlFront' || fieldName === 'photoUrlBack')) {
           try {
             const graphicResult = await scanGraphic(compressed.uri);
             if (graphicResult.detectedText || (graphicResult.logos && graphicResult.logos.length > 0)) {
@@ -221,9 +228,12 @@ export default function ItemFormScreen() {
     }
 
     const missingViews = [];
-    if (!item.photoUrlCard) missingViews.push('Card');
-    if (!item.photoUrlFront) missingViews.push('Front');
-    if (!item.photoUrlBack) missingViews.push('Back');
+    // Only warn for critical views based on current workflow mode
+    if (workflowMode !== 'measurements') {
+      if (!item.photoUrlCard) missingViews.push('Card');
+      if (!item.photoUrlFront) missingViews.push('Front');
+      if (!item.photoUrlBack) missingViews.push('Back');
+    }
 
     if (missingViews.length > 0) {
       Alert.alert(
@@ -419,9 +429,16 @@ export default function ItemFormScreen() {
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {existingItem ? 'Edit Item' : 'New Item'}
-        </Text>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={styles.headerTitle}>
+            {existingItem ? 'Edit Item' : 'New Item'}
+          </Text>
+          <View style={styles.workflowBadge}>
+            <Text style={styles.workflowBadgeText}>
+              {workflowMode === 'display' ? 'DISPLAY MODE' : workflowMode === 'measurements' ? 'MEASURES MODE' : 'PRO MODE'}
+            </Text>
+          </View>
+        </View>
         <TouchableOpacity onPress={handleSave} disabled={saving}>
           <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>
             {saving ? 'Saving…' : 'Save'}
@@ -856,6 +873,16 @@ const styles = StyleSheet.create({
   },
   cancelText: { color: '#94a3b8', fontSize: 16, fontWeight: '600' },
   headerTitle: { color: '#e8eaf6', fontSize: 17, fontWeight: '700' },
+  workflowBadge: {
+    backgroundColor: '#1e2235',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#3a3d50',
+    marginTop: 2,
+  },
+  workflowBadgeText: { color: '#94a3b8', fontSize: 10, fontWeight: '700' },
   saveText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
   itemNumberBadge: {
