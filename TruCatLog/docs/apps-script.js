@@ -1,5 +1,5 @@
 /**
- * TrueLister — Google Apps Script Web App
+ * TruCatLog — Google Apps Script Web App
  * 
  * Deploy this as a web app to enable the mobile app to:
  *   1. Append new items to the Google Sheet
@@ -48,7 +48,7 @@ function doPost(e) {
 }
 
 function doGet(e) {
-  return jsonResponse({ status: 'ok', message: 'TrueLister API is running' });
+  return jsonResponse({ status: 'ok', message: 'TruCatLog API is running' });
 }
 
 /**

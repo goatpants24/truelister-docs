@@ -1,16 +1,19 @@
 # TruCatLog Repository
 
-This repository contains the TruCatLog application and associated documentation.
+Welcome to the **TruCatLog** repository. This workspace is organized to manage the core application, its historical archives, and related projects.
 
 ## Project Structure
 
-- **[TruCatLog/](./TruCatLog/)**: The primary application codebase. Built with Expo (React Native).
-- **[backup_hold-fold/](./backup_hold-fold/)**: Archive of legacy files and conceptual documentation.
+- **[TruCatLog/](./TruCatLog/)**: The active application codebase. A professional cataloging and inventory management tool for marketplace sellers.
+- **[archived_projects/](./archived_projects/)**: Independent projects and experiments that are currently separate from the main application.
+  - `mastermind`: Governance and strategy documentation.
+  - `c-goldfish-termination-suite`: Specialized state synchronization and archiving tools.
+- **[backup_hold-fold/](./backup_hold-fold/)**: An archive of legacy files, redundant configurations, and historical logs from the development process.
 
-## About TruCatLog
+## Getting Started
 
-TruCatLog is a cross-platform catalog and inventory management tool designed for marketplace sellers. It leverages Google Sheets as a backend and provides a streamlined interface for item entry, photo management, and market research.
+To dive into the application, navigate to the [TruCatLog/](./TruCatLog/) directory. You will find a dedicated README there with setup instructions for both developers and end-users.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is proprietary. Please refer to the [LICENSE](LICENSE) file for terms of use.

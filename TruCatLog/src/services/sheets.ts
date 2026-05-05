@@ -7,11 +7,18 @@ const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CO
 // AsyncStorage keys — must stay in sync with SettingsScreen
 const SETTINGS_KEYS = {
   APPS_SCRIPT_URL: 'settings_apps_script_url',
+  SPREADSHEET_ID: 'settings_spreadsheet_id',
 };
 
+// Helper to get active spreadsheet ID (user setting or default)
+async function getSpreadsheetId(): Promise<string> {
+  const customId = await AsyncStorage.getItem(SETTINGS_KEYS.SPREADSHEET_ID);
+  return customId || DEFAULT_SPREADSHEET_ID;
+}
+
 // Public CSV export URL (no API key needed for sheets shared with "anyone with link")
-const SHEETS_CSV_URL = (sheet: string) =>
-  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
+const SHEETS_CSV_URL = (id: string, sheet: string) =>
+  `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
 
 function parseCSVRow(row: string): string[] {
   const result: string[] = [];
@@ -201,8 +208,8 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
 
 export function generateItemNumber(existingItems: CatalogItem[]): string {
   const maxNum = existingItems.reduce((max, item) => {
-    const match = item.itemNumber.match(/TL-(\d+)/);
+    const match = item.itemNumber.match(/TCL-(\d+)/);
     return match ? Math.max(max, parseInt(match[1], 10)) : max;
   }, 0);
-  return `TL-${String(maxNum + 1).padStart(3, '0')}`;
+  return `TCL-${String(maxNum + 1).padStart(3, '0')}`;
 }

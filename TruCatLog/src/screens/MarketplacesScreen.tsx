@@ -181,7 +181,7 @@ export default function MarketplacesScreen() {
       <View style={styles.legend}>
         <View style={styles.legendRow}>
           <StatusBadge status="official" />
-          <Text style={styles.legendText}>Full listing API — TrueLister can publish directly</Text>
+          <Text style={styles.legendText}>Full listing API — TruCatLog can publish directly</Text>
         </View>
         <View style={styles.legendRow}>
           <StatusBadge status="partner_only" />

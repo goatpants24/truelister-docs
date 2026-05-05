@@ -846,4 +846,16 @@ const styles = StyleSheet.create({
     borderColor: '#4f6ef7',
   },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
+  errorText: { color: '#f87171', fontSize: 12, marginTop: 4, fontWeight: '500' },
+  soldButton: {
+    flex: 1,
+    backgroundColor: 'rgba(74, 222, 128, 0.1)',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 20,
+    borderWidth: 1.5,
+    borderColor: '#4ade80',
+  },
+  soldButtonText: { color: '#4ade80', fontSize: 17, fontWeight: '700' },
 });
