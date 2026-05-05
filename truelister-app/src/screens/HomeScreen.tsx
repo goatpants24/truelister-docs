@@ -13,6 +13,8 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackNavProp } from '../navigation/types';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Print from 'expo-print';
+import * as Clipboard from 'expo-clipboard';
 
 import { CatalogItem } from '../types';
 import { fetchInventory } from '../services/sheets';
@@ -152,13 +154,8 @@ export default function HomeScreen() {
           onPress: () => exportCSV(items),
         },
         {
-          text: 'PDF',
-          onPress: () => {
-            Alert.alert(
-              'PDF Export (Coming Soon)',
-              'PDF catalog generation is under construction but will be added soon.'
-            );
-          },
+          text: 'PDF Catalog',
+          onPress: () => exportPDF(items),
         },
         {
           text: 'HTML Catalog',
@@ -326,6 +323,45 @@ function exportCSV(items: CatalogItem[]) {
   saveToFile(csv, 'truelister-catalog.csv', 'text/csv');
 }
 
+async function exportPDF(items: CatalogItem[]) {
+  const html = `
+    <html>
+      <head>
+        <style>
+          body { font-family: sans-serif; padding: 20px; }
+          h1 { color: #4f6ef7; text-align: center; }
+          .grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+          .item { width: 180px; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; }
+          .item img { width: 100%; height: 150px; object-fit: cover; border-radius: 4px; }
+          .title { font-weight: bold; margin-top: 8px; font-size: 14px; }
+          .price { color: #059669; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <h1>TruCatLog Inventory</h1>
+        <div class="grid">
+          ${items.map(item => `
+            <div class="item">
+              ${item.photoUrl ? `<img src="${item.photoUrl}" />` : '<div style="height:150px; background:#f3f4f6; display:flex; align-items:center; justify-content:center;">No Image</div>'}
+              <div class="title">${item.title}</div>
+              <div>${item.designerBrand || ''}</div>
+              <div class="price">$${item.price || '0.00'}</div>
+            </div>
+          `).join('')}
+        </div>
+      </body>
+    </html>
+  `;
+
+  try {
+    const { uri } = await Print.printToFileAsync({ html });
+    await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+  } catch (error) {
+    console.error('PDF Export failed:', error);
+    Alert.alert('Error', 'Failed to generate PDF catalog.');
+  }
+}
+
 function exportHTMLCatalog(items: CatalogItem[]) {
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -485,12 +521,27 @@ function openMarketplaceTemplateModal(
   items: CatalogItem[],
   platform: 'ebay' | 'mercari' | 'etsy' | 'facebook'
 ) {
-  const templates = items.map((item) => generateTemplate(item, platform));
+  if (items.length === 0) {
+    Alert.alert('Empty', 'No items to generate templates for.');
+    return;
+  }
+
+  const item = items[0]; // Just use the first one for demonstration in this modal
+  const template = generateTemplate(item, platform);
 
   Alert.alert(
-    `${platform.charAt(0).toUpperCase() + platform.slice(1)} Templates`,
-    `Generated ${templates.length} templates. In the full app, this would render a screen where you can view and copy each field.`,
-    [{ text: 'OK' }]
+    `${platform.charAt(0).toUpperCase() + platform.slice(1)} Template`,
+    `Title: ${template.title}\n\nPrice: $${template.price}\n\nDescription: ${template.description.slice(0, 100)}...`,
+    [
+      {
+        text: 'Copy Description',
+        onPress: async () => {
+          await Clipboard.setStringAsync(template.description);
+          Alert.alert('Copied!', 'Listing description copied to clipboard.');
+        },
+      },
+      { text: 'OK', style: 'cancel' },
+    ]
   );
 }
 

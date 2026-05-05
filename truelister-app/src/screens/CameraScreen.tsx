@@ -18,9 +18,12 @@ interface Props {
   onCapture: (compressed: ImageResult, originalUri: string) => void;
   onCancel: () => void;
   itemNumber: string;
+  isBatchMode?: boolean;
+  photoField?: string;
+  onBatchConfirm?: (captures: Record<string, { compressed: ImageResult; originalUri: string }>) => void;
 }
 
-export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props) {
+export default function CameraScreen({ onCapture, onCancel, itemNumber, isBatchMode, photoField, onBatchConfirm }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [whiteBalance, setWhiteBalance] = useState<WhiteBalanceMode>('auto');
   const [processing, setProcessing] = useState(false);
@@ -87,9 +90,19 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
     setProcessing(false);
   };
 
+  const [batchCaptures, setBatchCaptures] = useState<Record<string, { compressed: ImageResult; originalUri: string }>>({});
+
   const handleConfirm = () => {
     if (preview) {
-      onCapture(preview.compressed, preview.originalUri);
+      if (isBatchMode && photoField) {
+        const nextBatch = { ...batchCaptures, [photoField]: preview };
+        setBatchCaptures(nextBatch);
+        setPreview(null);
+        // In a real batch mode we'd cycle fields, but for now we confirm
+        onCapture(preview.compressed, preview.originalUri);
+      } else {
+        onCapture(preview.compressed, preview.originalUri);
+      }
     }
   };
 

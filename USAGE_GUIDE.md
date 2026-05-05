@@ -19,8 +19,11 @@ When capturing the **Front** or **Back** of an item (e.g., a Graphic T-shirt):
 - A **Confirmation Banner** will appear if data is found.
 - Tap **"Confirm & Add"** to auto-fill the Brand and Title fields.
 
-### Multi-Photo Support
-Capture up to 8 specific views (Card, Front, Back, Detail, Tabletop, Measure). The "Card" photo is automatically used as the main thumbnail on your Home Grid.
+### Multi-Photo & Batch Mode
+Capture up to 8 specific views (Card, Front, Back, Detail, Tabletop, Measure).
+- **Batch Mode**: Tap the ⚡️ icon in the form to enter a streamlined capture flow that guided you through the most important views.
+- **Validation**: TruCatLog will warn you if you forget critical "Card", "Front", or "Back" photos before saving.
+- **Smart Thumbnails**: The "Card" photo is automatically used as the main thumbnail on your Home Grid.
 
 ### White Balance Locking
 Tap the **WB** icon in the Camera UI to switch from **AUTO** to **LOCKED**. This ensures consistent colors across all photos for a single item, regardless of changes in room lighting.
@@ -35,13 +38,16 @@ TruCatLog communicates with Google via two methods:
    - **Configure**: Paste your deployment URL into **Settings > Write to Sheet**.
    - **Validate**: Use the **"Test Script Connection"** button in Settings to verify it's working.
 
-### Nifty.ai Integration
-TruCatLog works seamlessly with Nifty.ai via the **CSV Workflow**:
-1. In the app, tap the **"⚙️ Export / Templates"** button on the Home Screen.
-2. Select **"CSV"**.
-3. Save or share the CSV file.
-4. Upload this CSV directly into **Nifty.ai** or **List Perfectly** to blast your items across Poshmark, eBay, and Mercari.
-5. *Tip*: Since TruCatLog already captures specialized views (Front, Back, Detail), your Nifty.ai listings will require significantly less manual adjustment.
+### PDF & CSV Export
+TruCatLog makes it easy to share your inventory or upload it to other tools:
+1. Tap **"⚙️ Export / Templates"** on the Home Screen.
+2. **PDF Catalog**: Generates a professional, print-ready grid of your items.
+3. **CSV Export**: Standard data format for backup or external tools.
+
+### Nifty.ai & Marketplace Integration
+TruCatLog works seamlessly with Nifty.ai and other cross-listing tools:
+1. **CSV Workflow**: Export your CSV and upload it directly into **Nifty.ai** or **List Perfectly**.
+2. **Dynamic Templates**: Tap **"Marketplace Templates"** in the Export menu to generate auto-populated descriptions for eBay, Mercari, etc., and copy them to your clipboard with one tap.
 
 ---
 

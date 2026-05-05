@@ -238,3 +238,28 @@ export async function scanTag(imageUri: string): Promise<{
 
   return { rawText, parsedFields, confidence };
 }
+
+/**
+ * AI Title & Price Suggestion (Integration Path)
+ *
+ * Template for LLM integration (Vertex AI / OpenAI / Anthropic).
+ * This function should be called by the "AI Suggest" button in the form.
+ */
+export async function getAISuggestions(item: CatalogItem): Promise<{
+  suggestedTitle: string;
+  suggestedPrice: string;
+  rationale: string;
+}> {
+  // Placeholder: In production, this would call an LLM with the item's
+  // current fields and detected graphic text.
+
+  const query = `Suggest a marketplace title and price for a ${item.designerBrand} ${item.category} in ${item.condition} condition.`;
+  console.log('[AI] LLM Prompt Query:', query);
+
+  // Simulated AI response
+  return {
+    suggestedTitle: item.designerBrand ? `${item.designerBrand} ${item.title}` : item.title,
+    suggestedPrice: item.price || '29.99',
+    rationale: "Based on brand historical sales and item condition."
+  };
+}

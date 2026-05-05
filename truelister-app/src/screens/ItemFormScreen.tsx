@@ -19,7 +19,7 @@ import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
 import { fetchDropdowns, generateItemNumber, appendItem } from '../services/sheets';
 import { saveDraftItem, addPendingUpload } from '../services/localStorage';
 import { uploadToDrive } from '../services/driveUpload';
-import { scanGraphic } from '../services/ocrService';
+import { scanGraphic, getAISuggestions } from '../services/ocrService';
 import CameraScreen from './CameraScreen';
 import TagScanner from '../components/TagScanner';
 import UndoRedoBar from '../components/UndoRedoBar';
@@ -220,6 +220,27 @@ export default function ItemFormScreen() {
       return;
     }
 
+    const missingViews = [];
+    if (!item.photoUrlCard) missingViews.push('Card');
+    if (!item.photoUrlFront) missingViews.push('Front');
+    if (!item.photoUrlBack) missingViews.push('Back');
+
+    if (missingViews.length > 0) {
+      Alert.alert(
+        'Missing Photos',
+        `Standard listings usually include ${missingViews.join(', ')} views. Save anyway?`,
+        [
+          { text: 'Capture Now', style: 'cancel' },
+          { text: 'Save Anyway', onPress: () => performSave() }
+        ]
+      );
+      return;
+    }
+
+    performSave();
+  };
+
+  const performSave = async () => {
     setSaving(true);
 
     try {
@@ -272,13 +293,29 @@ export default function ItemFormScreen() {
     Linking.openURL(url);
   };
 
-  const handleAISuggest = () => {
-    // In a real app, this would call an LLM API to suggest title/price
-    Alert.alert(
-      'AI Assistant',
-      'AI suggestion feature would analyze your photos and OCR text to recommend optimal title and price. (Coming Soon)',
-      [{ text: 'Sounds Good' }]
-    );
+  const handleAISuggest = async () => {
+    try {
+      const suggestions = await getAISuggestions(item);
+      Alert.alert(
+        'AI Suggestions',
+        `Suggested Title: ${suggestions.suggestedTitle}\nSuggested Price: $${suggestions.suggestedPrice}\n\nRationale: ${suggestions.rationale}`,
+        [
+          { text: 'Discard', style: 'cancel' },
+          {
+            text: 'Apply Suggestions',
+            onPress: () => {
+              const updates: Partial<CatalogItem> = {
+                title: suggestions.suggestedTitle,
+                price: suggestions.suggestedPrice
+              };
+              setItem({ ...item, ...updates }, true);
+            }
+          }
+        ]
+      );
+    } catch (e) {
+      Alert.alert('AI Error', 'Failed to get suggestions.');
+    }
   };
 
   const confirmGraphicText = () => {
@@ -329,8 +366,19 @@ export default function ItemFormScreen() {
   };
 
   // ── Photo capture helpers ──────────────────────────────────────────────────
+  const [isBatchMode, setIsBatchMode] = useState(false);
+
   const handleCapture = (field: PhotoField) => () => {
     setPhotoField(field);
+    setIsBatchMode(false);
+    setMode('camera');
+  };
+
+  const handleBatchCapture = () => {
+    // Start with the first missing critical view or Card
+    const firstField = !item.photoUrlCard ? 'photoUrlCard' : (!item.photoUrlFront ? 'photoUrlFront' : 'photoUrlBack');
+    setPhotoField(firstField as PhotoField);
+    setIsBatchMode(true);
     setMode('camera');
   };
 
@@ -341,6 +389,8 @@ export default function ItemFormScreen() {
         itemNumber={item.itemNumber}
         onCapture={handlePhotoCapture}
         onCancel={() => setMode('form')}
+        isBatchMode={isBatchMode}
+        photoField={photoField || undefined}
       />
     );
   }
@@ -390,6 +440,13 @@ export default function ItemFormScreen() {
 
         {/* Quick actions */}
         <View style={styles.quickActions}>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: '#4f6ef7', borderColor: '#4f6ef7' }]}
+            onPress={handleBatchCapture}
+          >
+            <Text style={styles.actionIcon}>⚡️</Text>
+            <Text style={[styles.actionLabel, { color: '#fff' }]}>Batch Mode</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlCard')}>
             <Text style={styles.actionIcon}>🃏</Text>
             <Text style={styles.actionLabel}>Card</Text>
