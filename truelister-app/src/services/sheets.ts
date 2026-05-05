@@ -1,17 +1,18 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
 
-async function getSpreadsheetId(): Promise<string> {
-  const saved = await AsyncStorage.getItem('settings_spreadsheet_id');
-  return saved || DEFAULT_SPREADSHEET_ID;
-}
+// AsyncStorage keys — must stay in sync with SettingsScreen
+const SETTINGS_KEYS = {
+  APPS_SCRIPT_URL: 'settings_apps_script_url',
+};
 
 // Public CSV export URL (no API key needed for sheets shared with "anyone with link")
-const SHEETS_CSV_URL = (id: string, sheet: string) =>
-  `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
+const SHEETS_CSV_URL = (sheet: string) =>
+  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
 
 function parseCSVRow(row: string): string[] {
   const result: string[] = [];
@@ -141,14 +142,7 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
     };
   } catch (error) {
     console.error('Error fetching dropdowns:', error);
-    return {
-      categories: [],
-      conditions: [],
-      saleStatuses: [],
-      marketplaces: [],
-      colors: [],
-      sizes: [],
-    };
+    return { categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [] };
   }
 }
 
@@ -183,18 +177,17 @@ export async function testConnection(type: 'sheet' | 'script'): Promise<{ succes
 }
 
 export async function appendItem(item: CatalogItem): Promise<boolean> {
-  // For write operations, we use the Google Apps Script web app endpoint
-  // This avoids needing OAuth in the mobile app
-  // See README for how to deploy the Apps Script
-  const APPS_SCRIPT_URL = await AsyncStorage.getItem('settings_apps_script_url') || '';
+  // Read the Apps Script URL from AsyncStorage — set by the user in the Settings tab.
+  // This means no code change is needed; the user just pastes their URL in-app.
+  const appsScriptUrl = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL))?.trim() ?? '';
 
-  if (!APPS_SCRIPT_URL) {
-    console.warn('Apps Script URL not configured. Saving locally only.');
+  if (!appsScriptUrl) {
+    console.warn('Apps Script URL not configured. Open the Settings tab to add it.');
     return false;
   }
 
   try {
-    const response = await fetch(APPS_SCRIPT_URL, {
+    const response = await fetch(appsScriptUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'append', data: itemToRow(item) }),
@@ -202,7 +195,7 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
     const result = await response.json();
     return result.success === true;
   } catch (error) {
-    console.error('Error appending item:', error);
+    console.error('Error appending item to sheet:', error);
     return false;
   }
 }

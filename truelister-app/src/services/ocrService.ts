@@ -1,73 +1,34 @@
-import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
+import TextRecognition from '@react-native-ml-kit/text-recognition';
 import { CatalogItem } from '../types';
 
 /**
  * OCR Service for clothing tag reading.
- * 
- * Uses Google Cloud Vision API (free tier: 1,000 requests/month)
- * for text detection. The Vision API requires base64 in its JSON payload —
- * this is the one unavoidable place, and we only send the already-compressed
- * catalog image (1-2MB), not the original.
- * 
- * For on-device OCR without API calls, swap in expo-text-extractor
- * or @react-native-ml-kit/text-recognition (requires EAS build).
+ *
+ * Uses @react-native-ml-kit/text-recognition — Google ML Kit bundled on-device.
+ * - 100% FREE: no API key, no billing account, no network call required
+ * - Works offline
+ * - Runs entirely on the device (iOS Core ML / Android ML Kit)
+ * - No base64 encoding — passes the file URI directly
  */
 
-// Google Cloud Vision API key (free tier: 1,000 OCR/month)
-let VISION_API_KEY = '';
-
-export function setVisionApiKey(key: string) {
-  VISION_API_KEY = key;
-}
-
-// ── OCR Text Extraction ──────────────────────────────────────────
+// ── OCR Text Extraction ──────────────────────────────────────────────────────
 
 /**
- * Extract text from an image using Google Cloud Vision API.
- * Vision API requires base64 in the JSON payload — unavoidable per API spec.
- * We only send the already-compressed (1-2MB) version, not the original.
+ * Extract text from an image using on-device ML Kit text recognition.
+ * Accepts a local file URI — no encoding, no network, no cost.
  */
 export async function extractTextFromImage(imageUri: string): Promise<string> {
-  if (!VISION_API_KEY) {
-    console.warn('Vision API key not set. OCR unavailable.');
-    return '';
-  }
-
   try {
-    const imageBase64 = await readAsStringAsync(imageUri, {
-      encoding: EncodingType.Base64,
-    });
-
-    const body = {
-      requests: [
-        {
-          image: { content: imageBase64 },
-          features: [
-            { type: 'TEXT_DETECTION', maxResults: 1 },
-          ],
-        },
-      ],
-    };
-
-    const response = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      }
-    );
-
-    const result = await response.json();
-    const annotation = result.responses?.[0]?.fullTextAnnotation;
-    return annotation?.text || '';
+    const result = await TextRecognition.recognize(imageUri);
+    // Join all detected text blocks into a single string
+    return result.blocks.map(block => block.text).join('\n');
   } catch (error) {
-    console.error('OCR error:', error);
+    console.error('On-device OCR error:', error);
     return '';
   }
 }
 
-// ── Smart Field Parsing ──────────────────────────────────────────
+// ── Smart Field Parsing ──────────────────────────────────────────────────────
 
 const FABRIC_KEYWORDS = [
   'cotton', 'polyester', 'nylon', 'silk', 'wool', 'linen', 'rayon',
@@ -94,7 +55,7 @@ const KNOWN_BRANDS = [
   'saint laurent', 'ysl', 'valentino', 'alexander mcqueen',
   'equipment', 'theory', 'vince', 'eileen fisher', 'free people',
   'anthropologie', 'madewell', 'everlane', 'reformation',
-  'patagonia', 'north face', 'columbia', 'arc\'teryx',
+  'patagonia', 'north face', 'columbia', "arc'teryx",
   'lululemon', 'athleta', 'under armour', 'new balance',
 ];
 
@@ -166,7 +127,8 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
 }
 
 /**
- * Full OCR pipeline: capture tag image → extract text → parse fields.
+ * Full OCR pipeline: pass image URI → on-device text extraction → parse fields.
+ * No API key. No network. No cost.
  */
 export async function scanTag(imageUri: string): Promise<{
   rawText: string;

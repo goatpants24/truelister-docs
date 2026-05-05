@@ -8,14 +8,14 @@ export type RootStackParamList = {
   Onboarding: undefined;
   Main: undefined;
   ItemForm: { item?: CatalogItem; existingItems: CatalogItem[] };
-  Camera: { onCapture: (uri: string) => void };
-  TagScanner: { onResult: (fields: Partial<CatalogItem>) => void };
+  Publish: { item: CatalogItem };
 };
 
 // ── Bottom Tab Navigator ──────────────────────────────────────────────────────
 export type TabParamList = {
   Inventory: undefined;
   Drafts: undefined;
+  Marketplaces: undefined;
   Settings: undefined;
 };
 
@@ -29,3 +29,4 @@ export type TabNavProp<T extends keyof TabParamList> = CompositeNavigationProp<
 >;
 
 export type ItemFormRouteProp = RouteProp<RootStackParamList, 'ItemForm'>;
+export type PublishRouteProp = RouteProp<RootStackParamList, 'Publish'>;

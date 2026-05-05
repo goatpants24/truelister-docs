@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   uploadAsync,
   FileSystemUploadType,
@@ -5,37 +6,38 @@ import {
 import { File } from 'expo-file-system';
 import { GOOGLE_DRIVE_CONFIG } from '../config';
 
+// AsyncStorage keys — must stay in sync with SettingsScreen
+const SETTINGS_KEYS = {
+  APPS_SCRIPT_URL: 'settings_apps_script_url',
+  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
+};
+
 /**
- * Upload original photo to Google Drive.
- * 
+ * Upload original photo to Google Drive via Apps Script web app.
+ *
  * Uses multipart/form-data with binary file streams — no base64 encoding.
  * This avoids the ~33% size bloat that base64 adds.
- * 
- * Two approaches available:
- * 1. Direct Google Drive API with resumable upload (binary, requires OAuth2 token)
- * 2. Google Apps Script web app with uploadAsync (binary multipart)
- */
-
-// Apps Script endpoint for file upload (set after deploying the script)
-let UPLOAD_ENDPOINT = '';
-
-export function setUploadEndpoint(url: string) {
-  UPLOAD_ENDPOINT = url;
-}
-
-/**
- * Upload a file to Google Drive via Apps Script web app.
- * Uses uploadAsync for binary multipart — no base64 bloat.
+ *
+ * Both the endpoint URL and Drive folder ID are read from AsyncStorage at
+ * call time, so the user can configure them in the Settings tab without
+ * needing to rebuild or restart the app.
  */
 export async function uploadToDrive(
   fileUri: string,
   fileName: string,
   itemNumber: string
 ): Promise<{ success: boolean; driveUrl?: string; error?: string }> {
-  if (!UPLOAD_ENDPOINT) {
+  // Read both values from AsyncStorage at call time — no restart needed after settings change
+  const uploadEndpoint = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL))?.trim() ?? '';
+  const folderId =
+    (await AsyncStorage.getItem(SETTINGS_KEYS.DRIVE_FOLDER_ID))?.trim() ||
+    GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID ||
+    '';
+
+  if (!uploadEndpoint) {
     return {
       success: false,
-      error: 'Drive upload not configured. Original saved locally. See README to set up Google Apps Script.',
+      error: 'Drive upload not configured. Open the Settings tab and add your Apps Script URL.',
     };
   }
 
@@ -43,14 +45,14 @@ export async function uploadToDrive(
     const fullFileName = `${itemNumber}_${fileName}`;
 
     // Binary multipart upload — no base64 conversion
-    const uploadResult = await uploadAsync(UPLOAD_ENDPOINT, fileUri, {
+    const uploadResult = await uploadAsync(uploadEndpoint, fileUri, {
       httpMethod: 'POST',
       uploadType: FileSystemUploadType.MULTIPART,
       fieldName: 'file',
       parameters: {
         fileName: fullFileName,
         mimeType: 'image/jpeg',
-        folderId: GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID || '',
+        folderId,
         itemNumber,
       },
     });
@@ -75,7 +77,7 @@ export async function uploadToDrive(
 /**
  * Upload using direct Google Drive API with resumable upload (binary stream).
  * This is the most efficient method — sends raw bytes, no encoding overhead.
- * Requires OAuth2 access token.
+ * Requires OAuth2 access token (advanced use case).
  */
 export async function uploadToDriveAPI(
   fileUri: string,
@@ -84,7 +86,6 @@ export async function uploadToDriveAPI(
   folderId?: string
 ): Promise<{ success: boolean; driveUrl?: string; fileId?: string; error?: string }> {
   try {
-    // Step 1: Initiate resumable upload session
     const metadata = {
       name: fileName,
       mimeType: 'image/jpeg',
@@ -108,14 +109,11 @@ export async function uploadToDriveAPI(
       return { success: false, error: 'Failed to initiate resumable upload' };
     }
 
-    // Step 2: Upload the binary file directly via uploadAsync
-    // This streams the raw file bytes — zero encoding overhead
+    // Streams raw file bytes — zero encoding overhead
     const uploadResult = await uploadAsync(uploadUrl, fileUri, {
       httpMethod: 'PUT',
       uploadType: FileSystemUploadType.BINARY_CONTENT,
-      headers: {
-        'Content-Type': 'image/jpeg',
-      },
+      headers: { 'Content-Type': 'image/jpeg' },
     });
 
     if (uploadResult.status >= 200 && uploadResult.status < 300) {

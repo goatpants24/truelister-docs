@@ -660,6 +660,13 @@ export default function ItemFormScreen() {
           )}
         </View>
 
+        {/* Publish button — only shown when item has been saved (has itemNumber) */}
+        <TouchableOpacity
+          style={styles.publishButton}
+          onPress={() => navigation.navigate('Publish', { item })}
+        >
+          <Text style={styles.publishButtonText}>🏪  Publish to Marketplaces</Text>
+        </TouchableOpacity>
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -828,18 +835,15 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  soldButton: {
-    backgroundColor: '#059669',
+  publishButton: {
+    backgroundColor: '#1a1d27',
     borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+    paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
+    marginTop: 10,
+    marginHorizontal: 20,
+    borderWidth: 1.5,
+    borderColor: '#4f6ef7',
   },
-  soldButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  errorText: { color: '#f87171', fontSize: 12, marginTop: 4 },
+  publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
 });

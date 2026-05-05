@@ -15,26 +15,22 @@ import { testConnection } from '../services/sheets';
 const KEYS = {
   APPS_SCRIPT_URL: 'settings_apps_script_url',
   DRIVE_FOLDER_ID: 'settings_drive_folder_id',
-  VISION_API_KEY: 'settings_vision_api_key',
 };
 
 export default function SettingsScreen() {
   const [appsScriptUrl, setAppsScriptUrl] = useState('');
   const [driveFolderId, setDriveFolderId] = useState('');
-  const [visionApiKey, setVisionApiKey] = useState('');
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [url, folder, key] = await Promise.all([
+      const [url, folder] = await Promise.all([
         AsyncStorage.getItem(KEYS.APPS_SCRIPT_URL),
         AsyncStorage.getItem(KEYS.DRIVE_FOLDER_ID),
-        AsyncStorage.getItem(KEYS.VISION_API_KEY),
       ]);
       if (url) setAppsScriptUrl(url);
       if (folder) setDriveFolderId(folder);
-      if (key) setVisionApiKey(key);
     })();
   }, []);
 
@@ -42,7 +38,6 @@ export default function SettingsScreen() {
     await Promise.all([
       AsyncStorage.setItem(KEYS.APPS_SCRIPT_URL, appsScriptUrl.trim()),
       AsyncStorage.setItem(KEYS.DRIVE_FOLDER_ID, driveFolderId.trim()),
-      AsyncStorage.setItem(KEYS.VISION_API_KEY, visionApiKey.trim()),
     ]);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -61,7 +56,6 @@ export default function SettingsScreen() {
             await AsyncStorage.clear();
             setAppsScriptUrl('');
             setDriveFolderId('');
-            setVisionApiKey('');
           },
         },
       ]
@@ -171,31 +165,17 @@ export default function SettingsScreen() {
         />
       </View>
 
-      {/* Vision API */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Tag OCR (Cloud Vision API Key)</Text>
-        <Text style={styles.sectionDesc}>
-          Free tier: 1,000 tag scans/month. Get a key from Google Cloud Console
-          with the Vision API enabled.
-        </Text>
-        <TextInput
-          style={styles.input}
-          value={visionApiKey}
-          onChangeText={setVisionApiKey}
-          placeholder="AIzaSy..."
-          placeholderTextColor="#4a4d60"
-          autoCapitalize="none"
-          autoCorrect={false}
-          secureTextEntry
-        />
-        <TouchableOpacity
-          style={styles.linkBtn}
-          onPress={() =>
-            Linking.openURL('https://console.cloud.google.com/apis/library/vision.googleapis.com')
-          }
-        >
-          <Text style={styles.linkBtnText}>Get API Key ↗</Text>
-        </TouchableOpacity>
+      {/* Tag OCR — info only, no key needed */}
+      <View style={styles.infoSection}>
+        <Text style={styles.infoIcon}>✓</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.infoTitle}>Tag OCR — No Setup Required</Text>
+          <Text style={styles.infoDesc}>
+            Tag scanning runs entirely on-device using Google ML Kit (free,
+            open-source, no API key, no billing account). Just tap "Scan Tag"
+            and point your camera at a clothing label.
+          </Text>
+        </View>
       </View>
 
       {/* Save */}
@@ -266,6 +246,20 @@ const styles = StyleSheet.create({
     borderColor: '#4f6ef7',
   },
   linkBtnText: { fontSize: 13, color: '#4f6ef7', fontWeight: '600' },
+  infoSection: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#0d1f17',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#166534',
+    gap: 12,
+  },
+  infoIcon: { fontSize: 18, color: '#22c55e', marginTop: 1 },
+  infoTitle: { fontSize: 14, fontWeight: '700', color: '#22c55e', marginBottom: 4 },
+  infoDesc: { fontSize: 13, color: '#6b7280', lineHeight: 19 },
   saveBtn: {
     backgroundColor: '#4f6ef7',
     borderRadius: 14,
