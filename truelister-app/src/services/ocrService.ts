@@ -1,34 +1,77 @@
-import TextRecognition from '@react-native-ml-kit/text-recognition';
+import { readAsStringAsync, EncodingType } from 'expo-file-system/legacy';
 import { CatalogItem } from '../types';
 
 /**
  * OCR Service for clothing tag reading.
  *
- * Uses @react-native-ml-kit/text-recognition — Google ML Kit bundled on-device.
- * - 100% FREE: no API key, no billing account, no network call required
- * - Works offline
- * - Runs entirely on the device (iOS Core ML / Android ML Kit)
- * - No base64 encoding — passes the file URI directly
+ * Uses Google Cloud Vision API (free tier: 1,000 requests/month)
+ * for text detection. The Vision API requires base64 in its JSON payload —
+ * this is the one unavoidable place, and we only send the already-compressed
+ * catalog image (1-2MB), not the original.
+ *
+ * For on-device OCR without API calls, swap in expo-text-extractor
+ * or @react-native-ml-kit/text-recognition (requires EAS build).
  */
 
-// ── OCR Text Extraction ──────────────────────────────────────────────────────
+// Google Cloud Vision API key (free tier: 1,000 OCR/month)
+let VISION_API_KEY = '';
+
+export function setVisionApiKey(key: string) {
+  VISION_API_KEY = key;
+}
+
+// ── OCR Text Extraction ──────────────────────────────────────────
 
 /**
- * Extract text from an image using on-device ML Kit text recognition.
- * Accepts a local file URI — no encoding, no network, no cost.
+ * Extract text and logos from an image using Google Cloud Vision API.
  */
-export async function extractTextFromImage(imageUri: string): Promise<string> {
+export async function annotateImage(imageUri: string): Promise<any> {
+  if (!VISION_API_KEY) {
+    console.warn('Vision API key not set. OCR unavailable.');
+    return null;
+  }
+
   try {
-    const result = await TextRecognition.recognize(imageUri);
-    // Join all detected text blocks into a single string
-    return result.blocks.map(block => block.text).join('\n');
+    const imageBase64 = await readAsStringAsync(imageUri, {
+      encoding: EncodingType.Base64,
+    });
+
+    const body = {
+      requests: [
+        {
+          image: { content: imageBase64 },
+          features: [
+            { type: 'TEXT_DETECTION', maxResults: 1 },
+            { type: 'LOGO_DETECTION', maxResults: 5 },
+          ],
+        },
+      ],
+    };
+
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${VISION_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }
+    );
+
+    const result = await response.json();
+    return result.responses?.[0] || null;
   } catch (error) {
-    console.error('On-device OCR error:', error);
-    return '';
+    console.error('OCR error:', error);
+    return null;
   }
 }
 
-// ── Smart Field Parsing ──────────────────────────────────────────────────────
+/** Legacy helper */
+export async function extractTextFromImage(imageUri: string): Promise<string> {
+  const data = await annotateImage(imageUri);
+  return data?.fullTextAnnotation?.text || '';
+}
+
+// ── Smart Field Parsing ──────────────────────────────────────────
 
 const FABRIC_KEYWORDS = [
   'cotton', 'polyester', 'nylon', 'silk', 'wool', 'linen', 'rayon',
@@ -55,7 +98,7 @@ const KNOWN_BRANDS = [
   'saint laurent', 'ysl', 'valentino', 'alexander mcqueen',
   'equipment', 'theory', 'vince', 'eileen fisher', 'free people',
   'anthropologie', 'madewell', 'everlane', 'reformation',
-  'patagonia', 'north face', 'columbia', "arc'teryx",
+  'patagonia', 'north face', 'columbia', 'arc\'teryx',
   'lululemon', 'athleta', 'under armour', 'new balance',
 ];
 
@@ -127,8 +170,53 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
 }
 
 /**
- * Full OCR pipeline: pass image URI → on-device text extraction → parse fields.
- * No API key. No network. No cost.
+ * Full OCR pipeline: capture tag image → extract text → parse fields.
+ */
+/**
+ * Detect text from graphics/logos on the front or back of items.
+ * Focuses on prominent phrases and brand names.
+ */
+export async function scanGraphic(imageUri: string): Promise<{
+  detectedText: string;
+  suggestedTitle?: string;
+  foundBrand?: string;
+  logos?: string[];
+}> {
+  const data = await annotateImage(imageUri);
+  if (!data) return { detectedText: '' };
+
+  const rawText = data.fullTextAnnotation?.text || '';
+  const lines = rawText.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 3);
+
+  // 1. Brand Detection (Text based)
+  let foundBrand = '';
+  const lowerText = rawText.toLowerCase();
+  for (const brand of KNOWN_BRANDS) {
+    if (lowerText.includes(brand.toLowerCase())) {
+      foundBrand = brand.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      break;
+    }
+  }
+
+  // 2. Logo Detection
+  const logos = data.logoAnnotations?.map((l: any) => l.description) || [];
+  if (logos.length > 0 && !foundBrand) {
+    foundBrand = logos[0];
+  }
+
+  // 3. Suggest a title based on the most prominent lines (usually the first few)
+  const suggestedTitle = lines.slice(0, 3).join(' ');
+
+  return {
+    detectedText: rawText,
+    suggestedTitle: suggestedTitle.length > 5 ? suggestedTitle : undefined,
+    foundBrand,
+    logos
+  };
+}
+
+/**
+ * Full OCR pipeline: capture tag image → extract text → parse fields.
  */
 export async function scanTag(imageUri: string): Promise<{
   rawText: string;

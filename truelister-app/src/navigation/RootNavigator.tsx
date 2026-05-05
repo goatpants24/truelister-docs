@@ -4,13 +4,14 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { RootStackParamList, TabParamList } from './types';
 import HomeScreen from '../screens/HomeScreen';
 import ItemFormScreen from '../screens/ItemFormScreen';
 import DraftsScreen from '../screens/DraftsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import MarketplacesScreen from '../screens/MarketplacesScreen';
-import PublishScreen from '../screens/PublishScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 
 // ── Theme ─────────────────────────────────────────────────────────────────────
 const AppTheme = {
@@ -32,7 +33,6 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
   const icons: Record<string, string> = {
     Inventory: '📦',
     Drafts: '📝',
-    Marketplaces: '🏪',
     Settings: '⚙️',
   };
   return (
@@ -81,11 +81,6 @@ function MainTabs() {
         options={{ title: 'Drafts' }}
       />
       <Tab.Screen
-        name="Marketplaces"
-        component={MarketplacesScreen}
-        options={{ title: 'Markets' }}
-      />
-      <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{ title: 'Settings' }}
@@ -118,16 +113,27 @@ export default function RootNavigator() {
           headerTintColor: '#e8eaf6',
           headerTitleStyle: { fontWeight: '700', fontSize: 17 },
           headerShadowVisible: false,
+          // Native back gesture on iOS, predictive back on Android 14+
           gestureEnabled: true,
           animation: Platform.OS === 'ios' ? 'default' : 'slide_from_right',
           contentStyle: { backgroundColor: '#0f1117' },
         }}
       >
+        {/* Onboarding */}
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
+
+        {/* Main tabs — no header (tabs have their own) */}
         <Stack.Screen
           name="Main"
           component={MainTabs}
           options={{ headerShown: false }}
         />
+
+        {/* Item form — slides up as a modal on iOS, slides right on Android */}
         <Stack.Screen
           name="ItemForm"
           component={ItemFormScreen}
@@ -135,17 +141,8 @@ export default function RootNavigator() {
             title: route.params?.item ? 'Edit Item' : 'New Item',
             presentation: Platform.OS === 'ios' ? 'modal' : 'card',
             animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
-            headerLeft: () => null,
+            headerLeft: () => null, // Form has its own Cancel / Save buttons
           })}
-        />
-        <Stack.Screen
-          name="Publish"
-          component={PublishScreen}
-          options={{
-            title: 'Publish Listing',
-            presentation: Platform.OS === 'ios' ? 'modal' : 'card',
-            animation: Platform.OS === 'ios' ? 'slide_from_bottom' : 'slide_from_right',
-          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

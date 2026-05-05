@@ -1,63 +1,30 @@
 {
   "expo": {
-    "name": "TrueLister",
-    "slug": "truelister-app",
+    "name": "TruCatLog",
+    "slug": "trucatlog",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0f1117"
+      "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.truelister.app",
-      "infoPlist": {
-        "NSCameraUsageDescription": "TrueLister uses the camera to photograph inventory items and scan clothing tags.",
-        "NSPhotoLibraryUsageDescription": "TrueLister reads photos from your library to attach to inventory items.",
-        "NSPhotoLibraryAddUsageDescription": "TrueLister saves compressed item photos to your photo library."
-      }
+      "supportsTablet": true
     },
     "android": {
-      "package": "com.truelister.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0f1117"
+        "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": true,
-      "permissions": [
-        "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.INTERNET"
-      ]
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      [
-        "expo-camera",
-        {
-          "cameraPermission": "TrueLister uses the camera to photograph inventory items and scan clothing tags."
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "TrueLister reads photos from your library to attach to inventory items."
-        }
-      ]
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
-      }
     }
   }
 }

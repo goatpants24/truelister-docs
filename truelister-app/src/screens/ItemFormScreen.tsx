@@ -19,7 +19,7 @@ import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
 import { fetchDropdowns, generateItemNumber, appendItem } from '../services/sheets';
 import { saveDraftItem, addPendingUpload } from '../services/localStorage';
 import { uploadToDrive } from '../services/driveUpload';
-import { formatFileSize } from '../services/imageProcessor';
+import { scanGraphic } from '../services/ocrService';
 import CameraScreen from './CameraScreen';
 import TagScanner from '../components/TagScanner';
 import UndoRedoBar from '../components/UndoRedoBar';
@@ -73,6 +73,12 @@ export default function ItemFormScreen() {
   const [photoField, setPhotoField] = useState<PhotoField | null>(null); // which field we're capturing
   const [saving, setSaving] = useState(false);
   const [ocrRawText, setOcrRawText] = useState('');
+  const [graphicTextDetected, setGraphicTextDetected] = useState(false);
+  const [pendingGraphic, setPendingGraphic] = useState<{
+    result: any;
+    uri: string;
+    field: PhotoField;
+  } | null>(null);
 
   // ── Undo/Redo on the entire form state ──────────────────────────────────────
   const {
@@ -143,13 +149,31 @@ export default function ItemFormScreen() {
     const fieldName = photoField as keyof CatalogItem;
     const fileName = `${item.itemNumber}-${photoField}.jpg`;
 
-    uploadToDrive(originalUri, fileName, item.itemNumber).then((uploadResult) => {
+    uploadToDrive(originalUri, fileName, item.itemNumber).then(async (uploadResult) => {
       if (uploadResult.success && uploadResult.driveUrl) {
         const updates: Partial<CatalogItem> = { [fieldName]: uploadResult.driveUrl };
+
         // Use the card photo as the main thumbnail if not already set
         if (fieldName === 'photoUrlCard' || !item.photoUrl) {
           updates.photoUrl = uploadResult.driveUrl;
         }
+
+        // ── Graphic/Logo OCR for Front/Back photos ──
+        if (fieldName === 'photoUrlFront' || fieldName === 'photoUrlBack') {
+          try {
+            const graphicResult = await scanGraphic(compressed.uri);
+            if (graphicResult.detectedText || (graphicResult.logos && graphicResult.logos.length > 0)) {
+              setPendingGraphic({
+                result: graphicResult,
+                uri: compressed.uri,
+                field: fieldName,
+              });
+            }
+          } catch (e) {
+            console.warn('Graphic OCR failed', e);
+          }
+        }
+
         setItem({ ...item, ...updates }, true);
       } else {
         addPendingUpload({
@@ -244,6 +268,28 @@ export default function ItemFormScreen() {
       'AI suggestion feature would analyze your photos and OCR text to recommend optimal title and price. (Coming Soon)',
       [{ text: 'Sounds Good' }]
     );
+  };
+
+  const confirmGraphicText = () => {
+    if (!pendingGraphic) return;
+    const { result } = pendingGraphic;
+    const updates: Partial<CatalogItem> = {};
+
+    if (result.foundBrand && !item.designerBrand) {
+      updates.designerBrand = result.foundBrand;
+    }
+    if (result.suggestedTitle && !item.title) {
+      updates.title = result.suggestedTitle;
+    } else if (result.detectedText) {
+      const textSnippet = result.detectedText.slice(0, 100).replace(/\n/g, ' ');
+      const newNote = `Detected from photo: "${textSnippet}"`;
+      updates.notes = item.notes ? `${item.notes}\n${newNote}` : newNote;
+    }
+
+    setItem({ ...item, ...updates }, true);
+    setPendingGraphic(null);
+    setGraphicTextDetected(true);
+    setTimeout(() => setGraphicTextDetected(false), 3000);
   };
 
   const handleMarkAsSold = () => {
@@ -381,6 +427,47 @@ export default function ItemFormScreen() {
             <Text style={styles.ocrBannerLabel}>
               🏷 Tag scanned — highlighted fields were auto-filled
             </Text>
+          </View>
+        ) : graphicTextDetected ? (
+          <View style={[styles.ocrBanner, { borderColor: '#10b981' }]}>
+            <Text style={[styles.ocrBannerLabel, { color: '#10b981' }]}>
+              ✨ Graphic text confirmed & added
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Pending Graphic OCR Confirmation */}
+        {pendingGraphic ? (
+          <View style={styles.confirmBanner}>
+            <View style={styles.confirmHeader}>
+              <Text style={styles.confirmTitle}>AI Detected Text/Logo</Text>
+              <TouchableOpacity onPress={() => setPendingGraphic(null)}>
+                <Text style={styles.confirmDismiss}>Discard</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.confirmBody}>
+              <Image source={{ uri: pendingGraphic.uri }} style={styles.confirmImage} />
+              <View style={styles.confirmDetails}>
+                {pendingGraphic.result.foundBrand && (
+                  <Text style={styles.confirmInfo}>
+                    <Text style={{ fontWeight: 'bold' }}>Brand:</Text> {pendingGraphic.result.foundBrand}
+                  </Text>
+                )}
+                {pendingGraphic.result.logos?.length > 0 && (
+                  <Text style={styles.confirmInfo}>
+                    <Text style={{ fontWeight: 'bold' }}>Logo:</Text> {pendingGraphic.result.logos[0]}
+                  </Text>
+                )}
+                <Text style={styles.confirmInfo} numberOfLines={2}>
+                   "{pendingGraphic.result.detectedText.slice(0, 80).replace(/\n/g, ' ')}..."
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.confirmButton} onPress={confirmGraphicText}>
+              <Text style={styles.confirmButtonText}>Confirm & Add to Form</Text>
+            </TouchableOpacity>
           </View>
         ) : null}
 
@@ -660,13 +747,6 @@ export default function ItemFormScreen() {
           )}
         </View>
 
-        {/* Publish button — only shown when item has been saved (has itemNumber) */}
-        <TouchableOpacity
-          style={styles.publishButton}
-          onPress={() => navigation.navigate('Publish', { item })}
-        >
-          <Text style={styles.publishButtonText}>🏪  Publish to Marketplaces</Text>
-        </TouchableOpacity>
         <View style={{ height: 40 }} />
       </ScrollView>
 
@@ -756,6 +836,28 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   ocrBannerLabel: { color: '#818cf8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
+  confirmBanner: {
+    backgroundColor: '#1a1d27',
+    borderWidth: 1,
+    borderColor: '#4f6ef7',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  confirmHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  confirmTitle: { color: '#4f6ef7', fontSize: 14, fontWeight: '800', textTransform: 'uppercase' },
+  confirmDismiss: { color: '#6b7280', fontSize: 12, fontWeight: '600' },
+  confirmBody: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  confirmImage: { width: 80, height: 80, borderRadius: 8, backgroundColor: '#000' },
+  confirmDetails: { flex: 1, justifyContent: 'center' },
+  confirmInfo: { color: '#e2e8f0', fontSize: 13, marginBottom: 4 },
+  confirmButton: { backgroundColor: '#4f6ef7', paddingVertical: 12, borderRadius: 10, alignItems: 'center' },
+  confirmButtonText: { color: 'white', fontWeight: '700', fontSize: 14 },
   sectionLabel: {
     color: '#6b7280',
     fontSize: 11,
@@ -835,15 +937,18 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  publishButton: {
-    backgroundColor: '#1a1d27',
+  soldButton: {
+    backgroundColor: '#059669',
     borderRadius: 14,
-    paddingVertical: 15,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
     alignItems: 'center',
-    marginTop: 10,
-    marginHorizontal: 20,
-    borderWidth: 1.5,
-    borderColor: '#4f6ef7',
+    shadowColor: '#059669',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
+  soldButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  errorText: { color: '#f87171', fontSize: 12, marginTop: 4 },
 });
