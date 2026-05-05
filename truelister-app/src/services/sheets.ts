@@ -63,6 +63,16 @@ function rowToItem(row: string[]): CatalogItem {
   };
 }
 
+function sanitizeCSV(val: string): string {
+  if (!val) return '';
+  const str = String(val);
+  // If value contains quotes, commas, or newlines, wrap in quotes and escape internal quotes
+  if (str.includes('"') || str.includes(',') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
 function itemToRow(item: CatalogItem): string[] {
   return [
     item.itemNumber,
@@ -80,15 +90,21 @@ function itemToRow(item: CatalogItem): string[] {
     item.marketplace,
     item.dateListed,
     item.notes,
-  ];
+  ].map(sanitizeCSV);
 }
 
 export async function fetchInventory(): Promise<CatalogItem[]> {
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, SHEET_NAME);
-  console.log(`[Sheets] Fetching inventory from: ${url}`);
+  // Remove logs for production security
+
+  // Implement timeout for resilient fetching
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.error(`[Sheets] Inventory fetch failed with status ${response.status}: ${response.statusText}`);
@@ -102,8 +118,13 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
     const rows = parseCSV(csv);
     // Skip header row
     return rows.slice(1).map(rowToItem).filter(item => item.itemNumber || item.title);
-  } catch (error) {
-    console.error('[Sheets] Network error fetching inventory:', error);
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      console.error('[Sheets] Fetch inventory timed out.');
+    } else {
+      console.error('[Sheets] Network error fetching inventory:', error);
+    }
     return [];
   }
 }
@@ -111,9 +132,13 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 export async function fetchDropdowns(): Promise<DropdownOptions> {
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, DROPDOWNS_SHEET);
-  console.log(`[Sheets] Fetching dropdowns from: ${url}`);
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       console.error(`[Sheets] Dropdowns fetch failed with status ${response.status}: ${response.statusText}`);
@@ -139,8 +164,9 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
       colors: dataRows.map(r => r[4]).filter(Boolean),
       sizes: dataRows.map(r => r[5]).filter(Boolean),
     };
-  } catch (error) {
-    console.error('Error fetching dropdowns:', error);
+  } catch (error: any) {
+    clearTimeout(timeoutId);
+    console.error('[Sheets] Error fetching dropdowns:', error.name === 'AbortError' ? 'Timeout' : error);
     return {
       categories: [],
       conditions: [],

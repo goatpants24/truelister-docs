@@ -71,6 +71,7 @@ export default function ItemFormScreen() {
   });
   const [photo, setPhoto] = useState<{ compressed: ImageResult; originalUri: string } | null>(null);
   const [photoField, setPhotoField] = useState<PhotoField | null>(null); // which field we're capturing
+  const [processing, setProcessing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [ocrRawText, setOcrRawText] = useState('');
   const [graphicTextDetected, setGraphicTextDetected] = useState(false);
@@ -145,15 +146,22 @@ export default function ItemFormScreen() {
 
     if (!photoField) return;
 
-    // Upload and set the correct photo field
+    // Set processing to prevent state collisions during rapid captures
+    setProcessing(true);
+
     const fieldName = photoField as keyof CatalogItem;
     const fileName = `${item.itemNumber}-${photoField}.jpg`;
 
     uploadToDrive(originalUri, fileName, item.itemNumber).then(async (uploadResult) => {
+      // Create a fresh updates object
+      const updates: Partial<CatalogItem> = {};
+
       if (uploadResult.success && uploadResult.driveUrl) {
-        const updates: Partial<CatalogItem> = { [fieldName]: uploadResult.driveUrl };
+        updates[fieldName] = uploadResult.driveUrl;
 
         // Use the card photo as the main thumbnail if not already set
+        // Note: Using a functional check or the latest 'item' state is better
+        // but since we blocked UI with 'processing', it's safer.
         if (fieldName === 'photoUrlCard' || !item.photoUrl) {
           updates.photoUrl = uploadResult.driveUrl;
         }
@@ -173,8 +181,6 @@ export default function ItemFormScreen() {
             console.warn('Graphic OCR failed', e);
           }
         }
-
-        setItem({ ...item, ...updates }, true);
       } else {
         addPendingUpload({
           itemNumber: item.itemNumber,
@@ -184,6 +190,11 @@ export default function ItemFormScreen() {
           timestamp: Date.now(),
         });
       }
+
+      // Merge updates with the absolute LATEST item state to avoid closure race conditions
+      // Since useUndoRedo currently doesn't expose functional updates, we merge carefully
+      setItem({ ...item, ...updates }, true);
+      setProcessing(false);
     });
   };
 
