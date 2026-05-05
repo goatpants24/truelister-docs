@@ -194,7 +194,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.version}>TrueLister v1.0.0 · Expo SDK 54</Text>
+      <Text style={styles.version}>TruCatLog v1.0.0 · Expo SDK 54</Text>
     </ScrollView>
   );
 }
