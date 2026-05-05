@@ -11,10 +11,30 @@ export interface CatalogItem {
   saleStatus: string;
   price: string;
   photoUrl: string;
-  marketplace: string;
+  marketplace: string; // Comma-separated for multiple markets
   dateListed: string;
   notes: string;
+
+  // Variant 3 photo fields
+  photoUrlCard?: string;
+  photoUrlFront?: string;
+  photoUrlBack?: string;
+  photoUrlDetail?: string;
+  photoUrlTabletopWide?: string;
+  photoUrlTabletopDetail?: string;
+  photoUrlTabletopMeasure1?: string;
+  photoUrlTabletopMeasure2?: string;
 }
+
+export type PhotoField =
+  | 'photoUrlCard'
+  | 'photoUrlFront'
+  | 'photoUrlBack'
+  | 'photoUrlDetail'
+  | 'photoUrlTabletopWide'
+  | 'photoUrlTabletopDetail'
+  | 'photoUrlTabletopMeasure1'
+  | 'photoUrlTabletopMeasure2';
 
 export interface DropdownOptions {
   categories: string[];

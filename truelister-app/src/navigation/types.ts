@@ -5,6 +5,7 @@ import { CatalogItem } from '../types';
 
 // ── Root Stack ────────────────────────────────────────────────────────────────
 export type RootStackParamList = {
+  Onboarding: undefined;
   Main: undefined;
   ItemForm: { item?: CatalogItem; existingItems: CatalogItem[] };
   Publish: { item: CatalogItem };

@@ -58,6 +58,7 @@ export interface PendingUpload {
   localUri: string;
   fileName: string;
   timestamp: number;
+  fieldName?: string; // which variant 3 photo field this belongs to
 }
 
 export async function addPendingUpload(upload: PendingUpload): Promise<void> {

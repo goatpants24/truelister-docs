@@ -98,9 +98,21 @@ function MainTabs() {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
+  const [initialRoute, setInitialRoute] = React.useState<keyof RootStackParamList | null>(null);
+
+  React.useEffect(() => {
+    (async () => {
+      const onboarded = await AsyncStorage.getItem('has_onboarded');
+      setInitialRoute(onboarded === 'true' ? 'Main' : 'Onboarding');
+    })();
+  }, []);
+
+  if (!initialRoute) return null;
+
   return (
     <NavigationContainer theme={AppTheme}>
       <Stack.Navigator
+        initialRouteName={initialRoute}
         screenOptions={{
           headerStyle: { backgroundColor: '#1a1d27' },
           headerTintColor: '#e8eaf6',

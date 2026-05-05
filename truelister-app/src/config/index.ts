@@ -1,7 +1,7 @@
 // TrueLister Configuration
 // Google Sheets API (public read via Sheets API v4, no auth needed for published sheets)
 export const GOOGLE_SHEETS_CONFIG = {
-  SPREADSHEET_ID: '1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI',
+  DEFAULT_SPREADSHEET_ID: '1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI',
   SHEET_NAME: 'Inventory',
   DROPDOWNS_SHEET: 'Dropdowns',
   // Using Google Sheets API v4 with API key for read access

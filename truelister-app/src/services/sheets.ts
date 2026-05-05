@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
+const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
 
 // AsyncStorage keys — must stay in sync with SettingsScreen
 const SETTINGS_KEYS = {
@@ -84,21 +85,49 @@ function itemToRow(item: CatalogItem): string[] {
 }
 
 export async function fetchInventory(): Promise<CatalogItem[]> {
+  const id = await getSpreadsheetId();
+  const url = SHEETS_CSV_URL(id, SHEET_NAME);
+  console.log(`[Sheets] Fetching inventory from: ${url}`);
   try {
-    const response = await fetch(SHEETS_CSV_URL(SHEET_NAME));
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.error(`[Sheets] Inventory fetch failed with status ${response.status}: ${response.statusText}`);
+      if (response.status === 404) {
+        console.error('[Sheets] 404 Error: Please check your SPREADSHEET_ID in config/index.ts and ensure the sheet is "Published to the Web".');
+      }
+      return [];
+    }
+
     const csv = await response.text();
     const rows = parseCSV(csv);
     // Skip header row
     return rows.slice(1).map(rowToItem).filter(item => item.itemNumber || item.title);
   } catch (error) {
-    console.error('Error fetching inventory:', error);
+    console.error('[Sheets] Network error fetching inventory:', error);
     return [];
   }
 }
 
 export async function fetchDropdowns(): Promise<DropdownOptions> {
+  const id = await getSpreadsheetId();
+  const url = SHEETS_CSV_URL(id, DROPDOWNS_SHEET);
+  console.log(`[Sheets] Fetching dropdowns from: ${url}`);
   try {
-    const response = await fetch(SHEETS_CSV_URL(DROPDOWNS_SHEET));
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.error(`[Sheets] Dropdowns fetch failed with status ${response.status}: ${response.statusText}`);
+      return {
+        categories: [],
+        conditions: [],
+        saleStatuses: [],
+        marketplaces: [],
+        colors: [],
+        sizes: [],
+      };
+    }
+
     const csv = await response.text();
     const rows = parseCSV(csv);
     // Skip header row, transpose columns
@@ -114,6 +143,36 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
   } catch (error) {
     console.error('Error fetching dropdowns:', error);
     return { categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [] };
+  }
+}
+
+export async function testConnection(type: 'sheet' | 'script'): Promise<{ success: boolean; error?: string }> {
+  if (type === 'sheet') {
+    try {
+      const id = await getSpreadsheetId();
+      const response = await fetch(SHEETS_CSV_URL(id, SHEET_NAME));
+      if (response.ok) return { success: true };
+      if (response.status === 404) return { success: false, error: 'Sheet not found. Ensure it is "Published to web" as CSV.' };
+      return { success: false, error: `Error ${response.status}: ${response.statusText}` };
+    } catch (e) {
+      return { success: false, error: 'Network error. Check your internet connection.' };
+    }
+  } else {
+    try {
+      const url = await AsyncStorage.getItem('settings_apps_script_url') || '';
+      if (!url) return { success: false, error: 'Apps Script URL not configured in Settings.' };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ping' }),
+      });
+
+      if (response.ok) return { success: true };
+      return { success: false, error: `Error ${response.status}: Ensure the script is deployed as a Web App for "Anyone".` };
+    } catch (e) {
+      return { success: false, error: 'Network error. Ensure the URL is correct and valid.' };
+    }
   }
 }
 

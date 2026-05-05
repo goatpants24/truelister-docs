@@ -12,8 +12,9 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute, usePreventRemove } from '@react-navigation/native';
+import * as Linking from 'expo-linking';
 import { Picker } from '@react-native-picker/picker';
-import { CatalogItem, DropdownOptions, ImageResult } from '../types';
+import { CatalogItem, DropdownOptions, ImageResult, PhotoField } from '../types';
 import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
 import { fetchDropdowns, generateItemNumber, appendItem } from '../services/sheets';
 import { saveDraftItem, addPendingUpload } from '../services/localStorage';
@@ -42,6 +43,16 @@ const EMPTY_ITEM = (existingItems: CatalogItem[]): CatalogItem => ({
   marketplace: '',
   dateListed: new Date().toISOString().split('T')[0],
   notes: '',
+
+  // 8 photo URL fields
+  photoUrlCard: '',
+  photoUrlFront: '',
+  photoUrlBack: '',
+  photoUrlDetail: '',
+  photoUrlTabletopWide: '',
+  photoUrlTabletopDetail: '',
+  photoUrlTabletopMeasure1: '',
+  photoUrlTabletopMeasure2: '',
 });
 
 export default function ItemFormScreen() {
@@ -51,10 +62,15 @@ export default function ItemFormScreen() {
 
   const [mode, setMode] = useState<FormMode>('form');
   const [dropdowns, setDropdowns] = useState<DropdownOptions>({
-    categories: [], conditions: [], saleStatuses: [],
-    marketplaces: [], colors: [], sizes: [],
+    categories: [],
+    conditions: [],
+    saleStatuses: [],
+    marketplaces: [],
+    colors: [],
+    sizes: [],
   });
   const [photo, setPhoto] = useState<{ compressed: ImageResult; originalUri: string } | null>(null);
+  const [photoField, setPhotoField] = useState<PhotoField | null>(null); // which field we're capturing
   const [saving, setSaving] = useState(false);
   const [ocrRawText, setOcrRawText] = useState('');
 
@@ -77,18 +93,23 @@ export default function ItemFormScreen() {
   // ── Prevent accidental back navigation when form is dirty ──────────────────
   usePreventRemove(isDirty && !saving, ({ data }) => {
     Alert.alert(
-      'Discard Changes?',
-      'You have unsaved changes. Discard them and go back?',
+      'Unsaved Changes',
+      'You have unsaved changes. If you go back, this item will remain as a draft.',
       [
         { text: 'Keep Editing', style: 'cancel' },
         {
-          text: 'Discard',
+          text: 'Go Back',
           style: 'destructive',
           onPress: () => navigation.dispatch(data.action),
         },
       ]
     );
   });
+
+  const isTitleValid = item.title.trim().length > 0;
+  const errors = {
+    title: !isTitleValid ? 'Title is required' : '',
+  };
 
   useEffect(() => {
     fetchDropdowns().then(setDropdowns);
@@ -101,12 +122,51 @@ export default function ItemFormScreen() {
     [item, setItem]
   );
 
+  const toggleMarketplace = (m: string) => {
+    const current = item.marketplace ? item.marketplace.split(',').map(s => s.trim()) : [];
+    let updated;
+    if (current.includes(m)) {
+      updated = current.filter(x => x !== m);
+    } else {
+      updated = [...current, m];
+    }
+    updateField('marketplace', updated.join(', '), true);
+  };
+
   const handlePhotoCapture = (compressed: ImageResult, originalUri: string) => {
     setPhoto({ compressed, originalUri });
     setMode('form');
+
+    if (!photoField) return;
+
+    // Upload and set the correct photo field
+    const fieldName = photoField as keyof CatalogItem;
+    const fileName = `${item.itemNumber}-${photoField}.jpg`;
+
+    uploadToDrive(originalUri, fileName, item.itemNumber).then((uploadResult) => {
+      if (uploadResult.success && uploadResult.driveUrl) {
+        const updates: Partial<CatalogItem> = { [fieldName]: uploadResult.driveUrl };
+        // Use the card photo as the main thumbnail if not already set
+        if (fieldName === 'photoUrlCard' || !item.photoUrl) {
+          updates.photoUrl = uploadResult.driveUrl;
+        }
+        setItem({ ...item, ...updates }, true);
+      } else {
+        addPendingUpload({
+          itemNumber: item.itemNumber,
+          localUri: originalUri,
+          fieldName: photoField,
+          fileName,
+          timestamp: Date.now(),
+        });
+      }
+    });
   };
 
-  const handleTagScanned = (fields: Partial<CatalogItem>, rawText: string) => {
+  const handleTagScanned = (
+    fields: Partial<CatalogItem>,
+    rawText: string
+  ) => {
     const updated = { ...item };
     for (const [key, value] of Object.entries(fields)) {
       const k = key as keyof CatalogItem;
@@ -120,7 +180,7 @@ export default function ItemFormScreen() {
   };
 
   const handleSave = async () => {
-    if (!item.title) {
+    if (!isTitleValid) {
       Alert.alert('Required', 'Please enter a title for this item.');
       return;
     }
@@ -130,24 +190,6 @@ export default function ItemFormScreen() {
     try {
       const finalItem = { ...item };
 
-      if (photo) {
-        const uploadResult = await uploadToDrive(
-          photo.originalUri,
-          `${item.itemNumber}.jpg`,
-          item.itemNumber
-        );
-        if (uploadResult.success && uploadResult.driveUrl) {
-          finalItem.photoUrl = uploadResult.driveUrl;
-        } else {
-          await addPendingUpload({
-            itemNumber: item.itemNumber,
-            localUri: photo.originalUri,
-            fileName: `${item.itemNumber}.jpg`,
-            timestamp: Date.now(),
-          });
-        }
-      }
-
       const sheetSuccess = await appendItem(finalItem);
       if (!sheetSuccess) {
         await saveDraftItem(finalItem);
@@ -156,17 +198,83 @@ export default function ItemFormScreen() {
       // Reset history so back navigation is clean
       reset(finalItem);
       navigation.goBack();
-    } catch {
+    } catch (err: any) {
       await saveDraftItem(item);
+      const isOffline =
+        err.message?.includes('offline') ||
+        err.message?.includes('network');
       Alert.alert(
-        'Saved Locally',
-        'Item saved as draft. It will sync when connection is available.'
+        'Error Saving',
+        isOffline
+          ? 'Item saved as draft. It will sync when connection is available.'
+          : 'Item saved locally; check settings or API credentials.'
       );
       reset(item);
       navigation.goBack();
     }
 
     setSaving(false);
+  };
+
+  // ── Research & AI helpers ──────────────────────────────────────────────────
+  const handleMarketResearch = () => {
+    const query = [item.designerBrand, item.title, item.category].filter(Boolean).join(' ');
+    if (!query) {
+      Alert.alert('Research', 'Please enter a title or brand first.');
+      return;
+    }
+    const url = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&LH_Sold=1&LH_Complete=1`;
+    Linking.openURL(url);
+  };
+
+  const handleLabelResearch = () => {
+    const query = [item.designerBrand, item.title, 'tag labeling labels'].filter(Boolean).join(' ');
+    if (!query) {
+      Alert.alert('Research', 'Please enter a title or brand first.');
+      return;
+    }
+    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`;
+    Linking.openURL(url);
+  };
+
+  const handleAISuggest = () => {
+    // In a real app, this would call an LLM API to suggest title/price
+    Alert.alert(
+      'AI Assistant',
+      'AI suggestion feature would analyze your photos and OCR text to recommend optimal title and price. (Coming Soon)',
+      [{ text: 'Sounds Good' }]
+    );
+  };
+
+  const handleMarkAsSold = () => {
+    const markets = item.marketplace ? item.marketplace.split(',').map(s => s.trim()) : [];
+
+    Alert.alert(
+      'Mark as Sold?',
+      'This will update the item status to Sold.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm Sold',
+          onPress: async () => {
+            updateField('saleStatus', 'Sold', true);
+            if (markets.length > 0) {
+              Alert.alert(
+                'Cross-Listing Reminder',
+                `Item sold! Don't forget to remove or update listings on:\n\n${markets.join('\n')}`,
+                [{ text: 'Done' }]
+              );
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  // ── Photo capture helpers ──────────────────────────────────────────────────
+  const handleCapture = (field: PhotoField) => () => {
+    setPhotoField(field);
+    setMode('camera');
   };
 
   // ── Sub-screens rendered inline ────────────────────────────────────────────
@@ -194,6 +302,7 @@ export default function ItemFormScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
       {/* Header row with Cancel / title / Save */}
       <View style={styles.header}>
@@ -213,7 +322,10 @@ export default function ItemFormScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Item number badge */}
         <View style={styles.itemNumberBadge}>
           <Text style={styles.itemNumberText}>{item.itemNumber}</Text>
@@ -221,9 +333,29 @@ export default function ItemFormScreen() {
 
         {/* Quick actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => setMode('camera')}>
-            <Text style={styles.actionIcon}>📷</Text>
-            <Text style={styles.actionLabel}>Take Photo</Text>
+          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlCard')}>
+            <Text style={styles.actionIcon}>🃏</Text>
+            <Text style={styles.actionLabel}>Card</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlFront')}>
+            <Text style={styles.actionIcon}>正面</Text>
+            <Text style={styles.actionLabel}>Front</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlBack')}>
+            <Text style={styles.actionIcon}>背面</Text>
+            <Text style={styles.actionLabel}>Back</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlDetail')}>
+            <Text style={styles.actionIcon}>🔍</Text>
+            <Text style={styles.actionLabel}>Detail</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlTabletopWide')}>
+            <Text style={styles.actionIcon}>📸</Text>
+            <Text style={styles.actionLabel}>Tabletop</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlTabletopMeasure1')}>
+            <Text style={styles.actionIcon}>📏</Text>
+            <Text style={styles.actionLabel}>Measure 1</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={() => setMode('tagScan')}>
             <Text style={styles.actionIcon}>🏷</Text>
@@ -231,20 +363,24 @@ export default function ItemFormScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Photo preview */}
-        {photo && (
+        {/* Card photo preview */}
+        {item.photoUrlCard ? (
           <View style={styles.photoPreview}>
-            <Image source={{ uri: photo.compressed.uri }} style={styles.photoImage} resizeMode="cover" />
-            <Text style={styles.photoSize}>
-              {formatFileSize(photo.compressed.fileSize ?? 0)} · {photo.compressed.width}×{photo.compressed.height}
-            </Text>
+            <Image
+              source={{ uri: item.photoUrlCard }}
+              style={styles.photoImage}
+              resizeMode="cover"
+            />
+            <Text style={styles.photoLabel}>Main catalog photo</Text>
           </View>
-        )}
+        ) : null}
 
         {/* OCR banner */}
         {ocrRawText ? (
           <View style={styles.ocrBanner}>
-            <Text style={styles.ocrBannerLabel}>🏷 Tag scanned — highlighted fields were auto-filled</Text>
+            <Text style={styles.ocrBannerLabel}>
+              🏷 Tag scanned — highlighted fields were auto-filled
+            </Text>
           </View>
         ) : null}
 
@@ -252,23 +388,43 @@ export default function ItemFormScreen() {
         <Text style={styles.sectionLabel}>Item Details</Text>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Title <Text style={styles.required}>*</Text></Text>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>
+              Title <Text style={styles.required}>*</Text>
+            </Text>
+            <TouchableOpacity onPress={handleAISuggest} style={styles.aiBadge}>
+              <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={styles.input}
             value={item.title}
-            onChangeText={v => updateField('title', v)}
+            onChangeText={(v) => updateField('title', v)}
             placeholder="e.g., Vintage Levi 501 Jeans"
             placeholderTextColor="#4a5568"
             returnKeyType="next"
           />
+          {errors.title ? (
+            <Text style={styles.errorText}>{errors.title}</Text>
+          ) : null}
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Designer / Brand</Text>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Designer / Brand</Text>
+            <TouchableOpacity onPress={handleLabelResearch} style={styles.researchLink}>
+              <Text style={styles.researchLinkText}>🔍 Label Research</Text>
+            </TouchableOpacity>
+          </View>
           <TextInput
-            style={[styles.input, item.designerBrand && ocrRawText ? styles.inputOcr : null]}
+            style={[
+              styles.input,
+              item.designerBrand && ocrRawText
+                ? styles.inputOcr
+                : null,
+            ]}
             value={item.designerBrand}
-            onChangeText={v => updateField('designerBrand', v)}
+            onChangeText={(v) => updateField('designerBrand', v)}
             placeholder="e.g., Levi's"
             placeholderTextColor="#4a5568"
           />
@@ -280,13 +436,24 @@ export default function ItemFormScreen() {
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={item.category}
-                onValueChange={v => updateField('category', v as string, true)}
+                onValueChange={(v) =>
+                  updateField('category', v as string, true)
+                }
                 style={styles.picker}
                 dropdownIconColor="#94a3b8"
               >
-                <Picker.Item label="Select…" value="" color="#4a5568" />
-                {dropdowns.categories.map(c => (
-                  <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />
+                <Picker.Item
+                  label="Select…"
+                  value=""
+                  color="#4a5568"
+                />
+                {dropdowns.categories.map((c) => (
+                  <Picker.Item
+                    key={c}
+                    label={c}
+                    value={c}
+                    color="#e2e8f0"
+                  />
                 ))}
               </Picker>
             </View>
@@ -295,9 +462,12 @@ export default function ItemFormScreen() {
           <View style={[styles.field, { flex: 1 }]}>
             <Text style={styles.label}>Size</Text>
             <TextInput
-              style={[styles.input, item.size && ocrRawText ? styles.inputOcr : null]}
+              style={[
+                styles.input,
+                item.size && ocrRawText ? styles.inputOcr : null,
+              ]}
               value={item.size}
-              onChangeText={v => updateField('size', v)}
+              onChangeText={(v) => updateField('size', v)}
               placeholder="e.g., M, 32×30"
               placeholderTextColor="#4a5568"
             />
@@ -310,13 +480,24 @@ export default function ItemFormScreen() {
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={item.condition}
-                onValueChange={v => updateField('condition', v as string, true)}
+                onValueChange={(v) =>
+                  updateField('condition', v as string, true)
+                }
                 style={styles.picker}
                 dropdownIconColor="#94a3b8"
               >
-                <Picker.Item label="Select…" value="" color="#4a5568" />
-                {dropdowns.conditions.map(c => (
-                  <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />
+                <Picker.Item
+                  label="Select…"
+                  value=""
+                  color="#4a5568"
+                />
+                {dropdowns.conditions.map((c) => (
+                  <Picker.Item
+                    key={c}
+                    label={c}
+                    value={c}
+                    color="#e2e8f0"
+                  />
                 ))}
               </Picker>
             </View>
@@ -327,13 +508,24 @@ export default function ItemFormScreen() {
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={item.color}
-                onValueChange={v => updateField('color', v as string, true)}
+                onValueChange={(v) =>
+                  updateField('color', v as string, true)
+                }
                 style={styles.picker}
                 dropdownIconColor="#94a3b8"
               >
-                <Picker.Item label="Select…" value="" color="#4a5568" />
-                {dropdowns.colors.map(c => (
-                  <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />
+                <Picker.Item
+                  label="Select…"
+                  value=""
+                  color="#4a5568"
+                />
+                {dropdowns.colors.map((c) => (
+                  <Picker.Item
+                    key={c}
+                    label={c}
+                    value={c}
+                    color="#e2e8f0"
+                  />
                 ))}
               </Picker>
             </View>
@@ -343,9 +535,14 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Fabric / Material</Text>
           <TextInput
-            style={[styles.input, item.fabricMaterial && ocrRawText ? styles.inputOcr : null]}
+            style={[
+              styles.input,
+              item.fabricMaterial && ocrRawText
+                ? styles.inputOcr
+                : null,
+            ]}
             value={item.fabricMaterial}
-            onChangeText={v => updateField('fabricMaterial', v)}
+            onChangeText={(v) => updateField('fabricMaterial', v)}
             placeholder="e.g., 100% Cotton"
             placeholderTextColor="#4a5568"
           />
@@ -356,7 +553,7 @@ export default function ItemFormScreen() {
           <TextInput
             style={styles.input}
             value={item.measurements}
-            onChangeText={v => updateField('measurements', v)}
+            onChangeText={(v) => updateField('measurements', v)}
             placeholder="e.g., Chest: 38  Length: 26"
             placeholderTextColor="#4a5568"
           />
@@ -367,14 +564,20 @@ export default function ItemFormScreen() {
 
         <View style={styles.row}>
           <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Price</Text>
+            <View style={styles.labelRow}>
+              <Text style={styles.label}>Price</Text>
+              <TouchableOpacity onPress={handleMarketResearch} style={styles.researchLink}>
+                <Text style={styles.researchLinkText}>📈 Market Sold</Text>
+              </TouchableOpacity>
+            </View>
             <TextInput
               style={styles.input}
               value={item.price}
-              onChangeText={v => updateField('price', v)}
+              onChangeText={(v) => updateField('price', v)}
               placeholder="0.00"
               placeholderTextColor="#4a5568"
               keyboardType="decimal-pad"
+              returnKeyType="done"
             />
           </View>
 
@@ -383,12 +586,19 @@ export default function ItemFormScreen() {
             <View style={styles.pickerWrapper}>
               <Picker
                 selectedValue={item.saleStatus}
-                onValueChange={v => updateField('saleStatus', v as string, true)}
+                onValueChange={(v) =>
+                  updateField('saleStatus', v as string, true)
+                }
                 style={styles.picker}
                 dropdownIconColor="#94a3b8"
               >
-                {dropdowns.saleStatuses.map(s => (
-                  <Picker.Item key={s} label={s} value={s} color="#e2e8f0" />
+                {dropdowns.saleStatuses.map((s) => (
+                  <Picker.Item
+                    key={s}
+                    label={s}
+                    value={s}
+                    color="#e2e8f0"
+                  />
                 ))}
               </Picker>
             </View>
@@ -396,19 +606,22 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Marketplace</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={item.marketplace}
-              onValueChange={v => updateField('marketplace', v as string, true)}
-              style={styles.picker}
-              dropdownIconColor="#94a3b8"
-            >
-              <Picker.Item label="Select…" value="" color="#4a5568" />
-              {dropdowns.marketplaces.map(m => (
-                <Picker.Item key={m} label={m} value={m} color="#e2e8f0" />
-              ))}
-            </Picker>
+          <Text style={styles.label}>Marketplaces (Select all that apply)</Text>
+          <View style={styles.marketplacesRow}>
+            {dropdowns.marketplaces.map((m) => {
+              const isSelected = item.marketplace?.split(',').map(s => s.trim()).includes(m);
+              return (
+                <TouchableOpacity
+                  key={m}
+                  style={[styles.marketChip, isSelected && styles.marketChipSelected]}
+                  onPress={() => toggleMarketplace(m)}
+                >
+                  <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
+                    {m}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -417,7 +630,7 @@ export default function ItemFormScreen() {
           <TextInput
             style={[styles.input, styles.textArea]}
             value={item.notes}
-            onChangeText={v => updateField('notes', v)}
+            onChangeText={(v) => updateField('notes', v)}
             placeholder="Care instructions, flaws, measurements…"
             placeholderTextColor="#4a5568"
             multiline
@@ -425,16 +638,27 @@ export default function ItemFormScreen() {
           />
         </View>
 
-        {/* Save button */}
-        <TouchableOpacity
-          style={[styles.saveButton, saving && { opacity: 0.5 }]}
-          onPress={handleSave}
-          disabled={saving}
-        >
-          <Text style={styles.saveButtonText}>
-            {saving ? 'Saving…' : 'Save Item'}
-          </Text>
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View style={styles.formActions}>
+          <TouchableOpacity
+            style={[styles.saveButton, { flex: 1 }, saving && { opacity: 0.5 }]}
+            onPress={handleSave}
+            disabled={saving}
+          >
+            <Text style={styles.saveButtonText}>
+              {saving ? 'Saving…' : 'Save Item'}
+            </Text>
+          </TouchableOpacity>
+
+          {existingItem && item.saleStatus !== 'Sold' && (
+            <TouchableOpacity
+              style={[styles.soldButton]}
+              onPress={handleMarkAsSold}
+            >
+              <Text style={styles.soldButtonText}>Mark Sold</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Publish button — only shown when item has been saved (has itemNumber) */}
         <TouchableOpacity
@@ -457,6 +681,18 @@ export default function ItemFormScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+// ────────────────────────────────────────────────────────────────
+// CatalogItem photos: wire these into UI as needed in the future
+//   photoUrlCard
+//   photoUrlFront
+//   photoUrlBack
+//   photoUrlDetail
+//   photoUrlTabletopWide
+//   photoUrlTabletopDetail
+//   photoUrlTabletopMeasure1
+//   photoUrlTabletopMeasure2
+// ────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117' },
@@ -485,7 +721,7 @@ const styles = StyleSheet.create({
     marginVertical: 14,
   },
   itemNumberText: { color: '#818cf8', fontSize: 13, fontWeight: '700', letterSpacing: 1 },
-  quickActions: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  quickActions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 16 },
   actionButton: {
     flex: 1,
     backgroundColor: '#1a1d27',
@@ -496,11 +732,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
+  actionPhotoButton: {
+    flex: 1,
+  },
   actionIcon: { fontSize: 26 },
   actionLabel: { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
-  photoPreview: { marginBottom: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1a1d27' },
+  photoPreview: {
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#1a1d27',
+    borderWidth: 1,
+    borderColor: '#2a2d3a',
+  },
   photoImage: { width: '100%', height: 200 },
-  photoSize: { color: '#4ade80', fontSize: 12, textAlign: 'center', paddingVertical: 6 },
+  photoLabel: { color: '#94a3b8', fontSize: 13, textAlign: 'center', paddingVertical: 6 },
   ocrBanner: {
     backgroundColor: 'rgba(79, 110, 247, 0.12)',
     borderWidth: 1,
@@ -520,7 +766,21 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   field: { marginBottom: 14 },
-  label: { color: '#cbd5e1', fontSize: 13, fontWeight: '600', marginBottom: 6 },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  label: { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
+  aiBadge: {
+    backgroundColor: 'rgba(124, 58, 237, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(124, 58, 237, 0.3)',
+  },
+  aiBadgeText: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
+  researchLink: {
+    paddingVertical: 2,
+  },
+  researchLinkText: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
   required: { color: '#f87171' },
   input: {
     backgroundColor: '#1a1d27',
@@ -546,6 +806,22 @@ const styles = StyleSheet.create({
   },
   picker: { color: '#e8eaf6', height: 48 },
   row: { flexDirection: 'row', gap: 12 },
+  marketplacesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  marketChip: {
+    backgroundColor: '#1a1d27',
+    borderWidth: 1,
+    borderColor: '#2a2d3a',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  marketChipSelected: {
+    backgroundColor: 'rgba(79, 110, 247, 0.2)',
+    borderColor: '#4f6ef7',
+  },
+  marketChipText: { color: '#94a3b8', fontSize: 13, fontWeight: '500' },
+  marketChipTextSelected: { color: '#4f6ef7', fontWeight: '700' },
+  formActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
   saveButton: {
     backgroundColor: '#4f6ef7',
     borderRadius: 14,

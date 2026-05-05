@@ -137,6 +137,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
         ref={cameraRef}
         style={styles.camera}
         facing="back"
+        {...({ whiteBalance } as any)}
       >
         {processing && (
           <View style={styles.processingOverlay}>
