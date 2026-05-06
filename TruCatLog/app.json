@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "TrueLister",
-    "slug": "truelister-app",
+    "name": "TruCatLog",
+    "slug": "trucatlog",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,15 +14,15 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.truelister.app",
+      "bundleIdentifier": "com.trucatlog.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "TrueLister uses the camera to photograph inventory items and scan clothing tags.",
-        "NSPhotoLibraryUsageDescription": "TrueLister reads photos from your library to attach to inventory items.",
-        "NSPhotoLibraryAddUsageDescription": "TrueLister saves compressed item photos to your photo library."
+        "NSCameraUsageDescription": "TruCatLog uses the camera to photograph inventory items and scan clothing tags.",
+        "NSPhotoLibraryUsageDescription": "TruCatLog reads photos from your library to attach to inventory items.",
+        "NSPhotoLibraryAddUsageDescription": "TruCatLog saves compressed item photos to your photo library."
       }
     },
     "android": {
-      "package": "com.truelister.app",
+      "package": "com.trucatlog.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0f1117"
@@ -44,13 +44,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "TrueLister uses the camera to photograph inventory items and scan clothing tags."
+          "cameraPermission": "TruCatLog uses the camera to photograph inventory items and scan clothing tags."
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "TrueLister reads photos from your library to attach to inventory items."
+          "photosPermission": "TruCatLog reads photos from your library to attach to inventory items."
         }
       ]
     ],

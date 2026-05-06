@@ -2,9 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CatalogItem } from '../types';
 
 const STORAGE_KEYS = {
-  DRAFT_ITEMS: 'truelister_draft_items',
-  PENDING_UPLOADS: 'truelister_pending_uploads',
-  SETTINGS: 'truelister_settings',
+  DRAFT_ITEMS: 'trucatlog_draft_items',
+  PENDING_UPLOADS: 'trucatlog_pending_uploads',
+  SETTINGS: 'trucatlog_settings',
 };
 
 /**

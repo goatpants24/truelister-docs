@@ -24,7 +24,7 @@ function buildDescription(item: CatalogItem): string {
   if (item.condition) lines.push(`Condition: ${item.condition}`);
   if (item.measurements) lines.push(`Measurements: ${item.measurements}`);
   if (item.notes) lines.push(`\nNotes: ${item.notes}`);
-  lines.push('\nListed with TrueLister');
+  lines.push('\nListed with TruCatLog');
   return lines.join('\n');
 }
 

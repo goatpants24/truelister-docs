@@ -323,7 +323,7 @@ function exportCSV(items: CatalogItem[]) {
 
   const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
 
-  saveToFile(csv, 'truelister-catalog.csv', 'text/csv');
+  saveToFile(csv, 'trucatlog-catalog.csv', 'text/csv');
 }
 
 function exportHTMLCatalog(items: CatalogItem[]) {
@@ -332,7 +332,7 @@ function exportHTMLCatalog(items: CatalogItem[]) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TrueLister Catalog</title>
+  <title>TruCatLog Catalog</title>
   <style>
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Open Sans";
@@ -416,7 +416,7 @@ function exportHTMLCatalog(items: CatalogItem[]) {
 </head>
 <body>
   <div class="header">
-    <h1>TrueLister Catalog</h1>
+    <h1>TruCatLog Catalog</h1>
   </div>
   <div class="catalog">
     ${items
@@ -445,7 +445,7 @@ function exportHTMLCatalog(items: CatalogItem[]) {
 </body>
 </html>`;
 
-  saveToFile(html, 'truelister-catalog.html', 'text/html');
+  saveToFile(html, 'trucatlog-catalog.html', 'text/html');
 }
 
 type MarketplaceTemplate = {
@@ -522,7 +522,7 @@ async function saveToFile(content: string, fileName: string, mimeType: string) {
 
   await Sharing.shareAsync(fileUri, {
     mimeType,
-    dialogTitle: `Export TrueLister Catalog (${fileName.split('.').slice(-1)[0].toUpperCase()})`,
+    dialogTitle: `Export TruCatLog Catalog (${fileName.split('.').slice(-1)[0].toUpperCase()})`,
   });
 }
 

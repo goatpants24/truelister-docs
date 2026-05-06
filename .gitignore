@@ -1,0 +1,31 @@
+# Dependency directories
+node_modules/
+.npm/
+
+# Build outputs
+dist/
+build/
+*.apk
+*.ipa
+*.app
+
+# Expo/EAS
+.expo/
+.eas/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment and Secrets
+.env
+.env.local
+secrets.json
+credentials.json
+
+# Backup folder (Kept in repo for now, but usually ignored)
+# backup_hold-fold/
