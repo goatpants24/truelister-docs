@@ -1,19 +1,18 @@
-# TruCatLog Repository
+# project-trucatlog Workspace
 
-Welcome to the **TruCatLog** repository. This workspace is organized to manage the core application, its historical archives, and related projects.
+This repository serves as a centralized workspace for several independent projects.
 
-## Project Structure
+## Repository Structure
 
-- **[TruCatLog/](./TruCatLog/)**: The active application codebase. A professional cataloging and inventory management tool for marketplace sellers.
-- **[archived_projects/](./archived_projects/)**: Independent projects and experiments that are currently separate from the main application.
-  - `mastermind`: Governance and strategy documentation.
-  - `c-goldfish-termination-suite`: Specialized state synchronization and archiving tools.
-- **[backup_hold-fold/](./backup_hold-fold/)**: An archive of legacy files, redundant configurations, and historical logs from the development process.
+- **[TruCatLog/](./TruCatLog/)**: A professional cataloging and inventory management application for marketplace sellers. This is the primary active codebase.
+- **[mastermind/](./mastermind/)**: An independent governance and strategy framework.
+- **[c-goldfish-termination-suite/](./c-goldfish-termination-suite/)**: An independent protocol for state synchronization and specialized archiving.
+- **[backup_hold-fold/](./backup_hold-fold/)**: A legacy archive containing redundant files, historical development logs, and deprecated configurations.
 
 ## Getting Started
 
-To dive into the application, navigate to the [TruCatLog/](./TruCatLog/) directory. You will find a dedicated README there with setup instructions for both developers and end-users.
+Each project is independent. To work with the TruCatLog application, navigate to its directory and follow the instructions in its specific README.
 
 ## License
 
-This project is proprietary. Please refer to the [LICENSE](LICENSE) file for terms of use.
+This repository and its contents are proprietary. Please refer to the [LICENSE](LICENSE) file for terms of use.
