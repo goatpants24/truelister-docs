@@ -12,14 +12,34 @@ type UndoRedoAction<T> =
   | { type: 'REDO' }
   | { type: 'RESET'; payload: T };
 
+/**
+ * Optimized shallow equality check.
+ * Faster than JSON.stringify for large state objects.
+ */
+function shallowEqual(objA: any, objB: any) {
+  if (Object.is(objA, objB)) return true;
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
+    return false;
+  }
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+  if (keysA.length !== keysB.length) return false;
+  for (let i = 0; i < keysA.length; i++) {
+    if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function undoRedoReducer<T>(
   state: UndoRedoState<T>,
   action: UndoRedoAction<T>
 ): UndoRedoState<T> {
   switch (action.type) {
     case 'SET': {
-      // Don't push if value is identical
-      if (JSON.stringify(state.present) === JSON.stringify(action.payload)) {
+      // Don't push if value is identical (optimized shallow check)
+      if (shallowEqual(state.present, action.payload)) {
         return state;
       }
       return {
@@ -71,6 +91,9 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingValue = useRef<T>(initialValue);
+  // Keep track of present state in a ref to support functional updates safely
+  const presentRef = useRef<T>(initialValue);
+  presentRef.current = state.present;
 
   /** Commit pending value to history immediately */
   const flush = useCallback(() => {
@@ -83,13 +106,18 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
 
   /**
    * Set a new value. Debounced — rapid changes are batched into one history entry.
+   * Supports functional updates like set(prev => ({ ...prev, count: prev.count + 1 })).
    * Pass `immediate: true` to bypass debounce (e.g., on dropdown select).
    */
   const set = useCallback(
-    (value: T, immediate = false) => {
-      pendingValue.current = value;
+    (value: T | ((prev: T) => T), immediate = false) => {
+      const nextValue = typeof value === 'function'
+        ? (value as (prev: T) => T)(presentRef.current)
+        : value;
+
+      pendingValue.current = nextValue;
       // Update present immediately for UI responsiveness
-      dispatch({ type: 'SET', payload: value });
+      dispatch({ type: 'SET', payload: nextValue });
 
       if (!immediate) {
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
