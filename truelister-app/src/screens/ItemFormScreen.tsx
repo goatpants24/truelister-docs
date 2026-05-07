@@ -116,22 +116,29 @@ export default function ItemFormScreen() {
   }, []);
 
   const updateField = useCallback(
-    (field: keyof CatalogItem, value: string, immediate = false) => {
-      setItem({ ...item, [field]: value }, immediate);
+    (field: keyof CatalogItem, value: any, immediate = false) => {
+      setItem((prev) => ({ ...prev, [field]: value }), immediate);
     },
-    [item, setItem]
+    [setItem]
   );
 
-  const toggleMarketplace = (m: string) => {
-    const current = item.marketplace ? item.marketplace.split(',').map(s => s.trim()) : [];
-    let updated;
-    if (current.includes(m)) {
-      updated = current.filter(x => x !== m);
-    } else {
-      updated = [...current, m];
-    }
-    updateField('marketplace', updated.join(', '), true);
-  };
+  const toggleMarketplace = useCallback(
+    (m: string) => {
+      setItem((prev) => {
+        const current = prev.marketplace
+          ? prev.marketplace.split(',').map((s) => s.trim())
+          : [];
+        let updated;
+        if (current.includes(m)) {
+          updated = current.filter((x) => x !== m);
+        } else {
+          updated = [...current, m];
+        }
+        return { ...prev, marketplace: updated.join(', ') };
+      }, true);
+    },
+    [setItem]
+  );
 
   const handlePhotoCapture = (compressed: ImageResult, originalUri: string) => {
     setPhoto({ compressed, originalUri });
@@ -835,6 +842,17 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  soldButton: {
+    backgroundColor: '#1a1d27',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#4ade80',
+  },
+  soldButtonText: { color: '#4ade80', fontSize: 15, fontWeight: '700' },
   publishButton: {
     backgroundColor: '#1a1d27',
     borderRadius: 14,
@@ -846,4 +864,5 @@ const styles = StyleSheet.create({
     borderColor: '#4f6ef7',
   },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
+  errorText: { color: '#f87171', fontSize: 12, marginTop: 4 },
 });
