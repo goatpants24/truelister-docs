@@ -74,6 +74,12 @@ export default function ItemFormScreen() {
   const [saving, setSaving] = useState(false);
   const [ocrRawText, setOcrRawText] = useState('');
 
+  // ── Memoize initial item to prevent expensive generateItemNumber on re-renders ──
+  const initialItem = React.useMemo(
+    () => existingItem ?? EMPTY_ITEM(existingItems ?? []),
+    [existingItem, existingItems]
+  );
+
   // ── Undo/Redo on the entire form state ──────────────────────────────────────
   const {
     value: item,
@@ -84,9 +90,7 @@ export default function ItemFormScreen() {
     canUndo,
     canRedo,
     historyLength,
-  } = useUndoRedo<CatalogItem>(
-    existingItem ?? EMPTY_ITEM(existingItems ?? [])
-  );
+  } = useUndoRedo<CatalogItem>(initialItem);
 
   const isDirty = canUndo; // form has been modified if there's undo history
 
@@ -117,9 +121,10 @@ export default function ItemFormScreen() {
 
   const updateField = useCallback(
     (field: keyof CatalogItem, value: string, immediate = false) => {
-      setItem({ ...item, [field]: value }, immediate);
+      // Use functional update to keep this callback stable
+      setItem((prev) => ({ ...prev, [field]: value }), immediate);
     },
-    [item, setItem]
+    [setItem]
   );
 
   const toggleMarketplace = (m: string) => {
