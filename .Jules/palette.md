@@ -1,0 +1,3 @@
+## 2025-05-22 - [Title Character Counter & Button Accessibility]
+**Learning:** Marketplace sellers frequently use multiple platforms with a common 80-character title limit. Providing an immediate, color-coded visual indicator (amber at 70, red at 80+) directly below the input field reduces cognitive load and listing errors. Additionally, many "icon-only" buttons in the cataloging workflow (e.g., camera actions) lack labels, making the app unusable for screen readers.
+**Action:** Always implement character counters for platform-constrained fields and enforce `accessibilityLabel`/`role` on all emoji-based navigation/action buttons.
