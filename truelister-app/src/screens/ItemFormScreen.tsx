@@ -314,13 +314,20 @@ export default function ItemFormScreen() {
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel="Cancel editing"
+          accessibilityRole="button"
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {existingItem ? 'Edit Item' : 'New Item'}
         </Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={saving}
+          accessibilityLabel="Save item"
+          accessibilityRole="button"
+        >
           <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>
             {saving ? 'Saving…' : 'Save'}
           </Text>
@@ -338,31 +345,66 @@ export default function ItemFormScreen() {
 
         {/* Quick actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlCard')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton]}
+            onPress={handleCapture('photoUrlCard')}
+            accessibilityLabel="Capture Card photo"
+            accessibilityRole="button"
+          >
             <Text style={styles.actionIcon}>🃏</Text>
             <Text style={styles.actionLabel}>Card</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlFront')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton]}
+            onPress={handleCapture('photoUrlFront')}
+            accessibilityLabel="Capture Front photo"
+            accessibilityRole="button"
+          >
             <Text style={styles.actionIcon}>正面</Text>
             <Text style={styles.actionLabel}>Front</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlBack')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton]}
+            onPress={handleCapture('photoUrlBack')}
+            accessibilityLabel="Capture Back photo"
+            accessibilityRole="button"
+          >
             <Text style={styles.actionIcon}>背面</Text>
             <Text style={styles.actionLabel}>Back</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlDetail')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton]}
+            onPress={handleCapture('photoUrlDetail')}
+            accessibilityLabel="Capture Detail photo"
+            accessibilityRole="button"
+          >
             <Text style={styles.actionIcon}>🔍</Text>
             <Text style={styles.actionLabel}>Detail</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlTabletopWide')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton]}
+            onPress={handleCapture('photoUrlTabletopWide')}
+            accessibilityLabel="Capture Tabletop photo"
+            accessibilityRole="button"
+          >
             <Text style={styles.actionIcon}>📸</Text>
             <Text style={styles.actionLabel}>Tabletop</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlTabletopMeasure1')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton]}
+            onPress={handleCapture('photoUrlTabletopMeasure1')}
+            accessibilityLabel="Capture Measurement 1 photo"
+            accessibilityRole="button"
+          >
             <Text style={styles.actionIcon}>📏</Text>
             <Text style={styles.actionLabel}>Measure 1</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => setMode('tagScan')}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => setMode('tagScan')}
+            accessibilityLabel="Scan garment tag with AI"
+            accessibilityRole="button"
+          >
             <Text style={styles.actionIcon}>🏷</Text>
             <Text style={styles.actionLabel}>Scan Tag</Text>
           </TouchableOpacity>
@@ -397,7 +439,12 @@ export default function ItemFormScreen() {
             <Text style={styles.label}>
               Title <Text style={styles.required}>*</Text>
             </Text>
-            <TouchableOpacity onPress={handleAISuggest} style={styles.aiBadge}>
+            <TouchableOpacity
+              onPress={handleAISuggest}
+              style={styles.aiBadge}
+              accessibilityLabel="Suggest title and price using AI"
+              accessibilityRole="button"
+            >
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
             </TouchableOpacity>
           </View>
@@ -409,6 +456,15 @@ export default function ItemFormScreen() {
             placeholderTextColor="#4a5568"
             returnKeyType="next"
           />
+          <Text
+            style={[
+              styles.charCounter,
+              (item?.title?.length || 0) >= 70 && { color: '#f59e0b' },
+              (item?.title?.length || 0) > 80 && { color: '#f87171' },
+            ]}
+          >
+            {item?.title?.length || 0} / 80
+          </Text>
           {errors.title ? (
             <Text style={styles.errorText}>{errors.title}</Text>
           ) : null}
@@ -417,7 +473,12 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Designer / Brand</Text>
-            <TouchableOpacity onPress={handleLabelResearch} style={styles.researchLink}>
+            <TouchableOpacity
+              onPress={handleLabelResearch}
+              style={styles.researchLink}
+              accessibilityLabel="Research brand labels on Google"
+              accessibilityRole="button"
+            >
               <Text style={styles.researchLinkText}>🔍 Label Research</Text>
             </TouchableOpacity>
           </View>
@@ -571,7 +632,12 @@ export default function ItemFormScreen() {
           <View style={[styles.field, { flex: 1 }]}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Price</Text>
-              <TouchableOpacity onPress={handleMarketResearch} style={styles.researchLink}>
+              <TouchableOpacity
+                onPress={handleMarketResearch}
+                style={styles.researchLink}
+                accessibilityLabel="Research sold prices on eBay"
+                accessibilityRole="button"
+              >
                 <Text style={styles.researchLinkText}>📈 Market Sold</Text>
               </TouchableOpacity>
             </View>
@@ -851,4 +917,23 @@ const styles = StyleSheet.create({
     borderColor: '#4f6ef7',
   },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
+  errorText: { color: '#f87171', fontSize: 12, marginTop: 4, fontWeight: '600' },
+  soldButton: {
+    backgroundColor: '#1a1d27',
+    borderWidth: 1,
+    borderColor: '#f87171',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  soldButtonText: { color: '#f87171', fontSize: 17, fontWeight: '700' },
+  charCounter: {
+    color: '#94a3b8',
+    fontSize: 11,
+    textAlign: 'right',
+    marginTop: 4,
+    fontWeight: '600',
+  },
 });
