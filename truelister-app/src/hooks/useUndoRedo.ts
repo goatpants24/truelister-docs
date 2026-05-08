@@ -7,7 +7,8 @@ interface UndoRedoState<T> {
 }
 
 type UndoRedoAction<T> =
-  | { type: 'SET'; payload: T }
+  | { type: 'UPDATE'; payload: T }
+  | { type: 'COMMIT'; payload: T }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'RESET'; payload: T };
@@ -37,7 +38,13 @@ function undoRedoReducer<T>(
   action: UndoRedoAction<T>
 ): UndoRedoState<T> {
   switch (action.type) {
-    case 'SET': {
+    case 'UPDATE': {
+      if (shallowEqual(state.present, action.payload)) {
+        return state;
+      }
+      return { ...state, present: action.payload };
+    }
+    case 'COMMIT': {
       // Don't push if value is identical (optimized shallow check)
       if (shallowEqual(state.present, action.payload)) {
         return state;
@@ -100,8 +107,8 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
       debounceTimer.current = null;
+      dispatch({ type: 'COMMIT', payload: pendingValue.current });
     }
-    dispatch({ type: 'SET', payload: pendingValue.current });
   }, []);
 
   /**
@@ -115,11 +122,21 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
         ? (value as (prev: T) => T)(presentRef.current)
         : value;
 
+      const isFirstOfSequence = !debounceTimer.current;
       pendingValue.current = nextValue;
-      // Update present immediately for UI responsiveness
-      dispatch({ type: 'SET', payload: nextValue });
 
-      if (!immediate) {
+      if (immediate) {
+        flush();
+        dispatch({ type: 'COMMIT', payload: nextValue });
+      } else {
+        if (isFirstOfSequence) {
+          // Push current stable state to history, move to next state
+          dispatch({ type: 'COMMIT', payload: nextValue });
+        } else {
+          // Just update UI, don't grow history stack
+          dispatch({ type: 'UPDATE', payload: nextValue });
+        }
+
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(flush, debounceMs);
       }
