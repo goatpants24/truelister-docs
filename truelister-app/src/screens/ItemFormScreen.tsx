@@ -314,13 +314,20 @@ export default function ItemFormScreen() {
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel editing and go back"
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {existingItem ? 'Edit Item' : 'New Item'}
         </Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={saving}
+          accessibilityRole="button"
+          accessibilityLabel="Save item"
+        >
           <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>
             {saving ? 'Saving…' : 'Save'}
           </Text>
@@ -394,9 +401,21 @@ export default function ItemFormScreen() {
 
         <View style={styles.field}>
           <View style={styles.labelRow}>
-            <Text style={styles.label}>
-              Title <Text style={styles.required}>*</Text>
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={styles.label}>
+                Title <Text style={styles.required}>*</Text>
+              </Text>
+              <Text
+                style={[
+                  styles.charCounter,
+                  item.title.length >= 80 ? styles.charCounterError :
+                  item.title.length >= 70 ? styles.charCounterWarning : null
+                ]}
+                accessibilityLabel="Title character count"
+              >
+                {item.title.length}/80
+              </Text>
+            </View>
             <TouchableOpacity onPress={handleAISuggest} style={styles.aiBadge}>
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
             </TouchableOpacity>
@@ -773,6 +792,9 @@ const styles = StyleSheet.create({
   field: { marginBottom: 14 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   label: { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
+  charCounter: { fontSize: 11, color: '#94a3b8', fontWeight: '600' },
+  charCounterWarning: { color: '#fbbf24' },
+  charCounterError: { color: '#f87171' },
   aiBadge: {
     backgroundColor: 'rgba(124, 58, 237, 0.15)',
     paddingHorizontal: 8,
@@ -840,6 +862,18 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  soldButton: {
+    backgroundColor: '#1a1d27',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#f87171',
+    paddingHorizontal: 20,
+  },
+  soldButtonText: { color: '#f87171', fontSize: 17, fontWeight: '700' },
+  errorText: { color: '#f87171', fontSize: 12, marginTop: 4 },
   publishButton: {
     backgroundColor: '#1a1d27',
     borderRadius: 14,
