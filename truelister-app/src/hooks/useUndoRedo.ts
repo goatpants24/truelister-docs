@@ -4,10 +4,12 @@ interface UndoRedoState<T> {
   past: T[];
   present: T;
   future: T[];
+  lastCommitted: T;
 }
 
 type UndoRedoAction<T> =
-  | { type: 'SET'; payload: T }
+  | { type: 'UPDATE'; payload: T }
+  | { type: 'COMMIT'; payload: T }
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'RESET'; payload: T };
@@ -37,23 +39,39 @@ function undoRedoReducer<T>(
   action: UndoRedoAction<T>
 ): UndoRedoState<T> {
   switch (action.type) {
-    case 'SET': {
-      // Don't push if value is identical (optimized shallow check)
+    case 'UPDATE': {
       if (shallowEqual(state.present, action.payload)) {
         return state;
       }
+      return { ...state, present: action.payload, future: [] };
+    }
+    case 'COMMIT': {
+      // Don't push if value is identical to the last committed one
+      if (shallowEqual(state.lastCommitted, action.payload)) {
+        return { ...state, present: action.payload, future: [] };
+      }
       return {
-        past: [...state.past, state.present],
+        past: [...state.past, state.lastCommitted],
         present: action.payload,
+        lastCommitted: action.payload,
         future: [],
       };
     }
     case 'UNDO': {
+      // If there's a pending uncommitted change, undoing it returns to lastCommitted
+      if (!shallowEqual(state.present, state.lastCommitted)) {
+        return {
+          ...state,
+          present: state.lastCommitted,
+          future: [state.present, ...state.future],
+        };
+      }
       if (state.past.length === 0) return state;
       const previous = state.past[state.past.length - 1];
       return {
         past: state.past.slice(0, -1),
         present: previous,
+        lastCommitted: previous,
         future: [state.present, ...state.future],
       };
     }
@@ -63,11 +81,12 @@ function undoRedoReducer<T>(
       return {
         past: [...state.past, state.present],
         present: next,
+        lastCommitted: next,
         future: state.future.slice(1),
       };
     }
     case 'RESET': {
-      return { past: [], present: action.payload, future: [] };
+      return { past: [], present: action.payload, lastCommitted: action.payload, future: [] };
     }
     default:
       return state;
@@ -86,7 +105,7 @@ function undoRedoReducer<T>(
 export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
   const [state, dispatch] = useReducer(
     (s: UndoRedoState<T>, a: UndoRedoAction<T>) => undoRedoReducer(s, a),
-    { past: [], present: initialValue, future: [] }
+    { past: [], present: initialValue, future: [], lastCommitted: initialValue }
   );
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,7 +120,7 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
       clearTimeout(debounceTimer.current);
       debounceTimer.current = null;
     }
-    dispatch({ type: 'SET', payload: pendingValue.current });
+    dispatch({ type: 'COMMIT', payload: pendingValue.current });
   }, []);
 
   /**
@@ -116,10 +135,16 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
         : value;
 
       pendingValue.current = nextValue;
-      // Update present immediately for UI responsiveness
-      dispatch({ type: 'SET', payload: nextValue });
 
-      if (!immediate) {
+      if (immediate) {
+        if (debounceTimer.current) {
+          clearTimeout(debounceTimer.current);
+          debounceTimer.current = null;
+        }
+        dispatch({ type: 'COMMIT', payload: nextValue });
+      } else {
+        // Update present immediately for UI responsiveness
+        dispatch({ type: 'UPDATE', payload: nextValue });
         if (debounceTimer.current) clearTimeout(debounceTimer.current);
         debounceTimer.current = setTimeout(flush, debounceMs);
       }
@@ -133,10 +158,16 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
       debounceTimer.current = null;
     }
     dispatch({ type: 'UNDO' });
+    // Note: pendingValue.current will sync on next render via presentRef
   }, []);
 
   const redo = useCallback(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
     dispatch({ type: 'REDO' });
+    // Note: pendingValue.current will sync on next render via presentRef
   }, []);
 
   const reset = useCallback((value: T) => {
@@ -145,6 +176,7 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
       debounceTimer.current = null;
     }
     dispatch({ type: 'RESET', payload: value });
+    pendingValue.current = value;
   }, []);
 
   return {
@@ -153,7 +185,7 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
     undo,
     redo,
     reset,
-    canUndo: state.past.length > 0,
+    canUndo: state.past.length > 0 || !shallowEqual(state.present, state.lastCommitted),
     canRedo: state.future.length > 0,
     historyLength: state.past.length,
   };
