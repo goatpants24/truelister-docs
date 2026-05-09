@@ -1,6 +1,7 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
