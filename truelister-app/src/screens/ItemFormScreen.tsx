@@ -409,9 +409,22 @@ export default function ItemFormScreen() {
             placeholderTextColor="#4a5568"
             returnKeyType="next"
           />
-          {errors.title ? (
-            <Text style={styles.errorText}>{errors.title}</Text>
-          ) : null}
+          <View style={styles.fieldFooter}>
+            {errors.title ? (
+              <Text style={styles.errorText}>{errors.title}</Text>
+            ) : (
+              <View />
+            )}
+            <Text
+              style={[
+                styles.charCounter,
+                item.title.length >= 70 && { color: '#fbbf24' },
+                item.title.length >= 80 && { color: '#f87171' },
+              ]}
+            >
+              {item.title.length} / 80
+            </Text>
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -657,10 +670,19 @@ export default function ItemFormScreen() {
 
           {existingItem && item.saleStatus !== 'Sold' && (
             <TouchableOpacity
-              style={[styles.soldButton]}
+              style={{
+                backgroundColor: '#1e293b',
+                borderRadius: 14,
+                paddingVertical: 16,
+                paddingHorizontal: 20,
+                alignItems: 'center',
+                marginTop: 20,
+                borderWidth: 1,
+                borderColor: '#334155',
+              }}
               onPress={handleMarkAsSold}
             >
-              <Text style={styles.soldButtonText}>Mark Sold</Text>
+              <Text style={{ color: '#94a3b8', fontSize: 17, fontWeight: '700' }}>Mark Sold</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -800,6 +822,22 @@ const styles = StyleSheet.create({
   inputOcr: {
     borderColor: 'rgba(74, 222, 128, 0.4)',
     backgroundColor: 'rgba(74, 222, 128, 0.05)',
+  },
+  fieldFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  charCounter: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  errorText: {
+    color: '#f87171',
+    fontSize: 12,
+    fontWeight: '500',
   },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   pickerWrapper: {
