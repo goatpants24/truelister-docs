@@ -1,18 +1,35 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
 
 // AsyncStorage keys — must stay in sync with SettingsScreen
 const SETTINGS_KEYS = {
   APPS_SCRIPT_URL: 'settings_apps_script_url',
+  SPREADSHEET_ID: 'settings_spreadsheet_id',
 };
 
+// --- Performance Optimization: In-memory Cache ---
+let cachedSpreadsheetId: string | null = null;
+let cachedDropdowns: DropdownOptions | null = null;
+let lastDropdownFetch = 0;
+const DROPDOWN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+/**
+ * Get the active spreadsheet ID from AsyncStorage with a fallback to the default.
+ * Cached in memory for performance (reduces redundant AsyncStorage reads).
+ */
+export async function getSpreadsheetId(): Promise<string> {
+  if (cachedSpreadsheetId) return cachedSpreadsheetId;
+  const id = await AsyncStorage.getItem(SETTINGS_KEYS.SPREADSHEET_ID);
+  cachedSpreadsheetId = id || DEFAULT_SPREADSHEET_ID;
+  return cachedSpreadsheetId;
+}
+
 // Public CSV export URL (no API key needed for sheets shared with "anyone with link")
-const SHEETS_CSV_URL = (sheet: string) =>
-  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
+const SHEETS_CSV_URL = (spreadsheetId: string, sheetName: string) =>
+  `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
 
 function parseCSVRow(row: string): string[] {
   const result: string[] = [];
@@ -110,6 +127,11 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 }
 
 export async function fetchDropdowns(): Promise<DropdownOptions> {
+  const now = Date.now();
+  if (cachedDropdowns && now - lastDropdownFetch < DROPDOWN_CACHE_TTL) {
+    return cachedDropdowns;
+  }
+
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, DROPDOWNS_SHEET);
   console.log(`[Sheets] Fetching dropdowns from: ${url}`);
@@ -132,7 +154,7 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
     const rows = parseCSV(csv);
     // Skip header row, transpose columns
     const dataRows = rows.slice(1);
-    return {
+    const dropdowns: DropdownOptions = {
       categories: dataRows.map(r => r[0]).filter(Boolean),
       conditions: dataRows.map(r => r[1]).filter(Boolean),
       saleStatuses: dataRows.map(r => r[2]).filter(Boolean),
@@ -140,6 +162,10 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
       colors: dataRows.map(r => r[4]).filter(Boolean),
       sizes: dataRows.map(r => r[5]).filter(Boolean),
     };
+
+    cachedDropdowns = dropdowns;
+    lastDropdownFetch = now;
+    return dropdowns;
   } catch (error) {
     console.error('Error fetching dropdowns:', error);
     return { categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [] };
@@ -202,8 +228,9 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
 
 export function generateItemNumber(existingItems: CatalogItem[]): string {
   const maxNum = existingItems.reduce((max, item) => {
-    const match = item.itemNumber.match(/TL-(\d+)/);
+    // Standardized TCL prefix after rebranding
+    const match = item.itemNumber.match(/TCL-(\d+)/);
     return match ? Math.max(max, parseInt(match[1], 10)) : max;
   }, 0);
-  return `TL-${String(maxNum + 1).padStart(3, '0')}`;
+  return `TCL-${String(maxNum + 1).padStart(3, '0')}`;
 }

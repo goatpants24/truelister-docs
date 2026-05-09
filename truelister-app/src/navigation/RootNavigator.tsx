@@ -4,6 +4,7 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList, TabParamList } from './types';
 import HomeScreen from '../screens/HomeScreen';
 import ItemFormScreen from '../screens/ItemFormScreen';
