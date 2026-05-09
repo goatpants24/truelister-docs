@@ -69,7 +69,8 @@ export default function HomeScreen() {
     }, [loadItems])
   );
 
-  const renderGridItem = ({ item }: { item: CatalogItem }) => {
+  /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
+  const renderGridItem = useCallback(({ item }: { item: CatalogItem }) => {
     const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
 
     return (
@@ -109,9 +110,10 @@ export default function HomeScreen() {
         ) : null}
       </TouchableOpacity>
     );
-  };
+  }, [thumbnailSize, navigation, items]);
 
-  const renderListItem = ({ item }: { item: CatalogItem }) => {
+  /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
+  const renderListItem = useCallback(({ item }: { item: CatalogItem }) => {
     return (
       <TouchableOpacity
         style={styles.listItem}
@@ -140,7 +142,7 @@ export default function HomeScreen() {
         </View>
       </TouchableOpacity>
     );
-  };
+  }, [navigation, items]);
 
   const handleExport = () => {
     Alert.alert(
@@ -649,17 +651,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     right: 20,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#4f6ef7',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#4f6ef7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 8,
+    width: 58, height: 58, borderRadius: 29, backgroundColor: '#4f6ef7', justifyContent: 'center', alignItems: 'center', shadowColor: '#4f6ef7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 8,
   },
   fabText: { color: '#fff', fontSize: 28, fontWeight: '300', marginTop: -2 },
 });

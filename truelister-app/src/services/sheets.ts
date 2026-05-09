@@ -1,18 +1,37 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
 
 // AsyncStorage keys — must stay in sync with SettingsScreen
 const SETTINGS_KEYS = {
   APPS_SCRIPT_URL: 'settings_apps_script_url',
+  SPREADSHEET_ID: 'settings_spreadsheet_id',
 };
 
-// Public CSV export URL (no API key needed for sheets shared with "anyone with link")
-const SHEETS_CSV_URL = (sheet: string) =>
-  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
+// Memory cache for spreadsheet ID to avoid redundant AsyncStorage reads during session
+let cachedSpreadsheetId: string | null = null;
+
+/**
+ * Optimized helper to get spreadsheet ID with memory caching.
+ * Reduces asynchronous overhead on every inventory/dropdown fetch.
+ */
+export async function getSpreadsheetId(): Promise<string> {
+  if (cachedSpreadsheetId) return cachedSpreadsheetId;
+  const storedId = await AsyncStorage.getItem(SETTINGS_KEYS.SPREADSHEET_ID);
+  cachedSpreadsheetId = storedId || DEFAULT_SPREADSHEET_ID;
+  return cachedSpreadsheetId;
+}
+
+/** Clear memory cache - used when settings change */
+export function clearSpreadsheetIdCache() {
+  cachedSpreadsheetId = null;
+}
+
+// Public CSV export URL
+const SHEETS_CSV_URL = (spreadsheetId: string, sheet: string) =>
+  `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
 
 function parseCSVRow(row: string): string[] {
   const result: string[] = [];
