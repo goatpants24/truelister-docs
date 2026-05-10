@@ -409,9 +409,17 @@ export default function ItemFormScreen() {
             placeholderTextColor="#4a5568"
             returnKeyType="next"
           />
-          {errors.title ? (
-            <Text style={styles.errorText}>{errors.title}</Text>
-          ) : null}
+          <View style={styles.fieldFooter}>
+            {errors.title ? (
+              <Text style={styles.errorText}>{errors.title}</Text>
+            ) : <View />}
+            <Text style={[
+              styles.charCount,
+              item.title.length >= 80 ? styles.charCountRed : item.title.length >= 70 ? styles.charCountAmber : null
+            ]}>
+              {item.title.length}/80
+            </Text>
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -620,6 +628,9 @@ export default function ItemFormScreen() {
                   key={m}
                   style={[styles.marketChip, isSelected && styles.marketChipSelected]}
                   onPress={() => toggleMarketplace(m)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${m}`}
+                  accessibilityState={{ selected: !!isSelected }}
                 >
                   <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
                     {m}
@@ -854,7 +865,23 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#f87171',
     fontSize: 12,
+  },
+  fieldFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 4,
+  },
+  charCount: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  charCountAmber: {
+    color: '#fbbf24',
+  },
+  charCountRed: {
+    color: '#f87171',
   },
   soldButton: {
     backgroundColor: '#1a1d27',
