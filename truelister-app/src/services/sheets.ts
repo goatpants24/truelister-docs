@@ -1,18 +1,30 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
 
 // AsyncStorage keys — must stay in sync with SettingsScreen
 const SETTINGS_KEYS = {
   APPS_SCRIPT_URL: 'settings_apps_script_url',
+  SPREADSHEET_ID: 'settings_spreadsheet_id',
 };
 
+/**
+ * Validates that the Apps Script URL is a legitimate Google domain.
+ */
+export function isValidAppsScriptUrl(url: string): boolean {
+  return url.startsWith('https://script.google.com/macros/s/');
+}
+
+async function getSpreadsheetId(): Promise<string> {
+  const storedId = await AsyncStorage.getItem(SETTINGS_KEYS.SPREADSHEET_ID);
+  return storedId?.trim() || DEFAULT_SPREADSHEET_ID;
+}
+
 // Public CSV export URL (no API key needed for sheets shared with "anyone with link")
-const SHEETS_CSV_URL = (sheet: string) =>
-  `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
+const SHEETS_CSV_URL = (id: string, sheet: string) =>
+  `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
 
 function parseCSVRow(row: string): string[] {
   const result: string[] = [];
@@ -87,21 +99,18 @@ function itemToRow(item: CatalogItem): string[] {
 export async function fetchInventory(): Promise<CatalogItem[]> {
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, SHEET_NAME);
-  console.log(`[Sheets] Fetching inventory from: ${url}`);
   try {
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`[Sheets] Inventory fetch failed with status ${response.status}: ${response.statusText}`);
       if (response.status === 404) {
-        console.error('[Sheets] 404 Error: Please check your SPREADSHEET_ID in config/index.ts and ensure the sheet is "Published to the Web".');
+        console.error('[Sheets] 404 Error: Please check your spreadsheet settings.');
       }
       return [];
     }
 
     const csv = await response.text();
     const rows = parseCSV(csv);
-    // Skip header row
     return rows.slice(1).map(rowToItem).filter(item => item.itemNumber || item.title);
   } catch (error) {
     console.error('[Sheets] Network error fetching inventory:', error);
@@ -112,25 +121,15 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 export async function fetchDropdowns(): Promise<DropdownOptions> {
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, DROPDOWNS_SHEET);
-  console.log(`[Sheets] Fetching dropdowns from: ${url}`);
   try {
     const response = await fetch(url);
 
     if (!response.ok) {
-      console.error(`[Sheets] Dropdowns fetch failed with status ${response.status}: ${response.statusText}`);
-      return {
-        categories: [],
-        conditions: [],
-        saleStatuses: [],
-        marketplaces: [],
-        colors: [],
-        sizes: [],
-      };
+      return { categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [] };
     }
 
     const csv = await response.text();
     const rows = parseCSV(csv);
-    // Skip header row, transpose columns
     const dataRows = rows.slice(1);
     return {
       categories: dataRows.map(r => r[0]).filter(Boolean),
@@ -152,15 +151,19 @@ export async function testConnection(type: 'sheet' | 'script'): Promise<{ succes
       const id = await getSpreadsheetId();
       const response = await fetch(SHEETS_CSV_URL(id, SHEET_NAME));
       if (response.ok) return { success: true };
-      if (response.status === 404) return { success: false, error: 'Sheet not found. Ensure it is "Published to web" as CSV.' };
-      return { success: false, error: `Error ${response.status}: ${response.statusText}` };
+      if (response.status === 404) return { success: false, error: 'Sheet not found.' };
+      return { success: false, error: `Error ${response.status}` };
     } catch (e) {
-      return { success: false, error: 'Network error. Check your internet connection.' };
+      return { success: false, error: 'Network error.' };
     }
   } else {
     try {
-      const url = await AsyncStorage.getItem('settings_apps_script_url') || '';
-      if (!url) return { success: false, error: 'Apps Script URL not configured in Settings.' };
+      const url = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL)) || '';
+      if (!url) return { success: false, error: 'URL not configured.' };
+
+      if (!isValidAppsScriptUrl(url)) {
+        return { success: false, error: 'Security Error: Invalid Apps Script URL domain.' };
+      }
 
       const response = await fetch(url, {
         method: 'POST',
@@ -169,20 +172,20 @@ export async function testConnection(type: 'sheet' | 'script'): Promise<{ succes
       });
 
       if (response.ok) return { success: true };
-      return { success: false, error: `Error ${response.status}: Ensure the script is deployed as a Web App for "Anyone".` };
+      return { success: false, error: `Error ${response.status}` };
     } catch (e) {
-      return { success: false, error: 'Network error. Ensure the URL is correct and valid.' };
+      return { success: false, error: 'Network error.' };
     }
   }
 }
 
 export async function appendItem(item: CatalogItem): Promise<boolean> {
-  // Read the Apps Script URL from AsyncStorage — set by the user in the Settings tab.
-  // This means no code change is needed; the user just pastes their URL in-app.
   const appsScriptUrl = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL))?.trim() ?? '';
 
-  if (!appsScriptUrl) {
-    console.warn('Apps Script URL not configured. Open the Settings tab to add it.');
+  if (!appsScriptUrl) return false;
+
+  if (!isValidAppsScriptUrl(appsScriptUrl)) {
+    console.error('Security Error: Invalid Apps Script URL domain.');
     return false;
   }
 
@@ -195,7 +198,7 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
     const result = await response.json();
     return result.success === true;
   } catch (error) {
-    console.error('Error appending item to sheet:', error);
+    console.error('Error appending item:', error);
     return false;
   }
 }

@@ -5,6 +5,7 @@ import {
 } from 'expo-file-system/legacy';
 import { File } from 'expo-file-system';
 import { GOOGLE_DRIVE_CONFIG } from '../config';
+import { isValidAppsScriptUrl } from './sheets';
 
 // AsyncStorage keys — must stay in sync with SettingsScreen
 const SETTINGS_KEYS = {
@@ -38,6 +39,13 @@ export async function uploadToDrive(
     return {
       success: false,
       error: 'Drive upload not configured. Open the Settings tab and add your Apps Script URL.',
+    };
+  }
+
+  if (!isValidAppsScriptUrl(uploadEndpoint)) {
+    return {
+      success: false,
+      error: 'Security Error: Invalid Apps Script URL domain.',
     };
   }
 
