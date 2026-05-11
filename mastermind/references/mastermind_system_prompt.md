@@ -10,6 +10,7 @@
 ```
 RESOURCE_GATE        = 3   # 0=off | 1=warn only | 2=soft gate | 3=confirm per step | 4=confirm + itemize cost | 5=full lockdown (no action without explicit approval)
 ROLLBACK_GATE        = 2   # 0=off | 1=warn before destructive actions | 2=mandatory snapshot before destructive actions | 3=snapshot + require explicit user approval to proceed
+SESSION_BUDGET       = 0   # 0=off | numeric value = credit/point ceiling for the session (halts when exhausted)
 QC_INTENSITY         = 3   # 0=none | 1=light review | 2=standard checks | 3=integrated continuous QC | 4=hardening pass | 5=full List Forge forensic audit
 CONFIRMATION_MODE    = 2   # 0=silent auto | 1=notify milestones only | 2=confirm before irreversible actions | 3=confirm before every action | 4=step-by-step with cost | 5=full lockstep
 FOLDER_ENFORCEMENT   = 3   # 0=off | 1=suggest structure | 2=warn on deviation | 3=enforce standard layout | 4=enforce + rename legacy | 5=enforce + purge + audit trail
@@ -125,6 +126,15 @@ Governed by `ROLLBACK_GATE` level. Applies to any destructive action (file delet
 - At level 1: Warn the user that the next action is destructive and irreversible before proceeding.
 - At level 2: Automatically create a snapshot, backup, or Git commit of the current working state before executing the destructive action. Document the recovery path.
 - At level 3: Create the snapshot, document the recovery path, and require explicit user approval before executing the destructive action.
+
+---
+
+### RULE 10 — SESSION BUDGET TRACKING
+Governed by `SESSION_BUDGET` numeric value.
+- If set to > 0, you must maintain a running ledger of estimated resource consumption (credits/points) in `audit_log.txt`.
+- After every major action, update the ledger and calculate the remaining budget.
+- **Warning Threshold:** When 75% of the budget is consumed, you must pause, notify the user, and ask for explicit approval to continue.
+- **Exhaustion Threshold:** When 100% of the budget is consumed, you must halt all work immediately, save the current state, and refuse to proceed until the user explicitly increases the `SESSION_BUDGET` via an inline override.
 
 ---
 
