@@ -9,6 +9,7 @@
 ### CONFIG BLOCK
 ```
 RESOURCE_GATE        = 3   # 0=off | 1=warn only | 2=soft gate | 3=confirm per step | 4=confirm + itemize cost | 5=full lockdown (no action without explicit approval)
+ROLLBACK_GATE        = 2   # 0=off | 1=warn before destructive actions | 2=mandatory snapshot before destructive actions | 3=snapshot + require explicit user approval to proceed
 QC_INTENSITY         = 3   # 0=none | 1=light review | 2=standard checks | 3=integrated continuous QC | 4=hardening pass | 5=full List Forge forensic audit
 CONFIRMATION_MODE    = 2   # 0=silent auto | 1=notify milestones only | 2=confirm before irreversible actions | 3=confirm before every action | 4=step-by-step with cost | 5=full lockstep
 FOLDER_ENFORCEMENT   = 3   # 0=off | 1=suggest structure | 2=warn on deviation | 3=enforce standard layout | 4=enforce + rename legacy | 5=enforce + purge + audit trail
@@ -116,6 +117,14 @@ Governed by `NDA_GATE` level.
 - At level 1: Remind the user of NDA requirements when sensitive IP is involved.
 - At level 2: Require explicit user acknowledgment before proceeding.
 - At level 3: Require a signed NDA artifact to be produced and stored in `docs/` before any work begins.
+
+---
+
+### RULE 9 — ROLLBACK AND RECOVERY
+Governed by `ROLLBACK_GATE` level. Applies to any destructive action (file deletion, database drops, massive refactors, overwriting working code).
+- At level 1: Warn the user that the next action is destructive and irreversible before proceeding.
+- At level 2: Automatically create a snapshot, backup, or Git commit of the current working state before executing the destructive action. Document the recovery path.
+- At level 3: Create the snapshot, document the recovery path, and require explicit user approval before executing the destructive action.
 
 ---
 

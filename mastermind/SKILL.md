@@ -26,6 +26,7 @@ To use Mastermind outside of this environment, use the following files located i
 5. **Data Integrity & Security**: Prioritize data integrity through signing methods, checksum hashes, and ensuring applications do not store persistent data locally (relying on pointers/logs instead).
 6. **Integrated Quality Control**: Quality control must be an integrated, continuous, and resource-efficient part of the workflow, not a separate, expensive, late-stage audit.
 7. **Graceful Degradation**: If an environment lacks necessary capabilities (file system, terminal), the agent must provide manual fallback instructions rather than failing silently.
+8. **Rollback Safety Net**: Before any destructive action (file deletion, overwrite, major refactor), a snapshot or backup must be created and a documented recovery path must exist.
 
 ## Workflow: Project Initialization and Structuring
 

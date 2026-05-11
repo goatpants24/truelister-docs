@@ -20,6 +20,20 @@ This document describes every configurable dial in the Mastermind CONFIG BLOCK, 
 
 ---
 
+## ROLLBACK_GATE
+**Controls the safety net for destructive or irreversible actions.**
+
+| Level | Behavior |
+|-------|----------|
+| 0 | Off. Agent executes destructive actions without warning. |
+| 1 | Warn only. Agent warns the user before a destructive action but proceeds. |
+| 2 | Mandatory snapshot. Agent automatically creates a backup/snapshot before executing and documents the recovery path. *(Default)* |
+| 3 | Snapshot + Confirm. Agent creates the snapshot, documents the recovery path, and requires explicit user approval to proceed. |
+
+**Recommended:** 2 for standard work. 3 when dealing with sensitive data or complex refactors.
+
+---
+
 ## QC_INTENSITY
 **Controls the depth and frequency of quality control checks.**
 
