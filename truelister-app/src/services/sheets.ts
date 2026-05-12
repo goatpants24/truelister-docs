@@ -13,6 +13,16 @@ const SETTINGS_KEYS = {
 // Memory cache for spreadsheet ID to avoid redundant AsyncStorage reads during session
 let cachedSpreadsheetId: string | null = null;
 
+// Performance: In-memory cache for static dropdown data (Categories, Sizes, etc.)
+// TTL of 5 minutes (300,000 ms) provides a measurable speed boost when opening forms.
+const DROPDOWN_CACHE_TTL = 5 * 60 * 1000;
+let dropdownCache: { data: DropdownOptions; timestamp: number } | null = null;
+
+// Performance: In-memory cache for inventory data
+// TTL of 1 minute (60,000 ms) ensures the home screen is snappy during frequent navigation.
+const INVENTORY_CACHE_TTL = 1 * 60 * 1000;
+let inventoryCache: { data: CatalogItem[]; timestamp: number } | null = null;
+
 /**
  * Optimized helper to get spreadsheet ID with memory caching.
  * Reduces asynchronous overhead on every inventory/dropdown fetch.
@@ -27,6 +37,8 @@ export async function getSpreadsheetId(): Promise<string> {
 /** Clear memory cache - used when settings change */
 export function clearSpreadsheetIdCache() {
   cachedSpreadsheetId = null;
+  dropdownCache = null;
+  inventoryCache = null;
 }
 
 // Public CSV export URL
@@ -104,6 +116,12 @@ function itemToRow(item: CatalogItem): string[] {
 }
 
 export async function fetchInventory(): Promise<CatalogItem[]> {
+  // Return cached inventory if still fresh (within 1 min TTL)
+  if (inventoryCache && (Date.now() - inventoryCache.timestamp < INVENTORY_CACHE_TTL)) {
+    console.log('[Sheets] Returning cached inventory data');
+    return inventoryCache.data;
+  }
+
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, SHEET_NAME);
   console.log(`[Sheets] Fetching inventory from: ${url}`);
@@ -121,7 +139,11 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
     const csv = await response.text();
     const rows = parseCSV(csv);
     // Skip header row
-    return rows.slice(1).map(rowToItem).filter(item => item.itemNumber || item.title);
+    const data = rows.slice(1).map(rowToItem).filter(item => item.itemNumber || item.title);
+
+    // Update in-memory cache
+    inventoryCache = { data, timestamp: Date.now() };
+    return data;
   } catch (error) {
     console.error('[Sheets] Network error fetching inventory:', error);
     return [];
@@ -129,6 +151,12 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 }
 
 export async function fetchDropdowns(): Promise<DropdownOptions> {
+  // Return cached dropdowns if still fresh (within 5 min TTL)
+  if (dropdownCache && (Date.now() - dropdownCache.timestamp < DROPDOWN_CACHE_TTL)) {
+    console.log('[Sheets] Returning cached dropdown data');
+    return dropdownCache.data;
+  }
+
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, DROPDOWNS_SHEET);
   console.log(`[Sheets] Fetching dropdowns from: ${url}`);
@@ -151,7 +179,7 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
     const rows = parseCSV(csv);
     // Skip header row, transpose columns
     const dataRows = rows.slice(1);
-    return {
+    const data: DropdownOptions = {
       categories: dataRows.map(r => r[0]).filter(Boolean),
       conditions: dataRows.map(r => r[1]).filter(Boolean),
       saleStatuses: dataRows.map(r => r[2]).filter(Boolean),
@@ -159,6 +187,10 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
       colors: dataRows.map(r => r[4]).filter(Boolean),
       sizes: dataRows.map(r => r[5]).filter(Boolean),
     };
+
+    // Update in-memory cache
+    dropdownCache = { data, timestamp: Date.now() };
+    return data;
   } catch (error) {
     console.error('Error fetching dropdowns:', error);
     return { categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [] };
@@ -212,7 +244,13 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
       body: JSON.stringify({ action: 'append', data: itemToRow(item) }),
     });
     const result = await response.json();
-    return result.success === true;
+
+    if (result.success === true) {
+      // Invalidate inventory cache so Home Screen reflects the new item immediately
+      inventoryCache = null;
+      return true;
+    }
+    return false;
   } catch (error) {
     console.error('Error appending item to sheet:', error);
     return false;
