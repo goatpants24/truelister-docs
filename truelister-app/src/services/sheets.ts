@@ -13,6 +13,11 @@ const SETTINGS_KEYS = {
 // Memory cache for spreadsheet ID to avoid redundant AsyncStorage reads during session
 let cachedSpreadsheetId: string | null = null;
 
+// Memory cache for dropdowns with 5-minute TTL
+let cachedDropdowns: DropdownOptions | null = null;
+let lastFetched: number = 0;
+const DROPDOWN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Optimized helper to get spreadsheet ID with memory caching.
  * Reduces asynchronous overhead on every inventory/dropdown fetch.
@@ -27,6 +32,8 @@ export async function getSpreadsheetId(): Promise<string> {
 /** Clear memory cache - used when settings change */
 export function clearSpreadsheetIdCache() {
   cachedSpreadsheetId = null;
+  cachedDropdowns = null;
+  lastFetched = 0;
 }
 
 // Public CSV export URL
@@ -129,6 +136,12 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 }
 
 export async function fetchDropdowns(): Promise<DropdownOptions> {
+  const now = Date.now();
+  if (cachedDropdowns && (now - lastFetched < DROPDOWN_CACHE_TTL)) {
+    console.log('[Sheets] Returning cached dropdowns');
+    return cachedDropdowns;
+  }
+
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, DROPDOWNS_SHEET);
   console.log(`[Sheets] Fetching dropdowns from: ${url}`);
@@ -151,7 +164,7 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
     const rows = parseCSV(csv);
     // Skip header row, transpose columns
     const dataRows = rows.slice(1);
-    return {
+    const options: DropdownOptions = {
       categories: dataRows.map(r => r[0]).filter(Boolean),
       conditions: dataRows.map(r => r[1]).filter(Boolean),
       saleStatuses: dataRows.map(r => r[2]).filter(Boolean),
@@ -159,6 +172,10 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
       colors: dataRows.map(r => r[4]).filter(Boolean),
       sizes: dataRows.map(r => r[5]).filter(Boolean),
     };
+
+    cachedDropdowns = options;
+    lastFetched = now;
+    return options;
   } catch (error) {
     console.error('Error fetching dropdowns:', error);
     return { categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [] };
