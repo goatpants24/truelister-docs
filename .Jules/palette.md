@@ -1,0 +1,3 @@
+## 2025-05-22 - [Title Character Counter & Accessibility]
+**Learning:** Marketplace titles often have strict character limits (e.g., 80 chars for eBay/Mercari). Providing a real-time character counter with visual "warning" thresholds (Amber at 70, Red at 80) significantly improves the listing experience by preventing "Title too long" errors at the time of submission. Additionally, icon-only buttons in React Native must have explicit `accessibilityLabel` and `accessibilityRole="button"` to be usable by screen readers.
+**Action:** Always implement character counters for fields with strict platform limits and ensure all `TouchableOpacity` components wrapping icons or emojis have descriptive `accessibilityLabel` and `accessibilityRole`.
