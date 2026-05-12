@@ -397,7 +397,12 @@ export default function ItemFormScreen() {
             <Text style={styles.label}>
               Title <Text style={styles.required}>*</Text>
             </Text>
-            <TouchableOpacity onPress={handleAISuggest} style={styles.aiBadge}>
+            <TouchableOpacity
+              onPress={handleAISuggest}
+              style={styles.aiBadge}
+              accessibilityLabel="Get AI suggestions for title and price"
+              accessibilityRole="button"
+            >
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
             </TouchableOpacity>
           </View>
@@ -408,16 +413,34 @@ export default function ItemFormScreen() {
             placeholder="e.g., Vintage Levi 501 Jeans"
             placeholderTextColor="#4a5568"
             returnKeyType="next"
+            maxLength={80}
           />
-          {errors.title ? (
-            <Text style={styles.errorText}>{errors.title}</Text>
-          ) : null}
+          <View style={styles.fieldFooter}>
+            <Text style={styles.errorText}>{errors.title || ' '}</Text>
+            <Text
+              style={[
+                styles.charCounter,
+                item.title.length >= 80
+                  ? { color: '#f87171' }
+                  : item.title.length >= 70
+                  ? { color: '#fbbf24' }
+                  : null,
+              ]}
+            >
+              {item.title.length}/80
+            </Text>
+          </View>
         </View>
 
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Designer / Brand</Text>
-            <TouchableOpacity onPress={handleLabelResearch} style={styles.researchLink}>
+            <TouchableOpacity
+              onPress={handleLabelResearch}
+              style={styles.researchLink}
+              accessibilityLabel="Search Google Images for brand labels"
+              accessibilityRole="button"
+            >
               <Text style={styles.researchLinkText}>🔍 Label Research</Text>
             </TouchableOpacity>
           </View>
@@ -571,7 +594,12 @@ export default function ItemFormScreen() {
           <View style={[styles.field, { flex: 1 }]}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Price</Text>
-              <TouchableOpacity onPress={handleMarketResearch} style={styles.researchLink}>
+              <TouchableOpacity
+                onPress={handleMarketResearch}
+                style={styles.researchLink}
+                accessibilityLabel="Search eBay for sold prices"
+                accessibilityRole="button"
+              >
                 <Text style={styles.researchLinkText}>📈 Market Sold</Text>
               </TouchableOpacity>
             </View>
@@ -620,6 +648,9 @@ export default function ItemFormScreen() {
                   key={m}
                   style={[styles.marketChip, isSelected && styles.marketChipSelected]}
                   onPress={() => toggleMarketplace(m)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`Select ${m}`}
                 >
                   <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
                     {m}
@@ -854,7 +885,17 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#f87171',
     fontSize: 12,
+  },
+  fieldFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 4,
+  },
+  charCounter: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
   },
   soldButton: {
     backgroundColor: '#1a1d27',
