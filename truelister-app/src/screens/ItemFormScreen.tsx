@@ -408,10 +408,22 @@ export default function ItemFormScreen() {
             placeholder="e.g., Vintage Levi 501 Jeans"
             placeholderTextColor="#4a5568"
             returnKeyType="next"
+            maxLength={80}
           />
-          {errors.title ? (
-            <Text style={styles.errorText}>{errors.title}</Text>
-          ) : null}
+          <View style={styles.fieldFooter}>
+            {errors.title ? (
+              <Text style={styles.errorText}>{errors.title}</Text>
+            ) : <View />}
+            <Text
+              style={[
+                styles.charCounter,
+                item.title.length >= 70 && styles.charCounterWarning,
+                item.title.length >= 80 && styles.charCounterDanger,
+              ]}
+            >
+              {item.title.length}/80
+            </Text>
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -620,6 +632,9 @@ export default function ItemFormScreen() {
                   key={m}
                   style={[styles.marketChip, isSelected && styles.marketChipSelected]}
                   onPress={() => toggleMarketplace(m)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`Toggle ${m} marketplace`}
                 >
                   <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
                     {m}
@@ -854,7 +869,23 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#f87171',
     fontSize: 12,
+  },
+  fieldFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 4,
+  },
+  charCounter: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '600',
+  },
+  charCounterWarning: {
+    color: '#fbbf24',
+  },
+  charCounterDanger: {
+    color: '#f87171',
   },
   soldButton: {
     backgroundColor: '#1a1d27',
