@@ -314,13 +314,20 @@ export default function ItemFormScreen() {
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel="Cancel editing"
+          accessibilityRole="button"
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
           {existingItem ? 'Edit Item' : 'New Item'}
         </Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={saving}
+          accessibilityLabel="Save item"
+          accessibilityRole="button"
+        >
           <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>
             {saving ? 'Saving…' : 'Save'}
           </Text>
@@ -397,7 +404,12 @@ export default function ItemFormScreen() {
             <Text style={styles.label}>
               Title <Text style={styles.required}>*</Text>
             </Text>
-            <TouchableOpacity onPress={handleAISuggest} style={styles.aiBadge}>
+            <TouchableOpacity
+              onPress={handleAISuggest}
+              style={styles.aiBadge}
+              accessibilityLabel="Get AI suggestions for title and price"
+              accessibilityRole="button"
+            >
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
             </TouchableOpacity>
           </View>
@@ -408,16 +420,32 @@ export default function ItemFormScreen() {
             placeholder="e.g., Vintage Levi 501 Jeans"
             placeholderTextColor="#4a5568"
             returnKeyType="next"
+            maxLength={80}
           />
-          {errors.title ? (
-            <Text style={styles.errorText}>{errors.title}</Text>
-          ) : null}
+          <View style={styles.fieldFooter}>
+            {errors.title ? (
+              <Text style={styles.errorText}>{errors.title}</Text>
+            ) : <View />}
+            <Text
+              style={[
+                styles.charCount,
+                item.title.length >= 80 ? styles.charCountError : item.title.length >= 70 ? styles.charCountWarning : null
+              ]}
+            >
+              {item.title.length}/80
+            </Text>
+          </View>
         </View>
 
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Designer / Brand</Text>
-            <TouchableOpacity onPress={handleLabelResearch} style={styles.researchLink}>
+            <TouchableOpacity
+              onPress={handleLabelResearch}
+              style={styles.researchLink}
+              accessibilityLabel="Search Google Images for brand labels"
+              accessibilityRole="button"
+            >
               <Text style={styles.researchLinkText}>🔍 Label Research</Text>
             </TouchableOpacity>
           </View>
@@ -571,7 +599,12 @@ export default function ItemFormScreen() {
           <View style={[styles.field, { flex: 1 }]}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Price</Text>
-              <TouchableOpacity onPress={handleMarketResearch} style={styles.researchLink}>
+              <TouchableOpacity
+                onPress={handleMarketResearch}
+                style={styles.researchLink}
+                accessibilityLabel="Search eBay for sold prices"
+                accessibilityRole="button"
+              >
                 <Text style={styles.researchLinkText}>📈 Market Sold</Text>
               </TouchableOpacity>
             </View>
@@ -620,6 +653,9 @@ export default function ItemFormScreen() {
                   key={m}
                   style={[styles.marketChip, isSelected && styles.marketChipSelected]}
                   onPress={() => toggleMarketplace(m)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`Toggle marketplace ${m}`}
                 >
                   <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
                     {m}
@@ -854,7 +890,23 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#f87171',
     fontSize: 12,
+  },
+  fieldFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginTop: 4,
+  },
+  charCount: {
+    fontSize: 11,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  charCountWarning: {
+    color: '#fbbf24',
+  },
+  charCountError: {
+    color: '#f87171',
   },
   soldButton: {
     backgroundColor: '#1a1d27',
