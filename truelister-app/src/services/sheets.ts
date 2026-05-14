@@ -13,6 +13,11 @@ const SETTINGS_KEYS = {
 // Memory cache for spreadsheet ID to avoid redundant AsyncStorage reads during session
 let cachedSpreadsheetId: string | null = null;
 
+// Memory cache for dropdowns to avoid redundant network requests
+let cachedDropdowns: DropdownOptions | null = null;
+let lastDropdownFetchTime = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /**
  * Optimized helper to get spreadsheet ID with memory caching.
  * Reduces asynchronous overhead on every inventory/dropdown fetch.
@@ -27,6 +32,8 @@ export async function getSpreadsheetId(): Promise<string> {
 /** Clear memory cache - used when settings change */
 export function clearSpreadsheetIdCache() {
   cachedSpreadsheetId = null;
+  cachedDropdowns = null;
+  lastDropdownFetchTime = 0;
 }
 
 // Public CSV export URL
@@ -129,6 +136,11 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 }
 
 export async function fetchDropdowns(): Promise<DropdownOptions> {
+  const now = Date.now();
+  if (cachedDropdowns && now - lastDropdownFetchTime < CACHE_TTL) {
+    return cachedDropdowns;
+  }
+
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, DROPDOWNS_SHEET);
   console.log(`[Sheets] Fetching dropdowns from: ${url}`);
@@ -151,7 +163,7 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
     const rows = parseCSV(csv);
     // Skip header row, transpose columns
     const dataRows = rows.slice(1);
-    return {
+    const dropdowns = {
       categories: dataRows.map(r => r[0]).filter(Boolean),
       conditions: dataRows.map(r => r[1]).filter(Boolean),
       saleStatuses: dataRows.map(r => r[2]).filter(Boolean),
@@ -159,6 +171,10 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
       colors: dataRows.map(r => r[4]).filter(Boolean),
       sizes: dataRows.map(r => r[5]).filter(Boolean),
     };
+
+    cachedDropdowns = dropdowns;
+    lastDropdownFetchTime = now;
+    return dropdowns;
   } catch (error) {
     console.error('Error fetching dropdowns:', error);
     return { categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [] };
