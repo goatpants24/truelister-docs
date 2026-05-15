@@ -13,6 +13,13 @@ const SETTINGS_KEYS = {
 // Memory cache for spreadsheet ID to avoid redundant AsyncStorage reads during session
 let cachedSpreadsheetId: string | null = null;
 
+// In-memory caches for inventory and dropdowns
+const INVENTORY_CACHE_TTL = 60000; // 1 minute
+const DROPDOWNS_CACHE_TTL = 300000; // 5 minutes
+
+let inventoryCache: { data: CatalogItem[]; lastFetched: number } | null = null;
+let dropdownsCache: { data: DropdownOptions; lastFetched: number } | null = null;
+
 /**
  * Optimized helper to get spreadsheet ID with memory caching.
  * Reduces asynchronous overhead on every inventory/dropdown fetch.
@@ -27,6 +34,8 @@ export async function getSpreadsheetId(): Promise<string> {
 /** Clear memory cache - used when settings change */
 export function clearSpreadsheetIdCache() {
   cachedSpreadsheetId = null;
+  inventoryCache = null;
+  dropdownsCache = null;
 }
 
 // Public CSV export URL
@@ -104,6 +113,12 @@ function itemToRow(item: CatalogItem): string[] {
 }
 
 export async function fetchInventory(): Promise<CatalogItem[]> {
+  const now = Date.now();
+  if (inventoryCache && now - inventoryCache.lastFetched < INVENTORY_CACHE_TTL) {
+    console.log('[Sheets] Returning cached inventory');
+    return inventoryCache.data;
+  }
+
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, SHEET_NAME);
   console.log(`[Sheets] Fetching inventory from: ${url}`);
@@ -121,7 +136,9 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
     const csv = await response.text();
     const rows = parseCSV(csv);
     // Skip header row
-    return rows.slice(1).map(rowToItem).filter(item => item.itemNumber || item.title);
+    const data = rows.slice(1).map(rowToItem).filter(item => item.itemNumber || item.title);
+    inventoryCache = { data, lastFetched: now };
+    return data;
   } catch (error) {
     console.error('[Sheets] Network error fetching inventory:', error);
     return [];
@@ -129,6 +146,12 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 }
 
 export async function fetchDropdowns(): Promise<DropdownOptions> {
+  const now = Date.now();
+  if (dropdownsCache && now - dropdownsCache.lastFetched < DROPDOWNS_CACHE_TTL) {
+    console.log('[Sheets] Returning cached dropdowns');
+    return dropdownsCache.data;
+  }
+
   const id = await getSpreadsheetId();
   const url = SHEETS_CSV_URL(id, DROPDOWNS_SHEET);
   console.log(`[Sheets] Fetching dropdowns from: ${url}`);
@@ -151,7 +174,7 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
     const rows = parseCSV(csv);
     // Skip header row, transpose columns
     const dataRows = rows.slice(1);
-    return {
+    const data = {
       categories: dataRows.map(r => r[0]).filter(Boolean),
       conditions: dataRows.map(r => r[1]).filter(Boolean),
       saleStatuses: dataRows.map(r => r[2]).filter(Boolean),
@@ -159,6 +182,8 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
       colors: dataRows.map(r => r[4]).filter(Boolean),
       sizes: dataRows.map(r => r[5]).filter(Boolean),
     };
+    dropdownsCache = { data, lastFetched: now };
+    return data;
   } catch (error) {
     console.error('Error fetching dropdowns:', error);
     return { categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [] };
@@ -212,7 +237,12 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
       body: JSON.stringify({ action: 'append', data: itemToRow(item) }),
     });
     const result = await response.json();
-    return result.success === true;
+    if (result.success === true) {
+      // Invalidate inventory cache on successful append
+      inventoryCache = null;
+      return true;
+    }
+    return false;
   } catch (error) {
     console.error('Error appending item to sheet:', error);
     return false;
