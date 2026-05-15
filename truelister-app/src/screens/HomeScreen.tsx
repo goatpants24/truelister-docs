@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackNavProp } from '../navigation/types';
@@ -28,10 +29,15 @@ export default function HomeScreen() {
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadItems = useCallback(async () => {
-    setLoading(true);
+  const loadItems = useCallback(async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const [sheetItems, draftItems] = await Promise.all([
@@ -59,8 +65,10 @@ export default function HomeScreen() {
     } catch (err) {
       console.error('Error loading items:', err);
       setError('Failed to connect to Google Sheets. Please check your settings.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    setLoading(false);
   }, []);
 
   useFocusEffect(
@@ -184,18 +192,27 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => setViewMode('list')}
               style={[styles.modeButton, viewMode === 'list' && { backgroundColor: '#4f6ef7' }]}
+              accessibilityRole="button"
+              accessibilityLabel="List view"
+              accessibilityState={{ selected: viewMode === 'list' }}
             >
               <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>List</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setViewMode('grid')}
               style={[styles.modeButton, viewMode === 'grid' && { backgroundColor: '#4f6ef7' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Grid view"
+              accessibilityState={{ selected: viewMode === 'grid' }}
             >
               <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>Grid</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setViewMode('table')}
               style={[styles.modeButton, viewMode === 'table' && { backgroundColor: '#4f6ef7' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Table view"
+              accessibilityState={{ selected: viewMode === 'table' }}
             >
               <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>Table</Text>
             </TouchableOpacity>
@@ -205,25 +222,39 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => setThumbnailSize('small')}
               style={[styles.sizeButton, thumbnailSize === 'small' && { backgroundColor: '#4f6ef7' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Small thumbnails"
+              accessibilityState={{ selected: thumbnailSize === 'small' }}
             >
               <Text style={{ color: 'white', fontSize: 12 }}>S</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setThumbnailSize('medium')}
               style={[styles.sizeButton, thumbnailSize === 'medium' && { backgroundColor: '#4f6ef7' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Medium thumbnails"
+              accessibilityState={{ selected: thumbnailSize === 'medium' }}
             >
               <Text style={{ color: 'white', fontSize: 12 }}>M</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setThumbnailSize('large')}
               style={[styles.sizeButton, thumbnailSize === 'large' && { backgroundColor: '#4f6ef7' }]}
+              accessibilityRole="button"
+              accessibilityLabel="Large thumbnails"
+              accessibilityState={{ selected: thumbnailSize === 'large' }}
             >
               <Text style={{ color: 'white', fontSize: 12 }}>L</Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        <TouchableOpacity style={styles.exportButton} onPress={handleExport}>
+        <TouchableOpacity
+          style={styles.exportButton}
+          onPress={handleExport}
+          accessibilityRole="button"
+          accessibilityLabel="Export catalog or use marketplace templates"
+        >
           <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
             ⚙️ Export / Templates
           </Text>
@@ -241,7 +272,7 @@ export default function HomeScreen() {
           <Text style={styles.errorIcon}>⚠️</Text>
           <Text style={styles.errorTitle}>Connection Issue</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadItems}>
+          <TouchableOpacity style={styles.retryButton} onPress={() => loadItems()}>
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -272,6 +303,13 @@ export default function HomeScreen() {
           keyExtractor={(item) => item.itemNumber}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => loadItems(true)}
+              tintColor="#4f6ef7"
+            />
+          }
         />
       )}
 
