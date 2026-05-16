@@ -51,6 +51,14 @@ export default function DraftsScreen() {
         <Text style={styles.emptySubtitle}>
           Items saved offline will appear here.
         </Text>
+        <TouchableOpacity
+          style={styles.emptyButton}
+          onPress={() => navigation.navigate('ItemForm', { existingItems: [] })}
+          accessibilityRole="button"
+          accessibilityLabel="Create new item"
+        >
+          <Text style={styles.emptyButtonText}>Create New Item</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -67,6 +75,8 @@ export default function DraftsScreen() {
             style={styles.card}
             onPress={() => handleEdit(item)}
             activeOpacity={0.75}
+            accessibilityRole="button"
+            accessibilityLabel={`Edit draft ${item.itemNumber}: ${item.title || 'Untitled'}`}
           >
             <View style={styles.cardLeft}>
               <Text style={styles.itemNumber}>{item.itemNumber}</Text>
@@ -83,6 +93,8 @@ export default function DraftsScreen() {
               style={styles.deleteBtn}
               onPress={() => handleDelete(item.itemNumber)}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Delete draft ${item.itemNumber}`}
             >
               <Text style={styles.deleteIcon}>🗑</Text>
             </TouchableOpacity>
@@ -115,5 +127,17 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f1117' },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: '#e8eaf6', marginBottom: 6 },
-  emptySubtitle: { fontSize: 14, color: '#6b7280', textAlign: 'center', paddingHorizontal: 32 },
+  emptySubtitle: { fontSize: 14, color: '#6b7280', textAlign: 'center', paddingHorizontal: 32, marginBottom: 24 },
+  emptyButton: {
+    backgroundColor: '#4f6ef7',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+    shadowColor: '#4f6ef7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  emptyButtonText: { color: 'white', fontWeight: '700', fontSize: 15 },
 });
