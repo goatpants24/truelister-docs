@@ -77,80 +77,26 @@ export default function HomeScreen() {
     }, [loadItems])
   );
 
-  /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
-  const renderGridItem = useCallback(({ item }: { item: CatalogItem }) => {
-    const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-
-    return (
-      <TouchableOpacity
-        style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
-      >
-        {item.photoUrl ? (
-          <Image
-            source={{ uri: item.photoUrl }}
-            style={[styles.thumbnail, { width: size, height: size }]}
-            resizeMode="cover"
-          />
-        ) : (
-          <View
-            style={[
-              styles.thumbnail,
-              { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-            ]}
-          >
-            <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-          </View>
-        )}
-        <Text style={styles.itemTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.itemBrand}>
-          {item.designerBrand || '–'}
-        </Text>
-        {item.price ? (
-          <Text style={styles.itemPrice}>${item.price}</Text>
-        ) : null}
-        {item.marketplace ? (
-          <Text style={styles.itemMarketplace} numberOfLines={1}>
-            {item.marketplace}
-          </Text>
-        ) : null}
-      </TouchableOpacity>
-    );
-  }, [thumbnailSize, navigation, items]);
+  const handleEditItem = useCallback((item: CatalogItem) => {
+    navigation.navigate('ItemForm', { item });
+  }, [navigation]);
 
   /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
-  const renderListItem = useCallback(({ item }: { item: CatalogItem }) => {
-    return (
-      <TouchableOpacity
-        style={styles.listItem}
-        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
-      >
-        {item.photoUrl && (
-          <Image
-            source={{ uri: item.photoUrl }}
-            style={[styles.listThumbnail, { width: 64, height: 64 }]}
-            resizeMode="cover"
-          />
-        )}
-        <View style={styles.listTextContainer}>
-          <Text style={styles.listTitle} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text style={styles.listSubtitle} numberOfLines={1}>
-            {item.designerBrand} • {item.size} • {item.condition}
-          </Text>
-          {item.price && (
-            <Text style={styles.listPrice}>${item.price}</Text>
-          )}
-          {item.marketplace && (
-            <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  }, [navigation, items]);
+  const renderGridItem = useCallback(({ item }: { item: CatalogItem }) => (
+    <GridItem
+      item={item}
+      onPress={handleEditItem}
+      thumbnailSize={thumbnailSize}
+    />
+  ), [thumbnailSize, handleEditItem]);
+
+  /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
+  const renderListItem = useCallback(({ item }: { item: CatalogItem }) => (
+    <ListItem
+      item={item}
+      onPress={handleEditItem}
+    />
+  ), [handleEditItem]);
 
   const handleExport = () => {
     Alert.alert(
@@ -692,4 +638,93 @@ const styles = StyleSheet.create({
     width: 58, height: 58, borderRadius: 29, backgroundColor: '#4f6ef7', justifyContent: 'center', alignItems: 'center', shadowColor: '#4f6ef7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 8,
   },
   fabText: { color: '#fff', fontSize: 28, fontWeight: '300', marginTop: -2 },
+});
+
+// --- Memoized Components ---
+
+const GridItem = React.memo(({
+  item,
+  onPress,
+  thumbnailSize
+}: {
+  item: CatalogItem;
+  onPress: (item: CatalogItem) => void;
+  thumbnailSize: ThumbnailSize;
+}) => {
+  const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
+
+  return (
+    <TouchableOpacity
+      style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
+      onPress={() => onPress(item)}
+    >
+      {item.photoUrl ? (
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={[styles.thumbnail, { width: size, height: size }]}
+          resizeMode="cover"
+        />
+      ) : (
+        <View
+          style={[
+            styles.thumbnail,
+            { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
+          ]}
+        >
+          <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
+        </View>
+      )}
+      <Text style={styles.itemTitle} numberOfLines={1}>
+        {item.title}
+      </Text>
+      <Text style={styles.itemBrand}>
+        {item.designerBrand || '–'}
+      </Text>
+      {item.price ? (
+        <Text style={styles.itemPrice}>${item.price}</Text>
+      ) : null}
+      {item.marketplace ? (
+        <Text style={styles.itemMarketplace} numberOfLines={1}>
+          {item.marketplace}
+        </Text>
+      ) : null}
+    </TouchableOpacity>
+  );
+});
+
+const ListItem = React.memo(({
+  item,
+  onPress
+}: {
+  item: CatalogItem;
+  onPress: (item: CatalogItem) => void;
+}) => {
+  return (
+    <TouchableOpacity
+      style={styles.listItem}
+      onPress={() => onPress(item)}
+    >
+      {item.photoUrl && (
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={[styles.listThumbnail, { width: 64, height: 64 }]}
+          resizeMode="cover"
+        />
+      )}
+      <View style={styles.listTextContainer}>
+        <Text style={styles.listTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={styles.listSubtitle} numberOfLines={1}>
+          {item.designerBrand} • {item.size} • {item.condition}
+        </Text>
+        {item.price && (
+          <Text style={styles.listPrice}>${item.price}</Text>
+        )}
+        {item.marketplace && (
+          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
 });
