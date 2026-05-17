@@ -29,6 +29,10 @@ export default function DraftsScreen() {
     navigation.navigate('ItemForm', { item, existingItems: drafts });
   };
 
+  const handleCreateNew = () => {
+    navigation.navigate('ItemForm', { existingItems: drafts });
+  };
+
   const handleDelete = (itemNumber: string) => {
     Alert.alert('Delete Draft', 'Remove this draft permanently?', [
       { text: 'Cancel', style: 'cancel' },
@@ -51,6 +55,14 @@ export default function DraftsScreen() {
         <Text style={styles.emptySubtitle}>
           Items saved offline will appear here.
         </Text>
+        <TouchableOpacity
+          style={styles.emptyCta}
+          onPress={handleCreateNew}
+          accessibilityLabel="Create New Item"
+          accessibilityRole="button"
+        >
+          <Text style={styles.emptyCtaText}>Create New Item</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -67,6 +79,8 @@ export default function DraftsScreen() {
             style={styles.card}
             onPress={() => handleEdit(item)}
             activeOpacity={0.75}
+            accessibilityLabel={`Edit draft ${item.itemNumber}: ${item.title || 'Untitled'}`}
+            accessibilityRole="button"
           >
             <View style={styles.cardLeft}>
               <Text style={styles.itemNumber}>{item.itemNumber}</Text>
@@ -83,6 +97,8 @@ export default function DraftsScreen() {
               style={styles.deleteBtn}
               onPress={() => handleDelete(item.itemNumber)}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityLabel={`Delete draft ${item.itemNumber}`}
+              accessibilityRole="button"
             >
               <Text style={styles.deleteIcon}>🗑</Text>
             </TouchableOpacity>
@@ -115,5 +131,12 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f1117' },
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: '#e8eaf6', marginBottom: 6 },
-  emptySubtitle: { fontSize: 14, color: '#6b7280', textAlign: 'center', paddingHorizontal: 32 },
+  emptySubtitle: { fontSize: 14, color: '#6b7280', textAlign: 'center', paddingHorizontal: 32, marginBottom: 24 },
+  emptyCta: {
+    backgroundColor: '#4f6ef7',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  emptyCtaText: { color: 'white', fontWeight: '700', fontSize: 15 },
 });
