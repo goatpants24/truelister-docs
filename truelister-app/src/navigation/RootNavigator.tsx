@@ -7,6 +7,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
 import { RootStackParamList, TabParamList } from './types';
 import HomeScreen from '../screens/HomeScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
 import ItemFormScreen from '../screens/ItemFormScreen';
 import DraftsScreen from '../screens/DraftsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -124,6 +125,11 @@ export default function RootNavigator() {
           contentStyle: { backgroundColor: '#0f1117' },
         }}
       >
+        <Stack.Screen
+          name="Onboarding"
+          component={OnboardingScreen}
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="Main"
           component={MainTabs}
