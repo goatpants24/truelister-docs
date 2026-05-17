@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -16,7 +16,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { CatalogItem } from '../types';
-import { fetchInventory } from '../services/sheets';
+import { fetchInventory, getSpreadsheetId } from '../services/sheets';
 import { getDraftItems } from '../services/localStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -29,13 +29,14 @@ export default function HomeScreen() {
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadItems = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (!hasLoadedOnce.current || items.length === 0) {
       setLoading(true);
     }
     setError(null);
@@ -55,13 +56,14 @@ export default function HomeScreen() {
 
       if (combined.length === 0) {
         // Show demo items if list is empty and user hasn't configured a private sheet
-        const id = await AsyncStorage.getItem('settings_spreadsheet_id');
+        const id = await getSpreadsheetId();
         if (!id || id === '1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI') {
            // We could add hardcoded sample items here if we wanted "instant" turnkey
         }
       }
 
       setItems(combined);
+      hasLoadedOnce.current = true;
     } catch (err) {
       console.error('Error loading items:', err);
       setError('Failed to connect to Google Sheets. Please check your settings.');
@@ -84,7 +86,7 @@ export default function HomeScreen() {
     return (
       <TouchableOpacity
         style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
+        onPress={() => navigation.navigate('ItemForm', { item })}
       >
         {item.photoUrl ? (
           <Image
@@ -118,14 +120,14 @@ export default function HomeScreen() {
         ) : null}
       </TouchableOpacity>
     );
-  }, [thumbnailSize, navigation, items]);
+  }, [thumbnailSize, navigation]);
 
   /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
   const renderListItem = useCallback(({ item }: { item: CatalogItem }) => {
     return (
       <TouchableOpacity
         style={styles.listItem}
-        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
+        onPress={() => navigation.navigate('ItemForm', { item })}
       >
         {item.photoUrl && (
           <Image
@@ -150,7 +152,7 @@ export default function HomeScreen() {
         </View>
       </TouchableOpacity>
     );
-  }, [navigation, items]);
+  }, [navigation]);
 
   const handleExport = () => {
     Alert.alert(
