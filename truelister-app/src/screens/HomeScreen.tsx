@@ -32,10 +32,12 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const hasLoadedOnce = React.useRef(false);
+
   const loadItems = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (!hasLoadedOnce.current) {
       setLoading(true);
     }
     setError(null);
@@ -62,6 +64,7 @@ export default function HomeScreen() {
       }
 
       setItems(combined);
+      hasLoadedOnce.current = true;
     } catch (err) {
       console.error('Error loading items:', err);
       setError('Failed to connect to Google Sheets. Please check your settings.');
@@ -84,7 +87,7 @@ export default function HomeScreen() {
     return (
       <TouchableOpacity
         style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
+        onPress={() => navigation.navigate('ItemForm', { item })}
       >
         {item.photoUrl ? (
           <Image
@@ -118,14 +121,14 @@ export default function HomeScreen() {
         ) : null}
       </TouchableOpacity>
     );
-  }, [thumbnailSize, navigation, items]);
+  }, [thumbnailSize, navigation]);
 
   /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
   const renderListItem = useCallback(({ item }: { item: CatalogItem }) => {
     return (
       <TouchableOpacity
         style={styles.listItem}
-        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
+        onPress={() => navigation.navigate('ItemForm', { item })}
       >
         {item.photoUrl && (
           <Image
@@ -150,7 +153,7 @@ export default function HomeScreen() {
         </View>
       </TouchableOpacity>
     );
-  }, [navigation, items]);
+  }, [navigation]);
 
   const handleExport = () => {
     Alert.alert(
