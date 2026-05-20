@@ -26,7 +26,7 @@ export default function DraftsScreen() {
   }, []);
 
   const handleEdit = (item: CatalogItem) => {
-    navigation.navigate('ItemForm', { item, existingItems: drafts });
+    navigation.navigate('ItemForm', { item });
   };
 
   const handleDelete = (itemNumber: string) => {

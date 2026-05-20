@@ -27,8 +27,8 @@ import { useUndoRedo } from '../hooks/useUndoRedo';
 
 type FormMode = 'form' | 'camera' | 'tagScan';
 
-const EMPTY_ITEM = (existingItems: CatalogItem[]): CatalogItem => ({
-  itemNumber: generateItemNumber(existingItems),
+const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
+  itemNumber: newItemNumber || 'TL-000',
   title: '',
   designerBrand: '',
   category: '',
@@ -58,7 +58,7 @@ const EMPTY_ITEM = (existingItems: CatalogItem[]): CatalogItem => ({
 export default function ItemFormScreen() {
   const navigation = useNavigation<RootStackNavProp<'ItemForm'>>();
   const route = useRoute<ItemFormRouteProp>();
-  const { item: existingItem, existingItems } = route.params;
+  const { item: existingItem, newItemNumber } = route.params;
 
   const [mode, setMode] = useState<FormMode>('form');
   const [dropdowns, setDropdowns] = useState<DropdownOptions>({
@@ -76,8 +76,8 @@ export default function ItemFormScreen() {
 
   // ── Memoize initial item to prevent expensive generateItemNumber on re-renders ──
   const initialItem = React.useMemo(
-    () => existingItem ?? EMPTY_ITEM(existingItems ?? []),
-    [existingItem, existingItems]
+    () => existingItem ?? EMPTY_ITEM(newItemNumber),
+    [existingItem, newItemNumber]
   );
 
   // ── Undo/Redo on the entire form state ──────────────────────────────────────
