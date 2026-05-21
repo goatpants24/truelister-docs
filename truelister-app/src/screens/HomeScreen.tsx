@@ -16,7 +16,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { CatalogItem } from '../types';
-import { fetchInventory } from '../services/sheets';
+import { fetchInventory, generateItemNumber } from '../services/sheets';
 import { getDraftItems } from '../services/localStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -32,10 +32,13 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
+  const hasLoadedOnce = React.useRef(false);
+
   const loadItems = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (!hasLoadedOnce.current) {
       setLoading(true);
     }
     setError(null);
@@ -68,6 +71,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      hasLoadedOnce.current = true;
     }
   }, []);
 
@@ -84,7 +88,7 @@ export default function HomeScreen() {
     return (
       <TouchableOpacity
         style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
+        onPress={() => navigation.navigate('ItemForm', { item })}
       >
         {item.photoUrl ? (
           <Image
@@ -118,14 +122,14 @@ export default function HomeScreen() {
         ) : null}
       </TouchableOpacity>
     );
-  }, [thumbnailSize, navigation, items]);
+  }, [thumbnailSize, navigation]);
 
   /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
   const renderListItem = useCallback(({ item }: { item: CatalogItem }) => {
     return (
       <TouchableOpacity
         style={styles.listItem}
-        onPress={() => navigation.navigate('ItemForm', { item, existingItems: items })}
+        onPress={() => navigation.navigate('ItemForm', { item })}
       >
         {item.photoUrl && (
           <Image
@@ -150,7 +154,7 @@ export default function HomeScreen() {
         </View>
       </TouchableOpacity>
     );
-  }, [navigation, items]);
+  }, [navigation]);
 
   const handleExport = () => {
     Alert.alert(
@@ -316,7 +320,7 @@ export default function HomeScreen() {
       {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('ItemForm', { existingItems: items })}
+        onPress={() => navigation.navigate('ItemForm', { newItemNumber: generateItemNumber(items) })}
         accessibilityLabel="Add new item"
         accessibilityRole="button"
       >
