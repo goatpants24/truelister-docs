@@ -16,7 +16,7 @@ import * as Linking from 'expo-linking';
 import { Picker } from '@react-native-picker/picker';
 import { CatalogItem, DropdownOptions, ImageResult, PhotoField } from '../types';
 import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
-import { fetchDropdowns, generateItemNumber, appendItem } from '../services/sheets';
+import { fetchDropdowns, appendItem } from '../services/sheets';
 import { saveDraftItem, addPendingUpload } from '../services/localStorage';
 import { uploadToDrive } from '../services/driveUpload';
 import { formatFileSize } from '../services/imageProcessor';
@@ -27,8 +27,8 @@ import { useUndoRedo } from '../hooks/useUndoRedo';
 
 type FormMode = 'form' | 'camera' | 'tagScan';
 
-const EMPTY_ITEM = (existingItems: CatalogItem[]): CatalogItem => ({
-  itemNumber: generateItemNumber(existingItems),
+const EMPTY_ITEM = (nextItemNumber: string): CatalogItem => ({
+  itemNumber: nextItemNumber,
   title: '',
   designerBrand: '',
   category: '',
@@ -58,7 +58,7 @@ const EMPTY_ITEM = (existingItems: CatalogItem[]): CatalogItem => ({
 export default function ItemFormScreen() {
   const navigation = useNavigation<RootStackNavProp<'ItemForm'>>();
   const route = useRoute<ItemFormRouteProp>();
-  const { item: existingItem, existingItems } = route.params;
+  const { item: existingItem, nextItemNumber } = route.params;
 
   const [mode, setMode] = useState<FormMode>('form');
   const [dropdowns, setDropdowns] = useState<DropdownOptions>({
@@ -74,10 +74,10 @@ export default function ItemFormScreen() {
   const [saving, setSaving] = useState(false);
   const [ocrRawText, setOcrRawText] = useState('');
 
-  // ── Memoize initial item to prevent expensive generateItemNumber on re-renders ──
+  // ── Memoize initial item to prevent expensive logic on re-renders ──
   const initialItem = React.useMemo(
-    () => existingItem ?? EMPTY_ITEM(existingItems ?? []),
-    [existingItem, existingItems]
+    () => existingItem ?? EMPTY_ITEM(nextItemNumber ?? 'TL-000'),
+    [existingItem, nextItemNumber]
   );
 
   // ── Undo/Redo on the entire form state ──────────────────────────────────────

@@ -15,7 +15,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { CatalogItem } from '../types';
-import { fetchInventory } from '../services/sheets';
+import { fetchInventory, generateItemNumber } from '../services/sheets';
 import { getDraftItems } from '../services/localStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GridItem, ListItem } from '../components/InventoryItems';
@@ -262,7 +262,7 @@ export default function HomeScreen() {
       {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('ItemForm', { existingItems: items })}
+        onPress={() => navigation.navigate('ItemForm', { nextItemNumber: generateItemNumber(items) })}
         accessibilityLabel="Add new item"
         accessibilityRole="button"
       >
