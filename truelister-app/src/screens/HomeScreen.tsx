@@ -52,9 +52,13 @@ export default function HomeScreen() {
       // fetchInventory might have logged a 404 internally.
       // We'll trust its logging but also show a hint here if list is empty.
 
-      const sheetNumbers = new Set(sheetItems.map(i => i.itemNumber));
-      const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
-      const combined = [...sheetItems, ...uniqueDrafts];
+      // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case)
+      let combined = sheetItems;
+      if (draftItems.length > 0) {
+        const sheetNumbers = new Set(sheetItems.map(i => i.itemNumber));
+        const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
+        combined = [...sheetItems, ...uniqueDrafts];
+      }
 
       if (combined.length === 0) {
         // Show demo items if list is empty and user hasn't configured a private sheet
