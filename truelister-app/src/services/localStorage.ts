@@ -7,6 +7,9 @@ const STORAGE_KEYS = {
   SETTINGS: 'truelister_settings',
 };
 
+// Memory cache to avoid redundant bridge traffic and parsing
+let cachedDrafts: CatalogItem[] | null = null;
+
 /**
  * Save a draft item locally (for offline use or before sync)
  */
@@ -15,15 +18,18 @@ export async function saveDraftItem(item: CatalogItem): Promise<void> {
     const existing = await getDraftItems();
     const updated = [...existing, item];
     await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
+    cachedDrafts = updated;
   } catch (error) {
     console.error('Error saving draft:', error);
   }
 }
 
 export async function getDraftItems(): Promise<CatalogItem[]> {
+  if (cachedDrafts) return cachedDrafts;
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.DRAFT_ITEMS);
-    return data ? JSON.parse(data) : [];
+    cachedDrafts = data ? JSON.parse(data) : [];
+    return cachedDrafts!;
   } catch (error) {
     console.error('Error reading drafts:', error);
     return [];
@@ -35,6 +41,7 @@ export async function removeDraftItem(itemNumber: string): Promise<void> {
     const existing = await getDraftItems();
     const updated = existing.filter(item => item.itemNumber !== itemNumber);
     await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
+    cachedDrafts = updated;
   } catch (error) {
     console.error('Error removing draft:', error);
   }
@@ -42,6 +49,7 @@ export async function removeDraftItem(itemNumber: string): Promise<void> {
 
 export async function clearDrafts(): Promise<void> {
   await AsyncStorage.removeItem(STORAGE_KEYS.DRAFT_ITEMS);
+  cachedDrafts = [];
 }
 
 /** Alias for getDraftItems — used by DraftsScreen */
