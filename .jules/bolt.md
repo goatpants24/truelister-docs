@@ -13,3 +13,7 @@
 ## 2026-05-22 - [Empty-State Merge Guard]
 **Learning:** Performing $O(N)$ merge operations (Set creation, filtering) on every screen focus is wasteful when the common state is "no drafts." Guarding these operations with a simple `length > 0` check provides instant UI responsiveness for the majority of user sessions.
 **Action:** Add early-exit guards for expensive data processing logic that depends on optional/local state.
+
+## 2026-05-22 - [Regex vs Loop for OCR Scanning]
+**Learning:** In OCR processing tasks where the text is checked against a large list of keywords, pre-compiled Regex with word boundaries (\b) is significantly faster and more accurate than iterative string.includes() calls. This reduces complexity from O(N*M) to O(M) and avoids false positives on substring matches (e.g. matching "Gap" inside "Agape").
+**Action:** Replace linear keyword loops with pre-compiled, sorted regex patterns for high-performance text parsing.
