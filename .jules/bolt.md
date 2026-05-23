@@ -13,3 +13,7 @@
 ## 2026-05-22 - [Empty-State Merge Guard]
 **Learning:** Performing $O(N)$ merge operations (Set creation, filtering) on every screen focus is wasteful when the common state is "no drafts." Guarding these operations with a simple `length > 0` check provides instant UI responsiveness for the majority of user sessions.
 **Action:** Add early-exit guards for expensive data processing logic that depends on optional/local state.
+
+## 2026-05-23 - [Optimized Regex for Keyword Matching]
+**Learning:** Replacing iterative substring searches (.includes) with pre-compiled regular expressions significantly improves throughput (O(M) vs O(N*M)). However, for overlapping keywords, the regex must be sorted by length descending to ensure the most specific term (longest match) is captured.
+**Action:** Use pre-compiled regexes for large keyword lists and always sort alternations by length descending to maintain parsing accuracy.

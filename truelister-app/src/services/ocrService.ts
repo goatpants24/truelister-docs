@@ -59,6 +59,47 @@ const KNOWN_BRANDS = [
   'lululemon', 'athleta', 'under armour', 'new balance',
 ];
 
+// ── Optimized Assets ────────────────────────────────────────────────────────
+
+/**
+ * Pre-calculated display names and regexes to avoid O(N*M) lookups and
+ * redundant string manipulations in the hot parsing path.
+ */
+
+const BRAND_DISPLAY_MAP = new Map(KNOWN_BRANDS.map(brand => [
+  brand.toLowerCase(),
+  brand.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+]));
+
+// Escapes special characters for regex safety (e.g. j.crew -> j\.crew)
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Bolt: Sort by length descending to ensure longest match (most specific term) wins in regex alternation
+const BRAND_REGEX = new RegExp(
+  [...KNOWN_BRANDS].sort((a, b) => b.length - a.length).map(escapeRegex).join('|'),
+  'i'
+);
+
+const FABRIC_DISPLAY_MAP = new Map(FABRIC_KEYWORDS.map(f => [
+  f.toLowerCase(),
+  f.charAt(0).toUpperCase() + f.slice(1)
+]));
+
+const FABRIC_REGEX = new RegExp(
+  [...FABRIC_KEYWORDS].sort((a, b) => b.length - a.length).map(escapeRegex).join('|'),
+  'gi'
+);
+
+const CARE_KEYWORDS = [
+  'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'hang dry',
+  'do not bleach', 'iron low', 'iron medium', 'cold water', 'warm water'
+];
+
+const CARE_REGEX = new RegExp(
+  [...CARE_KEYWORDS].sort((a, b) => b.length - a.length).map(escapeRegex).join('|'),
+  'gi'
+);
+
 /**
  * Parse OCR text from a clothing tag and extract structured fields.
  */
@@ -68,12 +109,11 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   const result: Partial<CatalogItem> = {};
 
   // ── Brand Detection ──
+  // Bolt: Reverted to loop to preserve array-order priority (per code review).
+  // Optimized by using pre-calculated BRAND_DISPLAY_MAP.
   for (const brand of KNOWN_BRANDS) {
     if (lowerText.includes(brand.toLowerCase())) {
-      result.designerBrand = brand
-        .split(' ')
-        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ');
+      result.designerBrand = BRAND_DISPLAY_MAP.get(brand.toLowerCase());
       break;
     }
   }
@@ -102,9 +142,14 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   if (fabricMatches.length > 0) {
     result.fabricMaterial = fabricMatches.join(', ');
   } else {
-    const found = FABRIC_KEYWORDS.filter(f => lowerText.includes(f));
-    if (found.length > 0) {
-      result.fabricMaterial = found.map(f => f.charAt(0).toUpperCase() + f.slice(1)).join(', ');
+    // Bolt: Use global regex to find all fabrics in one pass.
+    const matches = lowerText.match(FABRIC_REGEX);
+    if (matches) {
+      // Unique via Set, then format using pre-calculated map
+      const unique = Array.from(new Set(matches.map(m => m.toLowerCase())));
+      result.fabricMaterial = unique
+        .map(f => FABRIC_DISPLAY_MAP.get(f))
+        .join(', ');
     }
   }
 
@@ -115,11 +160,11 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   }
 
   // ── Care Instructions ──
-  const careKeywords = ['machine wash', 'hand wash', 'dry clean', 'tumble dry', 'hang dry',
-    'do not bleach', 'iron low', 'iron medium', 'cold water', 'warm water'];
-  const careFound = careKeywords.filter(c => lowerText.includes(c));
-  if (careFound.length > 0) {
-    const careNote = `Care: ${careFound.join(', ')}`;
+  // Bolt: Replace iterative .filter() with single-pass global regex match.
+  const careMatches = lowerText.match(CARE_REGEX);
+  if (careMatches) {
+    const unique = Array.from(new Set(careMatches.map(m => m.toLowerCase())));
+    const careNote = `Care: ${unique.join(', ')}`;
     result.notes = result.notes ? `${result.notes}. ${careNote}` : careNote;
   }
 
