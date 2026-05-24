@@ -69,9 +69,12 @@ export default function PublishScreen({ route, navigation }: Props) {
               ]}
               onPress={() => toggleMarketplace(m.id)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              accessibilityLabel={`Toggle ${m.name}`}
             >
               <Text style={[styles.platformName, isSelected && { color: m.color }]}>
-                {m.name}
+                {isSelected ? '✓ ' : ''}{m.name}
               </Text>
               <Text style={[
                 styles.platformStatus,
@@ -92,6 +95,8 @@ export default function PublishScreen({ route, navigation }: Props) {
           style={[styles.publishBtn, publishing && styles.publishBtnDisabled]}
           onPress={handlePublish}
           disabled={publishing}
+          accessibilityRole="button"
+          accessibilityLabel={publishing ? "Publishing..." : `Publish to ${selected.size} platforms`}
         >
           {publishing ? (
             <ActivityIndicator color="#fff" />
@@ -128,7 +133,11 @@ export default function PublishScreen({ route, navigation }: Props) {
                   <>
                     <Text style={styles.resultOk}>✓ Published as draft</Text>
                     {r.listingUrl && (
-                      <TouchableOpacity onPress={() => Linking.openURL(r.listingUrl!)}>
+                      <TouchableOpacity
+                        onPress={() => Linking.openURL(r.listingUrl!)}
+                        accessibilityRole="link"
+                        accessibilityLabel={`View listing on ${meta.name}`}
+                      >
                         <Text style={styles.resultLink}>View listing ↗</Text>
                       </TouchableOpacity>
                     )}
@@ -140,7 +149,12 @@ export default function PublishScreen({ route, navigation }: Props) {
             );
           })}
 
-          <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.doneBtn}
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Done and return to item details"
+          >
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
         </View>
