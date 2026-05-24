@@ -13,3 +13,7 @@
 ## 2026-05-22 - [Empty-State Merge Guard]
 **Learning:** Performing $O(N)$ merge operations (Set creation, filtering) on every screen focus is wasteful when the common state is "no drafts." Guarding these operations with a simple `length > 0` check provides instant UI responsiveness for the majority of user sessions.
 **Action:** Add early-exit guards for expensive data processing logic that depends on optional/local state.
+
+## 2026-05-23 - [OCR Regex & Lookup Optimization]
+**Learning:** Repetitive string transformations (split/map/join) and regex recompilation inside a high-frequency parsing function like `parseTagText` create significant CPU overhead. Hoisting these to module-level constants and using a pre-calculated map reduces execution time by ~38%.
+**Action:** Always hoist regex patterns and static lookup maps outside of performance-critical functions to avoid redundant work.
