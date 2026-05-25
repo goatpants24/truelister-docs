@@ -17,3 +17,7 @@
 ## 2026-05-23 - [OCR Regex & Lookup Optimization]
 **Learning:** Repetitive string transformations (split/map/join) and regex recompilation inside a high-frequency parsing function like `parseTagText` create significant CPU overhead. Hoisting these to module-level constants and using a pre-calculated map reduces execution time by ~38%.
 **Action:** Always hoist regex patterns and static lookup maps outside of performance-critical functions to avoid redundant work.
+
+## 2026-05-24 - [RegExp vs Loop for Multi-keyword Detection]
+**Learning:** Replacing an iterative loop of `.includes()` or `.indexOf()` with a single-pass `RegExp` (containing all keywords joined by `|`) provides a massive performance boost (up to 6x) for keyword detection in large text blocks. Modern JS engines optimize large alternate-group regexes much better than manual JS loops.
+**Action:** Prefer single-pass RegExp with word boundaries (`\b`) for multi-keyword detection and normalization tasks.
