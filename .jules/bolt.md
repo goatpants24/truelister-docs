@@ -15,5 +15,9 @@
 **Action:** Add early-exit guards for expensive data processing logic that depends on optional/local state.
 
 ## 2026-05-23 - [OCR Regex & Lookup Optimization]
-**Learning:** Repetitive string transformations (split/map/join) and regex recompilation inside a high-frequency parsing function like `parseTagText` create significant CPU overhead. Hoisting these to module-level constants and using a pre-calculated map reduces execution time by ~38%.
+**Learning:** Repetitive string transformations (split/map/join) and regex recompilation inside a high-frequency parsing function like `parseTagText` create significant CPU overhead. Hoisting these to module-level constants and some pre-calculated map reduces execution time by ~38%.
 **Action:** Always hoist regex patterns and static lookup maps outside of performance-critical functions to avoid redundant work.
+
+## 2026-05-24 - [Parallelize Independent Network Requests]
+**Learning:** Sequential execution of independent I/O-bound tasks (like publishing to multiple marketplaces) creates a performance bottleneck where total time is the sum of all latencies. Parallelizing these requests with `Promise.all` reduces total time to the maximum of any single latency.
+**Action:** Always identify independent network or disk operations and use `Promise.all` or similar constructs to execute them in parallel.
