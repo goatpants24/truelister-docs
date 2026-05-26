@@ -17,3 +17,7 @@
 ## 2026-05-23 - [OCR Regex & Lookup Optimization]
 **Learning:** Repetitive string transformations (split/map/join) and regex recompilation inside a high-frequency parsing function like `parseTagText` create significant CPU overhead. Hoisting these to module-level constants and using a pre-calculated map reduces execution time by ~38%.
 **Action:** Always hoist regex patterns and static lookup maps outside of performance-critical functions to avoid redundant work.
+
+## 2026-05-24 - [Parallel IO Optimization]
+**Learning:** Independent network requests executed in a sequence (e.g., within a `for` loop) accumulate latency, making multi-destination operations unnecessarily slow. Parallelizing these requests reduces total wait time to that of the slowest single request.
+**Action:** Use `Promise.all` for independent network or IO-bound operations to minimize total execution latency.
