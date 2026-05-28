@@ -17,3 +17,7 @@
 ## 2026-05-23 - [OCR Regex & Lookup Optimization]
 **Learning:** Repetitive string transformations (split/map/join) and regex recompilation inside a high-frequency parsing function like `parseTagText` create significant CPU overhead. Hoisting these to module-level constants and using a pre-calculated map reduces execution time by ~38%.
 **Action:** Always hoist regex patterns and static lookup maps outside of performance-critical functions to avoid redundant work.
+
+## 2026-05-28 - [Parallel Marketplace Publishing]
+**Learning:** Sequential execution of independent marketplace network requests (eBay, Etsy, etc.) creates a latency bottleneck that grows linearly with the number of selected platforms. Parallelizing these requests via `Promise.all` reduces total latency from O(sum) to O(max).
+**Action:** Always parallelize independent asynchronous operations that don't share data dependencies, especially network requests in a multi-platform environment.
