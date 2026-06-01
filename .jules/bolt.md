@@ -21,3 +21,7 @@
 ## 2026-05-24 - [Parallel Marketplace Publishing]
 **Learning:** Sequential `await` in a `for...of` loop for independent network requests (like publishing to multiple marketplaces) creates a performance bottleneck where the total latency is the sum of all requests. Refactoring to `Promise.all` with `map` parallelizes these requests, reducing latency to that of the single slowest request.
 **Action:** Always identify independent asynchronous operations and parallelize them using `Promise.all` or `Promise.allSettled` to improve UI responsiveness and reduce user wait time.
+
+## 2026-05-25 - [Single-pass Regex Brand Detection]
+**Learning:** Iterative substring searches (`includes`) over a large list of keywords is $O(N \times M)$ and performs poorly when no match is found, as it must scan the entire input for every keyword. A single-pass `RegExp` with word boundaries (`\b`) reduces complexity to roughly $O(M)$ and prevents false positives on partial word matches (e.g., "nike" in "uniken").
+**Action:** Use single-pass regex alternations for multi-keyword detection in large text blocks. Sort keywords by length descending to ensure longest-match precedence.
