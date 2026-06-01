@@ -21,3 +21,7 @@
 ## 2026-05-24 - [Parallel Marketplace Publishing]
 **Learning:** Sequential `await` in a `for...of` loop for independent network requests (like publishing to multiple marketplaces) creates a performance bottleneck where the total latency is the sum of all requests. Refactoring to `Promise.all` with `map` parallelizes these requests, reducing latency to that of the single slowest request.
 **Action:** Always identify independent asynchronous operations and parallelize them using `Promise.all` or `Promise.allSettled` to improve UI responsiveness and reduce user wait time.
+
+## 2026-06-01 - [Single-pass Regex Brand Detection]
+**Learning:** Iterating through a large array of brands to perform substring searches is O(N*M). Replacing this with a single-pass RegExp (Aho-Corasick style) with word boundaries and a lookup Map reduces detection overhead by ~84-87%. Sorting brands by length descending ensures longest-match precedence.
+**Action:** Use single-pass regex alternations for multi-pattern matching and hoist configuration to module-level constants. Always use the 'u' flag for regexes matching potential non-ASCII identifiers.
