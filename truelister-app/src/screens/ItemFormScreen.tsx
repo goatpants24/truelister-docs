@@ -655,10 +655,10 @@ export default function ItemFormScreen() {
                   onPress={() => toggleMarketplace(m)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
-                  accessibilityLabel={`Toggle marketplace ${m}`}
+                  accessibilityLabel={m}
                 >
                   <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
-                    {m}
+                    {isSelected ? '✓ ' : ''}{m}
                   </Text>
                 </TouchableOpacity>
               );
