@@ -28,7 +28,7 @@ To use Mastermind outside of this environment, use the following files located i
 7. **Graceful Degradation**: If an environment lacks necessary capabilities (file system, terminal), the agent must provide manual fallback instructions rather than failing silently.
 8. **Rollback Safety Net**: Before any destructive action (file deletion, overwrite, major refactor), a snapshot or backup must be created and a documented recovery path must exist.
 9. **Session Budget Awareness**: When a `SESSION_BUDGET` is set, the agent must track estimated resource consumption, warn at 75% consumed, and halt completely at 100% until the budget is explicitly extended.
-
+10. **Multi-AI Handoff**: When switching between AI systems, a structured `handoff_bundle.md` must be generated containing the active CONFIG BLOCK, the current `STATE.json`, immediate next steps, and all Logic Tombstones so the receiving AI can continue work without loss of context or governance.
 ## Workflow: Project Initialization and Structuring
 
 When starting a new project or restructuring an existing one, follow these sequential steps:
@@ -97,4 +97,7 @@ When the user explicitly requests to run the "same protocol, and checks and bala
 7. Providing a proof of integrity via a [Failure -> Fix] audit snippet.
 
 ## References
-For detailed workflows and portability artifacts, refer to the `references/` directory.
+For detailed workflows and portability artifacts, refer to the `references/` directory:
+- `mastermind_system_prompt.md` — Universal system prompt for any AI
+- `mastermind_dials.md` — Full dial reference card
+- `mastermind_handoff_template.md` — Multi-AI handoff bundle template

@@ -34,15 +34,17 @@ This document describes every configurable dial in the Mastermind CONFIG BLOCK, 
 
 ---
 
-## SESSION_BUDGET
-**Controls the session credit/point ceiling and halt behavior.**
+## HANDOFF_MODE
+**Controls the generation of the Multi-AI Handoff Bundle.**
 
 | Level | Behavior |
 |-------|----------|
-| 0 | Off. No budget tracked. *(Default)* |
-| > 0 | Active. Agent tracks estimated consumption in `audit_log.txt`. Pauses for approval at 75% consumed. Halts all work at 100% consumed until the budget is explicitly increased via override. |
+| 0 | Off. No handoff bundles generated. |
+| 1 | On request only. Agent generates the bundle only when explicitly asked. *(Default)* |
+| 2 | Auto-generate at milestones. Agent generates the bundle at the end of every major project phase. |
+| 3 | Auto-generate at session end. Agent generates the bundle before the session terminates or hibernates. |
 
-**Recommended:** 0 for local/free models. Set to your daily credit limit (e.g., 50) when using paid agents.
+**Recommended:** 1 for single-platform work. 3 when actively moving a project between ChatGPT, Claude, and Manus.
 
 ---
 
