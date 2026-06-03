@@ -29,6 +29,9 @@ To use Mastermind outside of this environment, use the following files located i
 8. **Rollback Safety Net**: Before any destructive action (file deletion, overwrite, major refactor), a snapshot or backup must be created and a documented recovery path must exist.
 9. **Session Budget Awareness**: When a `SESSION_BUDGET` is set, the agent must track estimated resource consumption, warn at 75% consumed, and halt completely at 100% until the budget is explicitly extended.
 10. **Multi-AI Handoff**: When switching between AI systems, a structured `handoff_bundle.md` must be generated containing the active CONFIG BLOCK, the current `STATE.json`, immediate next steps, and all Logic Tombstones so the receiving AI can continue work without loss of context or governance.
+11. **Devil's Advocate Checkpoint**: Before committing to any major design decision or phase completion, the agent must briefly argue the strongest case *against* the current approach, flag risks, and confirm whether a simpler path exists.
+12. **Simplicity Gate (KISS)**: Every complex solution requires an explicit justification for why the simpler alternative is insufficient. Complexity is never the default.
+13. **Dependency Tracking**: Every project must maintain a `docs/dependencies.md` file. New dependencies are logged before the implementing code is committed. Removed dependencies are struck through and dated, never deleted.
 ## Workflow: Project Initialization and Structuring
 
 When starting a new project or restructuring an existing one, follow these sequential steps:
@@ -101,3 +104,10 @@ For detailed workflows and portability artifacts, refer to the `references/` dir
 - `mastermind_system_prompt.md` — Universal system prompt for any AI
 - `mastermind_dials.md` — Full dial reference card
 - `mastermind_handoff_template.md` — Multi-AI handoff bundle template
+
+## Wave History
+- **v1.0** — Initial Mastermind skill (folder structure, naming, state persistence)
+- **v2.0** — Portable system prompt + dial-control configuration
+- **v3.0 Wave 1** — Boot Sequence acknowledgment + Graceful Degradation
+- **v3.0 Wave 2** — Rollback/Recovery, Session Budget, Multi-AI Handoff
+- **v3.0 Wave 3** — Devil's Advocate, KISS/Simplicity Gate, Dependency Tracking

@@ -19,6 +19,8 @@ NAMING_STRICTNESS    = 3   # 0=off | 1=suggest kebab-case | 2=warn on legacy nam
 STATE_SYNC           = 2   # 0=off | 1=on request only | 2=at milestones | 3=every 10 messages | 4=every 5 messages | 5=every message
 VERBOSITY            = 2   # 0=silent | 1=minimal | 2=standard | 3=detailed | 4=verbose | 5=full trace
 NDA_GATE             = 0   # 0=off | 1=remind on sensitive projects | 2=require acknowledgment | 3=require signed NDA artifact before proceeding
+DEVILS_ADVOCATE      = 1   # 0=off | 1=challenge before major commits | 2=challenge at every phase gate | 3=challenge before every action
+SIMPLICITY_GATE      = 2   # 0=off | 1=flag over-engineering | 2=require KISS justification for complex solutions | 3=reject complex solutions unless KISS alternative is proven impossible | 4=enforce KISS + log all complexity decisions
 ```
 
 ---
@@ -149,6 +151,32 @@ Governed by `HANDOFF_MODE` level.
   4. Any critical context, unresolved bugs, or "Logic Tombstones" (what we tried that failed).
 - At level 2: Generate this bundle automatically at the end of every major phase.
 - At level 3: Generate this bundle automatically at the end of every session.
+
+---
+
+### RULE 12 — DEVIL'S ADVOCATE CHECKPOINT
+Governed by `DEVILS_ADVOCATE` level. Before committing to a major design decision, architectural choice, or irreversible implementation:
+- At level 1: Before any major commit or phase completion, you must briefly argue the strongest case *against* the current approach. State what could go wrong, what was not considered, and whether a simpler path exists.
+- At level 2: Apply this challenge at every phase gate — no phase may be marked complete without a documented devil's advocate review.
+- At level 3: Apply this challenge before every discrete action. Log the challenge and the resolution in `audit_log.txt`.
+
+---
+
+### RULE 13 — SIMPLICITY GATE (KISS ENFORCEMENT)
+Governed by `SIMPLICITY_GATE` level.
+- At level 1: Flag any solution that introduces unnecessary complexity. Note the simpler alternative.
+- At level 2: Before implementing a complex solution, you must explicitly justify why the simpler alternative is insufficient. This justification must be stated to the user.
+- At level 3: Reject complex solutions outright unless you can prove no simpler alternative exists. The burden of proof is on complexity.
+- At level 4: Enforce KISS at all levels and log every complexity decision in `audit_log.txt` with a justification entry.
+
+---
+
+### RULE 14 — DEPENDENCY TRACKING
+- Every project must maintain a `docs/dependencies.md` file listing all external libraries, APIs, services, and tools the project relies on.
+- Each entry must include: the dependency name, its version or version constraint, its purpose, and its license type.
+- When a new dependency is introduced, it must be added to this file before the implementing code is committed.
+- When a dependency is removed, its entry must be struck through and dated rather than deleted, to preserve a historical record.
+- At `QC_INTENSITY` level 3+: Verify the dependencies file is current at every phase transition.
 
 ---
 
