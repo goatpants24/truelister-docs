@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -53,6 +53,44 @@ const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   photoUrlTabletopDetail: '',
   photoUrlTabletopMeasure1: '',
   photoUrlTabletopMeasure2: '',
+});
+
+interface MarketplaceSelectorProps {
+  selected: string;
+  available: string[];
+  onToggle: (marketplace: string) => void;
+}
+
+/**
+ * Bolt: Memoized marketplace selector to prevent redundant re-renders when typing in other fields.
+ * Uses useMemo to convert the comma-separated string to a Set for O(1) lookup.
+ */
+const MarketplaceSelector = memo(({ selected, available, onToggle }: MarketplaceSelectorProps) => {
+  const selectedSet = useMemo(() => {
+    return new Set(selected ? selected.split(',').map(s => s.trim()) : []);
+  }, [selected]);
+
+  return (
+    <View style={styles.marketplacesRow}>
+      {available.map((m) => {
+        const isSelected = selectedSet.has(m);
+        return (
+          <TouchableOpacity
+            key={m}
+            style={[styles.marketChip, isSelected && styles.marketChipSelected]}
+            onPress={() => onToggle(m)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSelected }}
+            accessibilityLabel={`Toggle marketplace ${m}`}
+          >
+            <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
+              {m}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
 });
 
 export default function ItemFormScreen() {
@@ -127,16 +165,18 @@ export default function ItemFormScreen() {
     [setItem]
   );
 
-  const toggleMarketplace = (m: string) => {
-    const current = item.marketplace ? item.marketplace.split(',').map(s => s.trim()) : [];
-    let updated;
-    if (current.includes(m)) {
-      updated = current.filter(x => x !== m);
-    } else {
-      updated = [...current, m];
-    }
-    updateField('marketplace', updated.join(', '), true);
-  };
+  const toggleMarketplace = useCallback((m: string) => {
+    setItem((prev) => {
+      const current = prev.marketplace ? prev.marketplace.split(',').map(s => s.trim()) : [];
+      let updated;
+      if (current.includes(m)) {
+        updated = current.filter(x => x !== m);
+      } else {
+        updated = [...current, m];
+      }
+      return { ...prev, marketplace: updated.join(', ') };
+    }, true);
+  }, [setItem]);
 
   const handlePhotoCapture = (compressed: ImageResult, originalUri: string) => {
     setPhoto({ compressed, originalUri });
@@ -645,25 +685,11 @@ export default function ItemFormScreen() {
 
         <View style={styles.field}>
           <Text style={styles.label}>Marketplaces (Select all that apply)</Text>
-          <View style={styles.marketplacesRow}>
-            {dropdowns.marketplaces.map((m) => {
-              const isSelected = item.marketplace?.split(',').map(s => s.trim()).includes(m);
-              return (
-                <TouchableOpacity
-                  key={m}
-                  style={[styles.marketChip, isSelected && styles.marketChipSelected]}
-                  onPress={() => toggleMarketplace(m)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
-                  accessibilityLabel={`Toggle marketplace ${m}`}
-                >
-                  <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
-                    {m}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <MarketplaceSelector
+            selected={item.marketplace}
+            available={dropdowns.marketplaces}
+            onToggle={toggleMarketplace}
+          />
         </View>
 
         <View style={styles.field}>
