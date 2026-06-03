@@ -33,3 +33,7 @@
 ## 2026-05-26 - [Allocation Guard in Data Loops]
 **Learning:** Hydrating every row of a spreadsheet into a full TypeScript object (e.g., `CatalogItem`) before checking if the row contains meaningful data is wasteful, especially for spreadsheets with thousands of trailing empty rows. Moving the truthiness check *before* the hydration call prevents unnecessary object allocations and reduces GC pressure.
 **Action:** Always guard object creation in high-volume data loops with early-exit checks on raw row data.
+
+## 2026-05-27 - [FlatList getItemLayout Optimization]
+**Learning:** Implementing `getItemLayout` for `FlatList` significantly improves scroll performance for large catalogs by eliminating dynamic measurements. However, it requires strictly enforced fixed heights on item components and `overflow: 'hidden'` to prevent content-driven expansion from invalidating the pre-calculated offsets.
+**Action:** When using `getItemLayout`, always verify that item styles (including margins and padding) perfectly match the mathematical formula used for offset calculation.
