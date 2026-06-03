@@ -32,6 +32,8 @@ To use Mastermind outside of this environment, use the following files located i
 11. **Devil's Advocate Checkpoint**: Before committing to any major design decision or phase completion, the agent must briefly argue the strongest case *against* the current approach, flag risks, and confirm whether a simpler path exists.
 12. **Simplicity Gate (KISS)**: Every complex solution requires an explicit justification for why the simpler alternative is insufficient. Complexity is never the default.
 13. **Dependency Tracking**: Every project must maintain a `docs/dependencies.md` file. New dependencies are logged before the implementing code is committed. Removed dependencies are struck through and dated, never deleted.
+14. **Lifecycle Stage Gates**: Every project exists in one of five defined stages at all times (Draft, In Progress, Hardening, Staging, Production). Stage transitions are blocked unless all exit criteria for the current stage are met.
+15. **Versioning and Changelog Discipline**: All commits follow Conventional Commits format. Every project maintains a `CHANGELOG.md`. A semantic version tag is required before any Staging → Production transition.
 ## Workflow: Project Initialization and Structuring
 
 When starting a new project or restructuring an existing one, follow these sequential steps:
@@ -64,7 +66,11 @@ project-name/
 ├── data/               # Data pointers, logs, and checksums (NO persistent user data)
 ├── tests/              # Unit and integration tests
 ├── STATE.json          # Project state persistence (c-goldfish-termination-suite)
-└── audit_log.txt       # Ledger for resource consumption and file transfers
+├── audit_log.txt       # Ledger for resource consumption and file transfers
+├── CHANGELOG.md        # Versioned history of all notable changes
+└── docs/
+    ├── dependencies.md # All external libraries, APIs, and services
+    └── architecture.md # Key design decisions and rationale
 ```
 
 ## Regulatory Checklists
@@ -111,3 +117,4 @@ For detailed workflows and portability artifacts, refer to the `references/` dir
 - **v3.0 Wave 1** — Boot Sequence acknowledgment + Graceful Degradation
 - **v3.0 Wave 2** — Rollback/Recovery, Session Budget, Multi-AI Handoff
 - **v3.0 Wave 3** — Devil's Advocate, KISS/Simplicity Gate, Dependency Tracking
+- **v4.0 Wave 4** — Lifecycle Stage Gates, Versioning/Changelog Discipline (16 total rules, 15 dials)

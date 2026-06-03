@@ -4,7 +4,7 @@
 
 ---BEGIN MASTERMIND---
 
-## MASTERMIND ACTIVE — Project Governance Protocol v3.0
+## MASTERMIND ACTIVE — Project Governance Protocol v4.0
 
 ### CONFIG BLOCK
 ```
@@ -21,6 +21,8 @@ VERBOSITY            = 2   # 0=silent | 1=minimal | 2=standard | 3=detailed | 4=
 NDA_GATE             = 0   # 0=off | 1=remind on sensitive projects | 2=require acknowledgment | 3=require signed NDA artifact before proceeding
 DEVILS_ADVOCATE      = 1   # 0=off | 1=challenge before major commits | 2=challenge at every phase gate | 3=challenge before every action
 SIMPLICITY_GATE      = 2   # 0=off | 1=flag over-engineering | 2=require KISS justification for complex solutions | 3=reject complex solutions unless KISS alternative is proven impossible | 4=enforce KISS + log all complexity decisions
+VERSIONING_GATE      = 2   # 0=off | 1=suggest Conventional Commits | 2=enforce Conventional Commits + require CHANGELOG.md | 3=enforce + require version tag before any Staging→Production transition
+STAGE_GATE           = 2   # 0=off | 1=track stage in STATE.json only | 2=enforce entry/exit criteria per stage | 3=enforce + require explicit user approval for every stage transition
 ```
 
 ---
@@ -177,6 +179,40 @@ Governed by `SIMPLICITY_GATE` level.
 - When a new dependency is introduced, it must be added to this file before the implementing code is committed.
 - When a dependency is removed, its entry must be struck through and dated rather than deleted, to preserve a historical record.
 - At `QC_INTENSITY` level 3+: Verify the dependencies file is current at every phase transition.
+
+---
+
+### RULE 15 — PROJECT LIFECYCLE STAGE GATES
+Governed by `STAGE_GATE` level. Every project must exist in one of five defined stages at all times. The current stage must be recorded in `STATE.json` under the `stage` field.
+
+| Stage | Entry Criteria | Exit Criteria |
+|-------|---------------|---------------|
+| **Draft** | Project initialized, game plan approved | Goal, scope, and MVP are fully defined |
+| **In Progress** | All entry criteria for Draft met | All MVP features implemented and passing basic tests |
+| **Hardening** | All entry criteria for In Progress met | QC_INTENSITY level 4+ checks passed, no Magic Wand I/O, all dependencies documented |
+| **Staging** | All entry criteria for Hardening met | Full end-to-end functional test passed, STATE.json reflects Staging |
+| **Production** | All entry criteria for Staging met + version tag applied | Deployment complete, audit_log.txt updated |
+
+- At level 1: Track the current stage in `STATE.json` only. No enforcement.
+- At level 2: Enforce entry and exit criteria. A stage transition may not occur unless all exit criteria for the current stage are met.
+- At level 3: Enforce criteria AND require explicit user approval before every stage transition.
+
+---
+
+### RULE 16 — VERSIONING AND CHANGELOG DISCIPLINE
+Governed by `VERSIONING_GATE` level.
+- All commit messages must follow **Conventional Commits** format: `type(scope): description`
+  - Valid types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `style`, `perf`
+  - Example: `feat(auth): add OAuth2 login flow`
+- Every project must maintain a `CHANGELOG.md` in the project root.
+- `CHANGELOG.md` must be updated at every `Hardening` and `Staging` stage transition.
+- A version tag (e.g., `v1.0.0`) using **Semantic Versioning** must be applied before any `Staging → Production` transition.
+  - `MAJOR` version: breaking changes
+  - `MINOR` version: new features, backward-compatible
+  - `PATCH` version: bug fixes, backward-compatible
+- At level 1: Suggest Conventional Commits format but do not enforce.
+- At level 2: Enforce Conventional Commits and require `CHANGELOG.md` to exist and be current.
+- At level 3: Enforce all of the above AND block the `Staging → Production` transition until a version tag is applied.
 
 ---
 

@@ -187,6 +187,34 @@ This document describes every configurable dial in the Mastermind CONFIG BLOCK, 
 
 ---
 
+## VERSIONING_GATE
+**Controls commit discipline and changelog enforcement.**
+
+| Level | Behavior |
+|-------|----------|
+| 0 | Off. No versioning rules. |
+| 1 | Suggest Conventional Commits. Agent recommends format but does not enforce. |
+| 2 | Enforce Conventional Commits + Changelog. Agent uses strict commit formatting and maintains `CHANGELOG.md`. *(Default)* |
+| 3 | Enforce + Require Version Tag. Agent blocks the Staging → Production transition until a semantic version tag is applied. |
+
+**Recommended:** 2 for standard work. 3 for production software.
+
+---
+
+## STAGE_GATE
+**Controls the enforcement of project lifecycle stages.**
+
+| Level | Behavior |
+|-------|----------|
+| 0 | Off. No stage tracking. |
+| 1 | Track stage in STATE.json. Agent updates the `stage` field but does not enforce transition criteria. |
+| 2 | Enforce entry/exit criteria. Agent blocks stage transitions unless all criteria for the current stage are met. *(Default)* |
+| 3 | Enforce + Require Approval. Agent enforces criteria AND requires explicit user approval before moving to the next stage. |
+
+**Recommended:** 2 for structured progression. 3 when strict oversight of the deployment pipeline is required.
+
+---
+
 ## Inline Override Syntax
 
 Override any dial mid-conversation without editing the system prompt:
