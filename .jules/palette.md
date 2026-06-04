@@ -5,3 +5,7 @@
 ## 2025-03-24 - [Home Screen Interactivity and Accessibility]
 **Learning:** Pull-to-refresh is a critical micro-UX pattern for data-driven apps, providing a familiar and intuitive way to update content. Combined with ARIA roles and accessibility states (selected), it ensures the interface is both delightful and usable for all users.
 **Action:** Implement pull-to-refresh for primary lists and ensure all mode/selection toggles include `accessibilityRole="button"` and `accessibilityState={{ selected: boolean }}`.
+
+## 2025-03-24 - [Emoji Button Accessibility]
+**Learning:** Icon-only buttons using emojis (e.g., 🖼, 🏷) require explicit `accessibilityLabel` props. Screen readers often fail to provide meaningful context for emojis, and `accessibilityRole="button"` is essential for non-button elements (like `TouchableOpacity`) to be correctly identified by assistive technologies.
+**Action:** Always provide descriptive `accessibilityLabel` and `accessibilityRole="button"` for interactive elements that use icons or emojis instead of text.
