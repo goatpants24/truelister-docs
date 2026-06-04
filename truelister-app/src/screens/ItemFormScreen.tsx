@@ -83,7 +83,7 @@ export default function ItemFormScreen() {
   // ── Undo/Redo on the entire form state ──────────────────────────────────────
   const {
     value: item,
-    set: setItem,
+    set: setItem, // setItem from useUndoRedo supports (value | (prev => value), immediate?)
     undo,
     redo,
     reset,
@@ -127,16 +127,42 @@ export default function ItemFormScreen() {
     [setItem]
   );
 
-  const toggleMarketplace = (m: string) => {
-    const current = item.marketplace ? item.marketplace.split(',').map(s => s.trim()) : [];
-    let updated;
-    if (current.includes(m)) {
-      updated = current.filter(x => x !== m);
-    } else {
-      updated = [...current, m];
-    }
-    updateField('marketplace', updated.join(', '), true);
-  };
+  const toggleMarketplace = useCallback((m: string) => {
+    // Bolt: Use setItem from useUndoRedo hook which supports functional updates and immediate flag.
+    // Functional update ensures we're always working with latest state without adding 'item' to dependencies.
+    setItem((prev) => {
+      const current = prev.marketplace ? prev.marketplace.split(',').map(s => s.trim()) : [];
+      let updated;
+      if (current.includes(m)) {
+        updated = current.filter(x => x !== m);
+      } else {
+        updated = [...current, m];
+      }
+      return { ...prev, marketplace: updated.join(', ') };
+    }, true);
+  }, [setItem]);
+
+  // Bolt: Memoize the marketplace chips to avoid redundant O(M^2) string processing and re-renders on every keystroke.
+  const marketplaceChips = React.useMemo(() => {
+    const selectedSet = new Set(item.marketplace?.split(',').map(s => s.trim()));
+    return dropdowns.marketplaces.map((m) => {
+      const isSelected = selectedSet.has(m);
+      return (
+        <TouchableOpacity
+          key={m}
+          style={[styles.marketChip, isSelected && styles.marketChipSelected]}
+          onPress={() => toggleMarketplace(m)}
+          accessibilityRole="button"
+          accessibilityState={{ selected: isSelected }}
+          accessibilityLabel={`Toggle marketplace ${m}`}
+        >
+          <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
+            {m}
+          </Text>
+        </TouchableOpacity>
+      );
+    });
+  }, [dropdowns.marketplaces, item.marketplace, toggleMarketplace]);
 
   const handlePhotoCapture = (compressed: ImageResult, originalUri: string) => {
     setPhoto({ compressed, originalUri });
@@ -646,23 +672,7 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Marketplaces (Select all that apply)</Text>
           <View style={styles.marketplacesRow}>
-            {dropdowns.marketplaces.map((m) => {
-              const isSelected = item.marketplace?.split(',').map(s => s.trim()).includes(m);
-              return (
-                <TouchableOpacity
-                  key={m}
-                  style={[styles.marketChip, isSelected && styles.marketChipSelected]}
-                  onPress={() => toggleMarketplace(m)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
-                  accessibilityLabel={`Toggle marketplace ${m}`}
-                >
-                  <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
-                    {m}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+            {marketplaceChips}
           </View>
         </View>
 
