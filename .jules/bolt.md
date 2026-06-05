@@ -37,3 +37,7 @@
 ## 2026-05-27 - [FlatList getItemLayout Optimization]
 **Learning:** Implementing `getItemLayout` for `FlatList` significantly improves scroll performance for large catalogs by eliminating dynamic measurements. However, it requires strictly enforced fixed heights on item components and `overflow: 'hidden'` to prevent content-driven expansion from invalidating the pre-calculated offsets.
 **Action:** When using `getItemLayout`, always verify that item styles (including margins and padding) perfectly match the mathematical formula used for offset calculation.
+
+## 2026-05-28 - [In-place Cache Update]
+**Learning:** Automatically invalidating a large memory cache after a mutation (like `appendItem`) forces a redundant and expensive network refetch on the next screen focus. Updating the cache in-place with the returned data provides an instant UI update and eliminates significant latency (2-4s for large catalogs).
+**Action:** Prefer in-place cache updates for simple mutations (append/update/delete) over full invalidation when the data source is remote and large.
