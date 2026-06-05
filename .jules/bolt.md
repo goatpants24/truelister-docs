@@ -37,3 +37,7 @@
 ## 2026-05-27 - [FlatList getItemLayout Optimization]
 **Learning:** Implementing `getItemLayout` for `FlatList` significantly improves scroll performance for large catalogs by eliminating dynamic measurements. However, it requires strictly enforced fixed heights on item components and `overflow: 'hidden'` to prevent content-driven expansion from invalidating the pre-calculated offsets.
 **Action:** When using `getItemLayout`, always verify that item styles (including margins and padding) perfectly match the mathematical formula used for offset calculation.
+
+## 2026-05-27 - [Item Number Generation Optimization]
+**Learning:** Using `RegExp.match()` inside a loop to parse patterned identifiers (e.g., "TL-001") is significantly slower than direct string slicing and character-based prefix checks. Benchmarks showed that `s.slice(3)` and index-based checks are ~45% faster than regex in this specific use case.
+**Action:** Prefer direct string manipulation over Regular Expressions for simple, fixed-prefix pattern parsing in hot paths or large data loops.
