@@ -413,9 +413,16 @@ export default function ItemFormScreen() {
 
         {/* Quick actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlCard')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlCard && styles.actionButtonCaptured]}
+            onPress={handleCapture('photoUrlCard')}
+            accessibilityRole="button"
+            accessibilityLabel={`Capture card photo${item.photoUrlCard ? ' (Captured)' : ''}`}
+          >
             <Text style={styles.actionIcon}>🃏</Text>
-            <Text style={styles.actionLabel}>Card</Text>
+            <Text style={[styles.actionLabel, item.photoUrlCard && styles.actionLabelCaptured]}>
+              {item.photoUrlCard ? '✓ ' : ''}Card
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlFront')}>
             <Text style={styles.actionIcon}>正面</Text>
@@ -437,9 +444,16 @@ export default function ItemFormScreen() {
             <Text style={styles.actionIcon}>📏</Text>
             <Text style={styles.actionLabel}>Measure 1</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => setMode('tagScan')}>
+          <TouchableOpacity
+            style={[styles.actionButton, ocrRawText && styles.actionButtonCaptured]}
+            onPress={() => setMode('tagScan')}
+            accessibilityRole="button"
+            accessibilityLabel={`Scan clothing tag${ocrRawText ? ' (Scanned)' : ''}`}
+          >
             <Text style={styles.actionIcon}>🏷</Text>
-            <Text style={styles.actionLabel}>Scan Tag</Text>
+            <Text style={[styles.actionLabel, ocrRawText && styles.actionLabelCaptured]}>
+              {ocrRawText ? '✓ ' : ''}Scan Tag
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -719,8 +733,10 @@ export default function ItemFormScreen() {
 
           {existingItem && item.saleStatus !== 'Sold' && (
             <TouchableOpacity
-              style={[styles.soldButton]}
+              style={styles.soldButton}
               onPress={handleMarkAsSold}
+              accessibilityRole="button"
+              accessibilityLabel="Mark item as sold"
             >
               <Text style={styles.soldButtonText}>Mark Sold</Text>
             </TouchableOpacity>
@@ -731,6 +747,8 @@ export default function ItemFormScreen() {
         <TouchableOpacity
           style={styles.publishButton}
           onPress={() => navigation.navigate('Publish', { item })}
+          accessibilityRole="button"
+          accessibilityLabel="Publish to Marketplaces"
         >
           <Text style={styles.publishButtonText}>🏪  Publish to Marketplaces</Text>
         </TouchableOpacity>
@@ -804,6 +822,11 @@ const styles = StyleSheet.create({
   },
   actionIcon: { fontSize: 26 },
   actionLabel: { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
+  actionLabelCaptured: { color: '#4ade80' },
+  actionButtonCaptured: {
+    borderColor: '#4ade80',
+    backgroundColor: 'rgba(74, 222, 128, 0.05)',
+  },
   photoPreview: {
     marginBottom: 16,
     borderRadius: 12,
