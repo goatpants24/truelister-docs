@@ -35,6 +35,11 @@ export default function HomeScreen() {
   /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
   const hasLoadedOnce = React.useRef(false);
 
+  /** Bolt: Cache previous results to avoid O(N) merge logic when data hasn't changed. */
+  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
+  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
+  const lastCombinedItems = React.useRef<CatalogItem[]>([]);
+
   const loadItems = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -48,9 +53,13 @@ export default function HomeScreen() {
         getDraftItems(),
       ]);
 
-      // If we got no sheet items but there was no network exception,
-      // fetchInventory might have logged a 404 internally.
-      // We'll trust its logging but also show a hint here if list is empty.
+      // Bolt: Skip expensive merge logic if references are identical (thanks to service caching)
+      if (sheetItems === lastSheetItems.current && draftItems === lastDraftItems.current) {
+        setItems(lastCombinedItems.current);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
       // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case)
       let combined = sheetItems;
@@ -59,6 +68,11 @@ export default function HomeScreen() {
         const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
         combined = [...sheetItems, ...uniqueDrafts];
       }
+
+      // Update refs
+      lastSheetItems.current = sheetItems;
+      lastDraftItems.current = draftItems;
+      lastCombinedItems.current = combined;
 
       if (combined.length === 0) {
         // Show demo items if list is empty and user hasn't configured a private sheet
@@ -84,6 +98,12 @@ export default function HomeScreen() {
       loadItems();
     }, [loadItems])
   );
+
+  /**
+   * Bolt: Memoize the next item number based on current items.
+   * Ensures the navigation to ItemForm is instant when the FAB is pressed.
+   */
+  const nextItemNumber = React.useMemo(() => generateItemNumber(items), [items]);
 
   /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
   const renderGridItem = useCallback(({ item }: { item: CatalogItem }) => {
@@ -352,7 +372,7 @@ export default function HomeScreen() {
       {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('ItemForm', { newItemNumber: generateItemNumber(items) })}
+        onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
         accessibilityLabel="Add new item"
         accessibilityRole="button"
       >
