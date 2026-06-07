@@ -35,6 +35,15 @@ export default function HomeScreen() {
   /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
   const hasLoadedOnce = React.useRef(false);
 
+  /**
+   * Bolt: Referential caching to avoid expensive $O(N)$ merge and re-renders.
+   * Since fetchInventory and getDraftItems use memory caching, these results
+   * are referentially stable if no data has changed.
+   */
+  const lastSheetItems = React.useRef<CatalogItem[]>([]);
+  const lastDraftItems = React.useRef<CatalogItem[]>([]);
+  const lastCombinedItems = React.useRef<CatalogItem[]>([]);
+
   const loadItems = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -48,17 +57,41 @@ export default function HomeScreen() {
         getDraftItems(),
       ]);
 
-      // If we got no sheet items but there was no network exception,
-      // fetchInventory might have logged a 404 internally.
-      // We'll trust its logging but also show a hint here if list is empty.
+      // Bolt: Skip if source data hasn't changed referentially.
+      // Prevents unnecessary merge work and redundant state updates/re-renders.
+      if (
+        hasLoadedOnce.current &&
+        sheetItems === lastSheetItems.current &&
+        draftItems === lastDraftItems.current
+      ) {
+        return;
+      }
 
-      // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case)
+      // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case).
+      // Optimized to avoid intermediate array allocations from .map() and .filter().
       let combined = sheetItems;
       if (draftItems.length > 0) {
-        const sheetNumbers = new Set(sheetItems.map(i => i.itemNumber));
-        const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
-        combined = [...sheetItems, ...uniqueDrafts];
+        if (sheetItems.length === 0) {
+          combined = draftItems;
+        } else {
+          const sheetNumbers = new Set<string>();
+          for (let i = 0; i < sheetItems.length; i++) {
+            sheetNumbers.add(sheetItems[i].itemNumber);
+          }
+          const uniqueDrafts = [];
+          for (let i = 0; i < draftItems.length; i++) {
+            if (!sheetNumbers.has(draftItems[i].itemNumber)) {
+              uniqueDrafts.push(draftItems[i]);
+            }
+          }
+          combined = uniqueDrafts.length > 0 ? [...sheetItems, ...uniqueDrafts] : sheetItems;
+        }
       }
+
+      // Update refs
+      lastSheetItems.current = sheetItems;
+      lastDraftItems.current = draftItems;
+      lastCombinedItems.current = combined;
 
       if (combined.length === 0) {
         // Show demo items if list is empty and user hasn't configured a private sheet
@@ -159,6 +192,12 @@ export default function HomeScreen() {
       </TouchableOpacity>
     );
   }, [navigation]);
+
+  /**
+   * Bolt: Memoize next item number calculation to ensure instantaneous
+   * navigation when the FAB is pressed.
+   */
+  const nextItemNumber = React.useMemo(() => generateItemNumber(items), [items]);
 
   /**
    * Bolt: Optimized layout calculation for FlatList.
@@ -352,7 +391,7 @@ export default function HomeScreen() {
       {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('ItemForm', { newItemNumber: generateItemNumber(items) })}
+        onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
         accessibilityLabel="Add new item"
         accessibilityRole="button"
       >
