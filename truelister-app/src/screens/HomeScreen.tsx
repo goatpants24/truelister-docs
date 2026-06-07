@@ -35,6 +35,11 @@ export default function HomeScreen() {
   /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
   const hasLoadedOnce = React.useRef(false);
 
+  // Bolt: Referential caching to avoid redundant O(N) merge and re-renders on every focus
+  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
+  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
+  const lastCombinedItems = React.useRef<CatalogItem[] | null>(null);
+
   const loadItems = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -47,6 +52,15 @@ export default function HomeScreen() {
         fetchInventory(),
         getDraftItems(),
       ]);
+
+      // Bolt: If references match our memory cache, skip merge and state update
+      if (
+        lastSheetItems.current === sheetItems &&
+        lastDraftItems.current === draftItems &&
+        lastCombinedItems.current
+      ) {
+        return;
+      }
 
       // If we got no sheet items but there was no network exception,
       // fetchInventory might have logged a 404 internally.
@@ -68,6 +82,10 @@ export default function HomeScreen() {
         }
       }
 
+      // Update refs and state
+      lastSheetItems.current = sheetItems;
+      lastDraftItems.current = draftItems;
+      lastCombinedItems.current = combined;
       setItems(combined);
     } catch (err) {
       console.error('Error loading items:', err);
@@ -159,6 +177,12 @@ export default function HomeScreen() {
       </TouchableOpacity>
     );
   }, [navigation]);
+
+  /**
+   * Bolt: Memoize next item number to ensure instantaneous navigation when FAB is pressed.
+   * Prevents O(N) calculation from blocking the main thread during navigation.
+   */
+  const nextItemNumber = React.useMemo(() => generateItemNumber(items), [items]);
 
   /**
    * Bolt: Optimized layout calculation for FlatList.
@@ -352,7 +376,7 @@ export default function HomeScreen() {
       {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('ItemForm', { newItemNumber: generateItemNumber(items) })}
+        onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
         accessibilityLabel="Add new item"
         accessibilityRole="button"
       >
