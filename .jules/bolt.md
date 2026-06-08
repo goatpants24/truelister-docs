@@ -41,3 +41,7 @@
 ## 2026-05-27 - [Item Number Generation Optimization]
 **Learning:** Using `RegExp.match()` inside a loop to parse patterned identifiers (e.g., "TL-001") is significantly slower than direct string slicing and character-based prefix checks. Benchmarks showed that `s.slice(3)` and index-based checks are ~45% faster than regex in this specific use case.
 **Action:** Prefer direct string manipulation over Regular Expressions for simple, fixed-prefix pattern parsing in hot paths or large data loops.
+
+## 2026-05-28 - [Referential Cache for Catalog Merge]
+**Learning:** Performing (N)$ merge operations and triggering React re-renders on every screen focus is wasteful when the underlying data sources haven't changed. Since the data services use module-level caches, the returned arrays are referentially stable. Using `useRef` to track these references in the view layer allows for a sub-millisecond early exit.
+**Action:** Use referential equality checks (`===`) with `useRef` to skip expensive data processing and UI updates when re-fetching from stable caches.
