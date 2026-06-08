@@ -424,25 +424,60 @@ export default function ItemFormScreen() {
               {item.photoUrlCard ? '✓ ' : ''}Card
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlFront')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlFront && styles.actionButtonCaptured]}
+            onPress={handleCapture('photoUrlFront')}
+            accessibilityRole="button"
+            accessibilityLabel={`Capture front photo${item.photoUrlFront ? ' (Captured)' : ''}`}
+          >
             <Text style={styles.actionIcon}>正面</Text>
-            <Text style={styles.actionLabel}>Front</Text>
+            <Text style={[styles.actionLabel, item.photoUrlFront && styles.actionLabelCaptured]}>
+              {item.photoUrlFront ? '✓ ' : ''}Front
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlBack')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlBack && styles.actionButtonCaptured]}
+            onPress={handleCapture('photoUrlBack')}
+            accessibilityRole="button"
+            accessibilityLabel={`Capture back photo${item.photoUrlBack ? ' (Captured)' : ''}`}
+          >
             <Text style={styles.actionIcon}>背面</Text>
-            <Text style={styles.actionLabel}>Back</Text>
+            <Text style={[styles.actionLabel, item.photoUrlBack && styles.actionLabelCaptured]}>
+              {item.photoUrlBack ? '✓ ' : ''}Back
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlDetail')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlDetail && styles.actionButtonCaptured]}
+            onPress={handleCapture('photoUrlDetail')}
+            accessibilityRole="button"
+            accessibilityLabel={`Capture detail photo${item.photoUrlDetail ? ' (Captured)' : ''}`}
+          >
             <Text style={styles.actionIcon}>🔍</Text>
-            <Text style={styles.actionLabel}>Detail</Text>
+            <Text style={[styles.actionLabel, item.photoUrlDetail && styles.actionLabelCaptured]}>
+              {item.photoUrlDetail ? '✓ ' : ''}Detail
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlTabletopWide')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlTabletopWide && styles.actionButtonCaptured]}
+            onPress={handleCapture('photoUrlTabletopWide')}
+            accessibilityRole="button"
+            accessibilityLabel={`Capture tabletop photo${item.photoUrlTabletopWide ? ' (Captured)' : ''}`}
+          >
             <Text style={styles.actionIcon}>📸</Text>
-            <Text style={styles.actionLabel}>Tabletop</Text>
+            <Text style={[styles.actionLabel, item.photoUrlTabletopWide && styles.actionLabelCaptured]}>
+              {item.photoUrlTabletopWide ? '✓ ' : ''}Tabletop
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={handleCapture('photoUrlTabletopMeasure1')}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlTabletopMeasure1 && styles.actionButtonCaptured]}
+            onPress={handleCapture('photoUrlTabletopMeasure1')}
+            accessibilityRole="button"
+            accessibilityLabel={`Capture measurements photo${item.photoUrlTabletopMeasure1 ? ' (Captured)' : ''}`}
+          >
             <Text style={styles.actionIcon}>📏</Text>
-            <Text style={styles.actionLabel}>Measure 1</Text>
+            <Text style={[styles.actionLabel, item.photoUrlTabletopMeasure1 && styles.actionLabelCaptured]}>
+              {item.photoUrlTabletopMeasure1 ? '✓ ' : ''}Measure 1
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, ocrRawText && styles.actionButtonCaptured]}
