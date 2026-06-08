@@ -41,3 +41,11 @@
 ## 2026-05-27 - [Item Number Generation Optimization]
 **Learning:** Using `RegExp.match()` inside a loop to parse patterned identifiers (e.g., "TL-001") is significantly slower than direct string slicing and character-based prefix checks. Benchmarks showed that `s.slice(3)` and index-based checks are ~45% faster than regex in this specific use case.
 **Action:** Prefer direct string manipulation over Regular Expressions for simple, fixed-prefix pattern parsing in hot paths or large data loops.
+
+## 2025-05-28 - [Memoized QuickActionsBar]
+**Learning:** In a large form component like , updating any single field (e.g., Title) triggers a full re-render of all child elements, including the complex action button grid. This causes measurable frame-rate drops during rapid typing.
+**Action:** Extract and memoize static or semi-static UI blocks (like action bars) and stabilize their callbacks via `useCallback` to prevent unnecessary re-renders.
+
+## 2025-05-28 - [Memoized QuickActionsBar]
+**Learning:** In a large form component like `ItemFormScreen.tsx`, updating any single field (e.g., Title) triggers a full re-render of all child elements, including the complex action button grid. This causes measurable frame-rate drops during rapid typing.
+**Action:** Extract and memoize static or semi-static UI blocks (like action bars) and stabilize their callbacks via `useCallback` to prevent unnecessary re-renders.
