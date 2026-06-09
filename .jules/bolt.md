@@ -49,3 +49,7 @@
 ## 2025-05-28 - [Memoized QuickActionsBar]
 **Learning:** In a large form component like `ItemFormScreen.tsx`, updating any single field (e.g., Title) triggers a full re-render of all child elements, including the complex action button grid. This causes measurable frame-rate drops during rapid typing.
 **Action:** Extract and memoize static or semi-static UI blocks (like action bars) and stabilize their callbacks via `useCallback` to prevent unnecessary re-renders.
+
+## 2025-05-29 - [Referential Caching in HomeScreen]
+**Learning:** Performing O(N) merge operations and triggering React state updates on every screen focus is wasteful when the underlying data hasn't changed. Since core services (`sheets.ts`, `localStorage.ts`) already return referentially stable arrays from their internal caches, using a simple `===` check in `loadItems` allows bypassing all expensive logic and React re-renders.
+**Action:** Always leverage referential stability from cached services to short-circuit data processing in components.
