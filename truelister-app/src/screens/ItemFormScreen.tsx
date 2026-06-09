@@ -94,50 +94,46 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: Marketplace
 });
 
 interface QuickActionsBarProps {
-  photoUrlCard: string;
+  photoFields: Record<PhotoField, string | undefined>;
   ocrRawText: string;
   onCapture: (field: PhotoField) => void;
   onScanTag: () => void;
 }
 
 /**
- * Bolt: Memoized quick actions bar to prevent redundant re-renders when typing in other fields.
- * Improves performance during rapid form filling by ~50ms per keystroke.
+ * Palette: Data-driven quick actions bar with consistent feedback and enhanced accessibility.
+ * Optimization: Uses a focused photoFields prop to maintain memoization and avoid re-renders during form typing.
  */
-const QuickActionsBar = memo(({ photoUrlCard, ocrRawText, onCapture, onScanTag }: QuickActionsBarProps) => {
+const QuickActionsBar = memo(({ photoFields, ocrRawText, onCapture, onScanTag }: QuickActionsBarProps) => {
+  const photoActions: { field: PhotoField; label: string; icon: string }[] = [
+    { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
+    { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+    { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
+    { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+    { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
+    { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+  ];
+
   return (
     <View style={styles.quickActions}>
-      <TouchableOpacity
-        style={[styles.actionButton, styles.actionPhotoButton, photoUrlCard && styles.actionButtonCaptured]}
-        onPress={() => onCapture('photoUrlCard')}
-        accessibilityRole="button"
-        accessibilityLabel={`Capture card photo${photoUrlCard ? ' (Captured)' : ''}`}
-      >
-        <Text style={styles.actionIcon}>🃏</Text>
-        <Text style={[styles.actionLabel, photoUrlCard && styles.actionLabelCaptured]}>
-          {photoUrlCard ? '✓ ' : ''}Card
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlFront')}>
-        <Text style={styles.actionIcon}>正面</Text>
-        <Text style={styles.actionLabel}>Front</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlBack')}>
-        <Text style={styles.actionIcon}>背面</Text>
-        <Text style={styles.actionLabel}>Back</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlDetail')}>
-        <Text style={styles.actionIcon}>🔍</Text>
-        <Text style={styles.actionLabel}>Detail</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlTabletopWide')}>
-        <Text style={styles.actionIcon}>📸</Text>
-        <Text style={styles.actionLabel}>Tabletop</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlTabletopMeasure1')}>
-        <Text style={styles.actionIcon}>📏</Text>
-        <Text style={styles.actionLabel}>Measure 1</Text>
-      </TouchableOpacity>
+      {photoActions.map(({ field, label, icon }) => {
+        const isCaptured = !!photoFields[field];
+        return (
+          <TouchableOpacity
+            key={field}
+            style={[styles.actionButton, styles.actionPhotoButton, isCaptured && styles.actionButtonCaptured]}
+            onPress={() => onCapture(field)}
+            accessibilityRole="button"
+            accessibilityLabel={`Capture ${label.toLowerCase()} photo${isCaptured ? ' (Captured)' : ''}`}
+          >
+            <Text style={styles.actionIcon}>{icon}</Text>
+            <Text style={[styles.actionLabel, isCaptured && styles.actionLabelCaptured]}>
+              {isCaptured ? '✓ ' : ''}{label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+
       <TouchableOpacity
         style={[styles.actionButton, ocrRawText && styles.actionButtonCaptured]}
         onPress={onScanTag}
@@ -477,7 +473,25 @@ export default function ItemFormScreen() {
 
         {/* Quick actions */}
         <QuickActionsBar
-          photoUrlCard={item.photoUrlCard ?? ''}
+          photoFields={useMemo(() => ({
+            photoUrlCard: item.photoUrlCard,
+            photoUrlFront: item.photoUrlFront,
+            photoUrlBack: item.photoUrlBack,
+            photoUrlDetail: item.photoUrlDetail,
+            photoUrlTabletopWide: item.photoUrlTabletopWide,
+            photoUrlTabletopDetail: item.photoUrlTabletopDetail,
+            photoUrlTabletopMeasure1: item.photoUrlTabletopMeasure1,
+            photoUrlTabletopMeasure2: item.photoUrlTabletopMeasure2,
+          }), [
+            item.photoUrlCard,
+            item.photoUrlFront,
+            item.photoUrlBack,
+            item.photoUrlDetail,
+            item.photoUrlTabletopWide,
+            item.photoUrlTabletopDetail,
+            item.photoUrlTabletopMeasure1,
+            item.photoUrlTabletopMeasure2,
+          ])}
           ocrRawText={ocrRawText}
           onCapture={onCapturePress}
           onScanTag={onScanTagPress}
@@ -751,6 +765,8 @@ export default function ItemFormScreen() {
             style={[styles.saveButton, { flex: 1 }, saving && { opacity: 0.5 }]}
             onPress={handleSave}
             disabled={saving}
+            accessibilityRole="button"
+            accessibilityLabel="Save item"
           >
             <Text style={styles.saveButtonText}>
               {saving ? 'Saving…' : 'Save Item'}
