@@ -116,24 +116,47 @@ const QuickActionsBar = memo(({ photoFields, ocrRawText, onCapture, onScanTag }:
 
   return (
     <View style={styles.quickActions}>
-      {photoActions.map(({ field, label, icon }) => {
-        const isCaptured = !!photoFields[field];
-        return (
-          <TouchableOpacity
-            key={field}
-            style={[styles.actionButton, styles.actionPhotoButton, isCaptured && styles.actionButtonCaptured]}
-            onPress={() => onCapture(field)}
-            accessibilityRole="button"
-            accessibilityLabel={`Capture ${label.toLowerCase()} photo${isCaptured ? ' (Captured)' : ''}`}
-          >
-            <Text style={styles.actionIcon}>{icon}</Text>
-            <Text style={[styles.actionLabel, isCaptured && styles.actionLabelCaptured]}>
-              {isCaptured ? '✓ ' : ''}{label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-
+      <TouchableOpacity
+        style={[styles.actionButton, styles.actionPhotoButton, photoUrlCard && styles.actionButtonCaptured]}
+        onPress={() => onCapture('photoUrlCard')}
+        accessibilityRole="button"
+        accessibilityLabel={`Capture card photo${photoUrlCard ? ' (Captured)' : ''}`}
+      >
+        <Text style={styles.actionIcon}>🃏</Text>
+        <Text style={[styles.actionLabel, photoUrlCard && styles.actionLabelCaptured]}>
+          {photoUrlCard ? '✓ ' : ''}Card
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.actionButton, styles.actionPhotoButton]}
+        onPress={() => onCapture('photoUrlFront')}
+        accessibilityRole="button"
+        accessibilityLabel="Capture front photo"
+      >
+        <Text style={styles.actionIcon}>👕</Text>
+        <Text style={styles.actionLabel}>Front</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.actionButton, styles.actionPhotoButton]}
+        onPress={() => onCapture('photoUrlBack')}
+        accessibilityRole="button"
+        accessibilityLabel="Capture back photo"
+      >
+        <Text style={styles.actionIcon}>🧥</Text>
+        <Text style={styles.actionLabel}>Back</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlDetail')}>
+        <Text style={styles.actionIcon}>🔍</Text>
+        <Text style={styles.actionLabel}>Detail</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlTabletopWide')}>
+        <Text style={styles.actionIcon}>📸</Text>
+        <Text style={styles.actionLabel}>Tabletop</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlTabletopMeasure1')}>
+        <Text style={styles.actionIcon}>📏</Text>
+        <Text style={styles.actionLabel}>Measure 1</Text>
+      </TouchableOpacity>
       <TouchableOpacity
         style={[styles.actionButton, ocrRawText && styles.actionButtonCaptured]}
         onPress={onScanTag}
