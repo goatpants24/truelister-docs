@@ -43,11 +43,9 @@ const SHEETS_CSV_URL = (spreadsheetId: string, sheet: string) =>
 
 /**
  * Optimized CSV parser that operates in a single pass over the raw string.
- * This avoids the O(N) memory overhead of creating intermediate line arrays via .split('\n').
- * Bolt: Reduces peak memory usage by ~50% for large catalogs.
+ * Bolt: Now uses a callback to avoid the memory overhead of intermediate row collections.
  */
-function parseCSV(csv: string): string[][] {
-  const rows: string[][] = [];
+function parseCSV(csv: string, onRow: (row: string[]) => void): void {
   let currentCell = '';
   let currentRow: string[] = [];
   let inQuotes = false;
@@ -78,9 +76,9 @@ function parseCSV(csv: string): string[][] {
       if (trimmed) hasDataInRow = true;
       currentRow.push(trimmed);
 
-      // Only push row if it contains data or multiple cells (matches previous .filter(line => line.trim()) behavior)
+      // Only call callback if it contains data or multiple cells
       if (hasDataInRow || currentRow.length > 1) {
-        rows.push(currentRow);
+        onRow(currentRow);
       }
       currentRow = [];
       currentCell = '';
@@ -96,11 +94,9 @@ function parseCSV(csv: string): string[][] {
     if (trimmed) hasDataInRow = true;
     currentRow.push(trimmed);
     if (hasDataInRow || currentRow.length > 1) {
-      rows.push(currentRow);
+      onRow(currentRow);
     }
   }
-
-  return rows;
 }
 
 /**
@@ -170,18 +166,20 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
     }
 
     const csv = await response.text();
-    const rows = parseCSV(csv);
 
     // Optimized: single-pass to avoid slice/map/filter intermediate arrays.
-    // Bolt: Checks for data in row[0]/row[1] before calling rowToItem to avoid
-    // unnecessary object allocations for empty trailing rows.
+    // Bolt: Now hydrates CatalogItem objects directly from the stream.
     const items: CatalogItem[] = [];
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
+    let isHeader = true;
+    parseCSV(csv, (row) => {
+      if (isHeader) {
+        isHeader = false;
+        return;
+      }
       if (row[0] || row[1]) {
         items.push(rowToItem(row));
       }
-    }
+    });
 
     // Update cache
     inventoryCache = { data: items, timestamp: Date.now() };
@@ -219,9 +217,9 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
     }
 
     const csv = await response.text();
-    const rows = parseCSV(csv);
 
-    // Optimized: single-pass extraction to replace 6 separate dataRows.map() calls
+    // Optimized: single-pass extraction to replace 6 separate dataRows.map() calls.
+    // Bolt: Now populates dropdowns directly from the stream.
     const categories: string[] = [];
     const conditions: string[] = [];
     const saleStatuses: string[] = [];
@@ -229,15 +227,19 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
     const colors: string[] = [];
     const sizes: string[] = [];
 
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
+    let isHeader = true;
+    parseCSV(csv, (r) => {
+      if (isHeader) {
+        isHeader = false;
+        return;
+      }
       if (r[0]) categories.push(r[0]);
       if (r[1]) conditions.push(r[1]);
       if (r[2]) saleStatuses.push(r[2]);
       if (r[3]) marketplaces.push(r[3]);
       if (r[4]) colors.push(r[4]);
       if (r[5]) sizes.push(r[5]);
-    }
+    });
 
     const dropdowns = { categories, conditions, saleStatuses, marketplaces, colors, sizes };
 

@@ -49,3 +49,7 @@
 ## 2025-05-28 - [Memoized QuickActionsBar]
 **Learning:** In a large form component like `ItemFormScreen.tsx`, updating any single field (e.g., Title) triggers a full re-render of all child elements, including the complex action button grid. This causes measurable frame-rate drops during rapid typing.
 **Action:** Extract and memoize static or semi-static UI blocks (like action bars) and stabilize their callbacks via `useCallback` to prevent unnecessary re-renders.
+
+## 2026-06-10 - [Streaming CSV Parser]
+**Learning:** Standard CSV parsing that returns a full `string[][]` structure creates a massive $O(N)$ memory bottleneck for large catalogs, doubling or tripling peak heap usage before any object hydration begins. Refactoring the parser to use an `onRow` callback allows for immediate hydration and data processing, effectively eliminating the intermediate collection overhead.
+**Action:** Always prefer callback-based "streaming" patterns for large data parsing tasks (CSV, JSON, etc.) to minimize peak memory pressure in resource-constrained environments like mobile.
