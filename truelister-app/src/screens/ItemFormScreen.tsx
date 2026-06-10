@@ -118,12 +118,22 @@ const QuickActionsBar = memo(({ photoUrlCard, ocrRawText, onCapture, onScanTag }
           {photoUrlCard ? '✓ ' : ''}Card
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlFront')}>
-        <Text style={styles.actionIcon}>正面</Text>
+      <TouchableOpacity
+        style={[styles.actionButton, styles.actionPhotoButton]}
+        onPress={() => onCapture('photoUrlFront')}
+        accessibilityRole="button"
+        accessibilityLabel="Capture front photo"
+      >
+        <Text style={styles.actionIcon}>👕</Text>
         <Text style={styles.actionLabel}>Front</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlBack')}>
-        <Text style={styles.actionIcon}>背面</Text>
+      <TouchableOpacity
+        style={[styles.actionButton, styles.actionPhotoButton]}
+        onPress={() => onCapture('photoUrlBack')}
+        accessibilityRole="button"
+        accessibilityLabel="Capture back photo"
+      >
+        <Text style={styles.actionIcon}>🧥</Text>
         <Text style={styles.actionLabel}>Back</Text>
       </TouchableOpacity>
       <TouchableOpacity style={[styles.actionButton, styles.actionPhotoButton]} onPress={() => onCapture('photoUrlDetail')}>
@@ -751,6 +761,8 @@ export default function ItemFormScreen() {
             style={[styles.saveButton, { flex: 1 }, saving && { opacity: 0.5 }]}
             onPress={handleSave}
             disabled={saving}
+            accessibilityRole="button"
+            accessibilityLabel="Save item"
           >
             <Text style={styles.saveButtonText}>
               {saving ? 'Saving…' : 'Save Item'}
