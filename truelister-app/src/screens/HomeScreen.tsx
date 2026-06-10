@@ -37,6 +37,10 @@ export default function HomeScreen() {
   const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
   const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
 
+  /** Bolt: Track previous data references to implement referential caching */
+  const lastSheetRef = React.useRef<CatalogItem[] | null>(null);
+  const lastDraftsRef = React.useRef<CatalogItem[] | null>(null);
+
   const loadItems = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -50,19 +54,16 @@ export default function HomeScreen() {
         getDraftItems(),
       ]);
 
-      // Bolt: Use referential caching to skip O(N) merge and re-render if sources haven't changed.
-      // fetchInventory and getDraftItems both return referentially stable arrays from their caches.
-      // Measured impact: Reduces focus-to-render latency from ~4ms to ~0.001ms (~4000x speedup) for the cached path.
-      if (
-        !isRefresh &&
-        lastSheetItems.current === sheetItems &&
-        lastDraftItems.current === draftItems
-      ) {
+      // Bolt: Skip O(N) merge and React update if data references from services are unchanged.
+      // Both fetchInventory and getDraftItems implement internal module-level referential
+      // caching, so we can use direct reference comparison here.
+      // This provides a ~4000x speedup for the cached 'hit' path by avoiding redundant work.
+      // Note: JavaScript's 'finally' block below will still execute, ensuring state reset.
+      if (sheetItems === lastSheetRef.current && draftItems === lastDraftsRef.current) {
         return;
       }
-
-      lastSheetItems.current = sheetItems;
-      lastDraftItems.current = draftItems;
+      lastSheetRef.current = sheetItems;
+      lastDraftsRef.current = draftItems;
 
       // If we got no sheet items but there was no network exception,
       // fetchInventory might have logged a 404 internally.
@@ -202,6 +203,12 @@ export default function HomeScreen() {
       index,
     };
   }, [viewMode, thumbnailSize]);
+
+  /**
+   * Bolt: Pre-calculate the next item number whenever the catalog changes.
+   * This ensures the FAB navigation is instantaneous even with 5000+ items.
+   */
+  const nextItemNumber = React.useMemo(() => generateItemNumber(items), [items]);
 
   const handleExport = () => {
     Alert.alert(
@@ -368,7 +375,7 @@ export default function HomeScreen() {
       {/* FAB */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('ItemForm', { newItemNumber: generateItemNumber(items) })}
+        onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
         accessibilityLabel="Add new item"
         accessibilityRole="button"
       >
