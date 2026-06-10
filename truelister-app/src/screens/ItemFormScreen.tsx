@@ -94,17 +94,26 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: Marketplace
 });
 
 interface QuickActionsBarProps {
-  photoUrlCard: string;
+  photoFields: Record<PhotoField, string | undefined>;
   ocrRawText: string;
   onCapture: (field: PhotoField) => void;
   onScanTag: () => void;
 }
 
 /**
- * Bolt: Memoized quick actions bar to prevent redundant re-renders when typing in other fields.
- * Improves performance during rapid form filling by ~50ms per keystroke.
+ * Palette: Data-driven quick actions bar with consistent feedback and enhanced accessibility.
+ * Optimization: Uses a focused photoFields prop to maintain memoization and avoid re-renders during form typing.
  */
-const QuickActionsBar = memo(({ photoUrlCard, ocrRawText, onCapture, onScanTag }: QuickActionsBarProps) => {
+const QuickActionsBar = memo(({ photoFields, ocrRawText, onCapture, onScanTag }: QuickActionsBarProps) => {
+  const photoActions: { field: PhotoField; label: string; icon: string }[] = [
+    { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
+    { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+    { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
+    { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+    { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
+    { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+  ];
+
   return (
     <View style={styles.quickActions}>
       <TouchableOpacity
@@ -487,7 +496,25 @@ export default function ItemFormScreen() {
 
         {/* Quick actions */}
         <QuickActionsBar
-          photoUrlCard={item.photoUrlCard ?? ''}
+          photoFields={useMemo(() => ({
+            photoUrlCard: item.photoUrlCard,
+            photoUrlFront: item.photoUrlFront,
+            photoUrlBack: item.photoUrlBack,
+            photoUrlDetail: item.photoUrlDetail,
+            photoUrlTabletopWide: item.photoUrlTabletopWide,
+            photoUrlTabletopDetail: item.photoUrlTabletopDetail,
+            photoUrlTabletopMeasure1: item.photoUrlTabletopMeasure1,
+            photoUrlTabletopMeasure2: item.photoUrlTabletopMeasure2,
+          }), [
+            item.photoUrlCard,
+            item.photoUrlFront,
+            item.photoUrlBack,
+            item.photoUrlDetail,
+            item.photoUrlTabletopWide,
+            item.photoUrlTabletopDetail,
+            item.photoUrlTabletopMeasure1,
+            item.photoUrlTabletopMeasure2,
+          ])}
           ocrRawText={ocrRawText}
           onCapture={onCapturePress}
           onScanTag={onScanTagPress}
