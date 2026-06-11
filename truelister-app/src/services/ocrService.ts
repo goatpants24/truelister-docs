@@ -44,21 +44,6 @@ const SIZE_PATTERNS = [
   /\b(EU|EUR)\s*(\d{2})\b/i,
 ];
 
-const KNOWN_BRANDS = [
-  'nike', 'adidas', 'gucci', 'prada', 'zara', 'h&m', 'uniqlo',
-  'ralph lauren', 'polo', 'tommy hilfiger', 'calvin klein', 'gap',
-  'banana republic', 'j.crew', 'j crew', 'brooks brothers',
-  'levi', 'levis', "levi's", 'wrangler', 'lee', 'diesel',
-  'coach', 'michael kors', 'kate spade', 'tory burch', 'burberry',
-  'louis vuitton', 'chanel', 'hermes', 'hermès', 'versace',
-  'armani', 'dolce', 'fendi', 'balenciaga', 'givenchy',
-  'saint laurent', 'ysl', 'valentino', 'alexander mcqueen',
-  'equipment', 'theory', 'vince', 'eileen fisher', 'free people',
-  'anthropologie', 'madewell', 'everlane', 'reformation',
-  'patagonia', 'north face', 'columbia', "arc'teryx",
-  'lululemon', 'athleta', 'under armour', 'new balance',
-];
-
 /**
  * Bolt: Pre-calculate brand display names and pre-compile regular expressions.
  * Avoids expensive string manipulations and regex re-compilation inside the parsing loop.
