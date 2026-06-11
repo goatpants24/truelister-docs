@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -30,6 +30,7 @@ export default function HomeScreen() {
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const hasLoadedOnce = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
@@ -113,6 +114,7 @@ export default function HomeScreen() {
       lastDraftItems.current = draftItems;
       lastCombinedItems.current = combined;
       setItems(combined);
+      hasLoadedOnce.current = true;
     } catch (err) {
       console.error('Error loading items:', err);
       setError('Failed to connect to Google Sheets. Please check your settings.');
