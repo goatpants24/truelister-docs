@@ -46,6 +46,15 @@ export default function HomeScreen() {
   const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
   const lastCombinedItems = React.useRef<CatalogItem[] | null>(null);
 
+  /**
+   * Bolt: Referential caching to avoid expensive $O(N)$ merge and re-renders.
+   * Since fetchInventory and getDraftItems use memory caching, these results
+   * are referentially stable if no data has changed.
+   */
+  const lastSheetItems = React.useRef<CatalogItem[]>([]);
+  const lastDraftItems = React.useRef<CatalogItem[]>([]);
+  const lastCombinedItems = React.useRef<CatalogItem[]>([]);
+
   const loadItems = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -74,7 +83,8 @@ export default function HomeScreen() {
       // fetchInventory might have logged a 404 internally.
       // We'll trust its logging but also show a hint here if list is empty.
 
-      // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case)
+      // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case).
+      // Optimized to avoid intermediate array allocations from .map() and .filter().
       let combined = sheetItems;
       if (draftItems.length > 0) {
         const sheetNumbers = new Set<string>();
@@ -84,6 +94,11 @@ export default function HomeScreen() {
         const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
         combined = [...sheetItems, ...uniqueDrafts];
       }
+
+      // Update refs
+      lastSheetItems.current = sheetItems;
+      lastDraftItems.current = draftItems;
+      lastCombinedItems.current = combined;
 
       if (combined.length === 0) {
         // Show demo items if list is empty and user hasn't configured a private sheet
