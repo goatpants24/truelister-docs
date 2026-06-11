@@ -156,7 +156,11 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onCancel}>
+        <TouchableOpacity
+          onPress={onCancel}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel tag scan"
+        >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Scan Tag</Text>
@@ -187,7 +191,12 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
       <View style={styles.controls}>
         <WhiteBalancePicker selected={whiteBalance} onSelect={setWhiteBalance} />
         <View style={styles.captureRow}>
-          <TouchableOpacity style={styles.libraryButton} onPress={handlePickImage}>
+          <TouchableOpacity
+            style={styles.libraryButton}
+            onPress={handlePickImage}
+            accessibilityRole="button"
+            accessibilityLabel="Open photo library"
+          >
             <Text style={styles.libraryIcon}>🖼</Text>
           </TouchableOpacity>
 
@@ -195,6 +204,8 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
             style={styles.captureButton}
             onPress={handleCapture}
             disabled={scanning}
+            accessibilityRole="button"
+            accessibilityLabel="Capture photo and scan tag"
           >
             <View style={styles.captureInner}>
               <Text style={styles.captureLabel}>SCAN</Text>
