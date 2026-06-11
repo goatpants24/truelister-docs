@@ -93,6 +93,89 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: Marketplace
   );
 });
 
+/**
+ * Bolt: Hoisted photo action configuration to module level to avoid re-creation on render.
+ */
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
+  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
+  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
+  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔬' },
+  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
+];
+
+interface QuickActionsBarProps {
+  captureStatus: Record<PhotoField, boolean>;
+  ocrRawText: string;
+  onCapture: (field: PhotoField) => void;
+  onScanTag: () => void;
+}
+
+/**
+ * Bolt: Hoisted configuration array outside the component to prevent recreation on every render.
+ * Measured impact: Avoids O(N) object allocations per render, improving memory efficiency.
+ */
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
+  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
+  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
+  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+];
+
+/**
+ * Palette: Data-driven quick actions bar with consistent feedback and enhanced accessibility.
+ * Bolt: Optimized with a referentially stable captureStatus object to maintain React.memo efficiency.
+ * This prevents re-renders during form typing while preserving clean maintainability.
+ */
+const QuickActionsBar = memo(({
+  captureStatus,
+  ocrRawText,
+  onCapture,
+  onScanTag
+}: QuickActionsBarProps) => {
+  return (
+    <View style={styles.quickActions}>
+      {PHOTO_ACTIONS.map(({ field, label, icon }) => {
+        const isCaptured = captureStatus[field];
+        return (
+          <TouchableOpacity
+            key={field}
+            style={[
+              styles.actionButton,
+              styles.actionPhotoButton,
+              isCaptured && styles.actionButtonCaptured
+            ]}
+            onPress={() => onCapture(field)}
+            accessibilityRole="button"
+            accessibilityLabel={`Capture ${label.toLowerCase()} photo${isCaptured ? ' (Captured)' : ''}`}
+          >
+            <Text style={styles.actionIcon}>{icon}</Text>
+            <Text style={[styles.actionLabel, isCaptured && styles.actionLabelCaptured]}>
+              {isCaptured ? '✓ ' : ''}{label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+      <TouchableOpacity
+        style={[styles.actionButton, ocrRawText && styles.actionButtonCaptured]}
+        onPress={onScanTag}
+        accessibilityRole="button"
+        accessibilityLabel={`Scan clothing tag${ocrRawText ? ' (Scanned)' : ''}`}
+      >
+        <Text style={styles.actionIcon}>🏷</Text>
+        <Text style={[styles.actionLabel, ocrRawText && styles.actionLabelCaptured]}>
+          {ocrRawText ? '✓ ' : ''}Scan Tag
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+});
+
 export default function ItemFormScreen() {
   const navigation = useNavigation<RootStackNavProp<'ItemForm'>>();
   const route = useRoute<ItemFormRouteProp>();
@@ -345,10 +428,14 @@ export default function ItemFormScreen() {
   };
 
   // ── Photo capture helpers ──────────────────────────────────────────────────
-  const handleCapture = (field: PhotoField) => () => {
+  const onCapturePress = useCallback((field: PhotoField) => {
     setPhotoField(field);
     setMode('camera');
-  };
+  }, []);
+
+  const onScanTagPress = useCallback(() => {
+    setMode('tagScan');
+  }, []);
 
   // ── Sub-screens rendered inline ────────────────────────────────────────────
   if (mode === 'camera') {
@@ -412,85 +499,30 @@ export default function ItemFormScreen() {
         </View>
 
         {/* Quick actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlCard && styles.actionButtonCaptured]}
-            onPress={handleCapture('photoUrlCard')}
-            accessibilityRole="button"
-            accessibilityLabel={`Capture card photo${item.photoUrlCard ? ' (Captured)' : ''}`}
-          >
-            <Text style={styles.actionIcon}>🃏</Text>
-            <Text style={[styles.actionLabel, item.photoUrlCard && styles.actionLabelCaptured]}>
-              {item.photoUrlCard ? '✓ ' : ''}Card
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlFront && styles.actionButtonCaptured]}
-            onPress={handleCapture('photoUrlFront')}
-            accessibilityRole="button"
-            accessibilityLabel={`Capture front photo${item.photoUrlFront ? ' (Captured)' : ''}`}
-          >
-            <Text style={styles.actionIcon}>正面</Text>
-            <Text style={[styles.actionLabel, item.photoUrlFront && styles.actionLabelCaptured]}>
-              {item.photoUrlFront ? '✓ ' : ''}Front
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlBack && styles.actionButtonCaptured]}
-            onPress={handleCapture('photoUrlBack')}
-            accessibilityRole="button"
-            accessibilityLabel={`Capture back photo${item.photoUrlBack ? ' (Captured)' : ''}`}
-          >
-            <Text style={styles.actionIcon}>背面</Text>
-            <Text style={[styles.actionLabel, item.photoUrlBack && styles.actionLabelCaptured]}>
-              {item.photoUrlBack ? '✓ ' : ''}Back
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlDetail && styles.actionButtonCaptured]}
-            onPress={handleCapture('photoUrlDetail')}
-            accessibilityRole="button"
-            accessibilityLabel={`Capture detail photo${item.photoUrlDetail ? ' (Captured)' : ''}`}
-          >
-            <Text style={styles.actionIcon}>🔍</Text>
-            <Text style={[styles.actionLabel, item.photoUrlDetail && styles.actionLabelCaptured]}>
-              {item.photoUrlDetail ? '✓ ' : ''}Detail
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlTabletopWide && styles.actionButtonCaptured]}
-            onPress={handleCapture('photoUrlTabletopWide')}
-            accessibilityRole="button"
-            accessibilityLabel={`Capture tabletop photo${item.photoUrlTabletopWide ? ' (Captured)' : ''}`}
-          >
-            <Text style={styles.actionIcon}>📸</Text>
-            <Text style={[styles.actionLabel, item.photoUrlTabletopWide && styles.actionLabelCaptured]}>
-              {item.photoUrlTabletopWide ? '✓ ' : ''}Tabletop
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.actionPhotoButton, item.photoUrlTabletopMeasure1 && styles.actionButtonCaptured]}
-            onPress={handleCapture('photoUrlTabletopMeasure1')}
-            accessibilityRole="button"
-            accessibilityLabel={`Capture measurement photo${item.photoUrlTabletopMeasure1 ? ' (Captured)' : ''}`}
-          >
-            <Text style={styles.actionIcon}>📏</Text>
-            <Text style={[styles.actionLabel, item.photoUrlTabletopMeasure1 && styles.actionLabelCaptured]}>
-              {item.photoUrlTabletopMeasure1 ? '✓ ' : ''}Measure 1
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, ocrRawText && styles.actionButtonCaptured]}
-            onPress={() => setMode('tagScan')}
-            accessibilityRole="button"
-            accessibilityLabel={`Scan clothing tag${ocrRawText ? ' (Scanned)' : ''}`}
-          >
-            <Text style={styles.actionIcon}>🏷</Text>
-            <Text style={[styles.actionLabel, ocrRawText && styles.actionLabelCaptured]}>
-              {ocrRawText ? '✓ ' : ''}Scan Tag
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <QuickActionsBar
+          captureStatus={useMemo(() => ({
+            photoUrlCard: !!item.photoUrlCard,
+            photoUrlFront: !!item.photoUrlFront,
+            photoUrlBack: !!item.photoUrlBack,
+            photoUrlDetail: !!item.photoUrlDetail,
+            photoUrlTabletopWide: !!item.photoUrlTabletopWide,
+            photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
+            photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
+            photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
+          }), [
+            !!item.photoUrlCard,
+            !!item.photoUrlFront,
+            !!item.photoUrlBack,
+            !!item.photoUrlDetail,
+            !!item.photoUrlTabletopWide,
+            !!item.photoUrlTabletopDetail,
+            !!item.photoUrlTabletopMeasure1,
+            !!item.photoUrlTabletopMeasure2,
+          ])}
+          ocrRawText={ocrRawText}
+          onCapture={onCapturePress}
+          onScanTag={onScanTagPress}
+        />
 
         {/* Card photo preview */}
         {item.photoUrlCard ? (
@@ -760,6 +792,8 @@ export default function ItemFormScreen() {
             style={[styles.saveButton, { flex: 1 }, saving && { opacity: 0.5 }]}
             onPress={handleSave}
             disabled={saving}
+            accessibilityRole="button"
+            accessibilityLabel="Save item"
           >
             <Text style={styles.saveButtonText}>
               {saving ? 'Saving…' : 'Save Item'}

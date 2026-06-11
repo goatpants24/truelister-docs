@@ -35,10 +35,20 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
     return (
       <View style={styles.container}>
         <Text style={styles.permissionText}>Camera access is needed to photograph items.</Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={requestPermission}
+          accessibilityRole="button"
+          accessibilityLabel="Grant camera permission"
+        >
           <Text style={styles.buttonText}>Grant Permission</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.buttonSecondary} onPress={onCancel}>
+        <TouchableOpacity
+          style={styles.buttonSecondary}
+          onPress={onCancel}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel and go back"
+        >
           <Text style={styles.buttonSecondaryText}>Cancel</Text>
         </TouchableOpacity>
       </View>
@@ -111,10 +121,20 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
         </View>
         <Image source={{ uri: preview.compressed.uri }} style={styles.previewImage} resizeMode="contain" />
         <View style={styles.previewActions}>
-          <TouchableOpacity style={styles.buttonSecondary} onPress={handleRetake}>
+          <TouchableOpacity
+            style={styles.buttonSecondary}
+            onPress={handleRetake}
+            accessibilityRole="button"
+            accessibilityLabel="Retake photo"
+          >
             <Text style={styles.buttonSecondaryText}>Retake</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={handleConfirm}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={handleConfirm}
+            accessibilityRole="button"
+            accessibilityLabel="Use this photo"
+          >
             <Text style={styles.buttonText}>Use Photo</Text>
           </TouchableOpacity>
         </View>
