@@ -43,8 +43,7 @@ const SHEETS_CSV_URL = (spreadsheetId: string, sheet: string) =>
 
 /**
  * Optimized CSV parser that operates in a single pass over the raw string.
- * This avoids the O(N) memory overhead of creating intermediate line arrays via .split('\n').
- * Bolt: Streaming implementation reduces peak memory usage by ~62% for large catalogs.
+ * Bolt: Now uses a callback to avoid the memory overhead of intermediate row collections.
  */
 function parseCSV(csv: string, onRow: (row: string[]) => void): void {
   let currentCell = '';
@@ -77,7 +76,7 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
       if (trimmed) hasDataInRow = true;
       currentRow.push(trimmed);
 
-      // Only call onRow if it contains data or multiple cells
+      // Only call callback if it contains data or multiple cells
       if (hasDataInRow || currentRow.length > 1) {
         onRow(currentRow);
       }
@@ -168,9 +167,8 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 
     const csv = await response.text();
 
-    // Optimized: streaming parser to avoid large intermediate row arrays.
-    // Bolt: Checks for data in row[0]/row[1] before calling rowToItem to avoid
-    // unnecessary object allocations for empty trailing rows.
+    // Optimized: single-pass to avoid slice/map/filter intermediate arrays.
+    // Bolt: Now hydrates CatalogItem objects directly from the stream.
     const items: CatalogItem[] = [];
     let isHeader = true;
     parseCSV(csv, (row) => {
@@ -220,7 +218,8 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
 
     const csv = await response.text();
 
-    // Optimized: streaming parser to avoid large intermediate row arrays.
+    // Optimized: single-pass extraction to replace 6 separate dataRows.map() calls.
+    // Bolt: Now populates dropdowns directly from the stream.
     const categories: string[] = [];
     const conditions: string[] = [];
     const saleStatuses: string[] = [];
