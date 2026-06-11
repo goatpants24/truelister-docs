@@ -74,7 +74,7 @@ export default function PublishScreen({ route, navigation }: Props) {
               accessibilityState={{ selected: isSelected }}
             >
               <Text style={[styles.platformName, isSelected && { color: m.color }]}>
-                {isSelected ? `✓ ${m.name}` : m.name}
+                {isSelected ? '✓ ' : ''}{m.name}
               </Text>
               <Text style={[
                 styles.platformStatus,
@@ -96,11 +96,7 @@ export default function PublishScreen({ route, navigation }: Props) {
           onPress={handlePublish}
           disabled={publishing}
           accessibilityRole="button"
-          accessibilityLabel={
-            publishing
-              ? 'Publishing...'
-              : `Publish to ${selected.size} platform${selected.size !== 1 ? 's' : ''}`
-          }
+          accessibilityLabel={publishing ? 'Publishing' : `Publish to ${selected.size} platform${selected.size !== 1 ? 's' : ''}`}
         >
           {publishing ? (
             <ActivityIndicator color="#fff" />
