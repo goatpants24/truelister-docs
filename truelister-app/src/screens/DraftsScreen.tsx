@@ -26,7 +26,7 @@ export default function DraftsScreen() {
   }, []);
 
   const handleEdit = (item: CatalogItem) => {
-    navigation.navigate('ItemForm', { item, existingItems: drafts });
+    navigation.navigate('ItemForm', { item });
   };
 
   const handleDelete = (itemNumber: string) => {
@@ -52,12 +52,12 @@ export default function DraftsScreen() {
           Items saved offline will appear here.
         </Text>
         <TouchableOpacity
-          style={styles.createBtn}
-          onPress={() => navigation.navigate('ItemForm', { existingItems: drafts })}
+          style={styles.ctaButton}
+          onPress={() => navigation.navigate('ItemForm', {})}
           accessibilityRole="button"
           accessibilityLabel="Create New Item"
         >
-          <Text style={styles.createBtnText}>Create New Item</Text>
+          <Text style={styles.ctaButtonText}>Create New Item</Text>
         </TouchableOpacity>
       </View>
     );
@@ -128,15 +128,11 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48, marginBottom: 12 },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: '#e8eaf6', marginBottom: 6 },
   emptySubtitle: { fontSize: 14, color: '#6b7280', textAlign: 'center', paddingHorizontal: 32, marginBottom: 24 },
-  createBtn: {
+  ctaButton: {
     backgroundColor: '#4f6ef7',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 10,
   },
-  createBtnText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  ctaButtonText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
