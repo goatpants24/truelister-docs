@@ -70,8 +70,8 @@ export default function PublishScreen({ route, navigation }: Props) {
               onPress={() => toggleMarketplace(m.id)}
               activeOpacity={0.7}
               accessibilityRole="button"
+              accessibilityLabel={m.name}
               accessibilityState={{ selected: isSelected }}
-              accessibilityLabel={`Toggle ${m.name}`}
             >
               <Text style={[styles.platformName, isSelected && { color: m.color }]}>
                 {isSelected ? '✓ ' : ''}{m.name}
@@ -96,7 +96,7 @@ export default function PublishScreen({ route, navigation }: Props) {
           onPress={handlePublish}
           disabled={publishing}
           accessibilityRole="button"
-          accessibilityLabel={publishing ? "Publishing..." : `Publish to ${selected.size} platforms`}
+          accessibilityLabel={publishing ? 'Publishing' : `Publish to ${selected.size} platform${selected.size !== 1 ? 's' : ''}`}
         >
           {publishing ? (
             <ActivityIndicator color="#fff" />
@@ -153,7 +153,6 @@ export default function PublishScreen({ route, navigation }: Props) {
             style={styles.doneBtn}
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
-            accessibilityLabel="Done and return to item details"
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
