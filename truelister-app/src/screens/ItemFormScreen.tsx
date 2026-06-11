@@ -204,7 +204,7 @@ export default function ItemFormScreen() {
   // ── Undo/Redo on the entire form state ──────────────────────────────────────
   const {
     value: item,
-    set: setItem,
+    set: setItem, // setItem from useUndoRedo supports (value | (prev => value), immediate?)
     undo,
     redo,
     reset,
