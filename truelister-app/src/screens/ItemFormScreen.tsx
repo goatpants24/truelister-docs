@@ -93,49 +93,70 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: Marketplace
   );
 });
 
+/**
+ * Bolt: Hoisted photo action configuration to module level to avoid re-creation on render.
+ */
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
+  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
+  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
+  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔬' },
+  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
+];
+
 interface QuickActionsBarProps {
-  photoFields: Record<PhotoField, string | undefined>;
+  captureStatus: Record<PhotoField, boolean>;
   ocrRawText: string;
   onCapture: (field: PhotoField) => void;
   onScanTag: () => void;
 }
 
 /**
- * Palette: Data-driven quick actions bar with consistent feedback and enhanced accessibility.
- * Optimization: Uses a focused photoFields prop to maintain memoization and avoid re-renders during form typing.
+ * Bolt: Hoisted configuration array outside the component to prevent recreation on every render.
+ * Measured impact: Avoids O(N) object allocations per render, improving memory efficiency.
  */
-const QuickActionsBar = memo(({ photoFields, ocrRawText, onCapture, onScanTag }: QuickActionsBarProps) => {
-  const photoActions: { field: PhotoField; label: string; icon: string }[] = [
-    { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
-    { field: 'photoUrlFront', label: 'Front', icon: '👕' },
-    { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
-    { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-    { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
-    { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-  ];
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
+  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
+  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
+  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+];
 
+/**
+ * Palette: Data-driven quick actions bar with consistent feedback and enhanced accessibility.
+ * Bolt: Optimized with a referentially stable captureStatus object to maintain React.memo efficiency.
+ * This prevents re-renders during form typing while preserving clean maintainability.
+ */
+const QuickActionsBar = memo(({
+  captureStatus,
+  ocrRawText,
+  onCapture,
+  onScanTag
+}: QuickActionsBarProps) => {
   return (
     <View style={styles.quickActions}>
-      {photoActions.map((action) => {
-        const isCaptured = !!photoFields[action.field];
+      {PHOTO_ACTIONS.map(({ field, label, icon }) => {
+        const isCaptured = captureStatus[field];
         return (
           <TouchableOpacity
-            key={action.field}
+            key={field}
             style={[
               styles.actionButton,
               styles.actionPhotoButton,
-              isCaptured && styles.actionButtonCaptured,
+              isCaptured && styles.actionButtonCaptured
             ]}
-            onPress={() => onCapture(action.field)}
+            onPress={() => onCapture(field)}
             accessibilityRole="button"
-            accessibilityLabel={`Capture ${action.label.toLowerCase()} photo${
-              isCaptured ? ' (Captured)' : ''
-            }`}
+            accessibilityLabel={`Capture ${label.toLowerCase()} photo${isCaptured ? ' (Captured)' : ''}`}
           >
-            <Text style={styles.actionIcon}>{action.icon}</Text>
+            <Text style={styles.actionIcon}>{icon}</Text>
             <Text style={[styles.actionLabel, isCaptured && styles.actionLabelCaptured]}>
-              {isCaptured ? '✓ ' : ''}
-              {action.label}
+              {isCaptured ? '✓ ' : ''}{label}
             </Text>
           </TouchableOpacity>
         );
@@ -479,24 +500,24 @@ export default function ItemFormScreen() {
 
         {/* Quick actions */}
         <QuickActionsBar
-          photoFields={useMemo(() => ({
-            photoUrlCard: item.photoUrlCard,
-            photoUrlFront: item.photoUrlFront,
-            photoUrlBack: item.photoUrlBack,
-            photoUrlDetail: item.photoUrlDetail,
-            photoUrlTabletopWide: item.photoUrlTabletopWide,
-            photoUrlTabletopDetail: item.photoUrlTabletopDetail,
-            photoUrlTabletopMeasure1: item.photoUrlTabletopMeasure1,
-            photoUrlTabletopMeasure2: item.photoUrlTabletopMeasure2,
+          captureStatus={useMemo(() => ({
+            photoUrlCard: !!item.photoUrlCard,
+            photoUrlFront: !!item.photoUrlFront,
+            photoUrlBack: !!item.photoUrlBack,
+            photoUrlDetail: !!item.photoUrlDetail,
+            photoUrlTabletopWide: !!item.photoUrlTabletopWide,
+            photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
+            photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
+            photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
           }), [
-            item.photoUrlCard,
-            item.photoUrlFront,
-            item.photoUrlBack,
-            item.photoUrlDetail,
-            item.photoUrlTabletopWide,
-            item.photoUrlTabletopDetail,
-            item.photoUrlTabletopMeasure1,
-            item.photoUrlTabletopMeasure2,
+            !!item.photoUrlCard,
+            !!item.photoUrlFront,
+            !!item.photoUrlBack,
+            !!item.photoUrlDetail,
+            !!item.photoUrlTabletopWide,
+            !!item.photoUrlTabletopDetail,
+            !!item.photoUrlTabletopMeasure1,
+            !!item.photoUrlTabletopMeasure2,
           ])}
           ocrRawText={ocrRawText}
           onCapture={onCapturePress}
