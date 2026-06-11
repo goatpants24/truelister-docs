@@ -41,6 +41,11 @@ export default function HomeScreen() {
   const lastSheetRef = React.useRef<CatalogItem[] | null>(null);
   const lastDraftsRef = React.useRef<CatalogItem[] | null>(null);
 
+  // Bolt: Referential caching to avoid redundant O(N) merge and re-renders on every focus
+  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
+  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
+  const lastCombinedItems = React.useRef<CatalogItem[] | null>(null);
+
   const loadItems = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
       setRefreshing(true);
@@ -88,6 +93,10 @@ export default function HomeScreen() {
         }
       }
 
+      // Update refs and state
+      lastSheetItems.current = sheetItems;
+      lastDraftItems.current = draftItems;
+      lastCombinedItems.current = combined;
       setItems(combined);
     } catch (err) {
       console.error('Error loading items:', err);
@@ -179,6 +188,12 @@ export default function HomeScreen() {
       </TouchableOpacity>
     );
   }, [navigation]);
+
+  /**
+   * Bolt: Memoize next item number to ensure instantaneous navigation when FAB is pressed.
+   * Prevents O(N) calculation from blocking the main thread during navigation.
+   */
+  const nextItemNumber = React.useMemo(() => generateItemNumber(items), [items]);
 
   /**
    * Bolt: Optimized layout calculation for FlatList.
