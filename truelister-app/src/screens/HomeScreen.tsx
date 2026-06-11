@@ -971,3 +971,92 @@ const styles = StyleSheet.create({
   },
   fabText: { color: '#fff', fontSize: 28, fontWeight: '300', marginTop: -2 },
 });
+
+// --- Memoized Components ---
+
+const GridItem = React.memo(({
+  item,
+  onPress,
+  thumbnailSize
+}: {
+  item: CatalogItem;
+  onPress: (item: CatalogItem) => void;
+  thumbnailSize: ThumbnailSize;
+}) => {
+  const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
+
+  return (
+    <TouchableOpacity
+      style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
+      onPress={() => onPress(item)}
+    >
+      {item.photoUrl ? (
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={[styles.thumbnail, { width: size, height: size }]}
+          resizeMode="cover"
+        />
+      ) : (
+        <View
+          style={[
+            styles.thumbnail,
+            { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
+          ]}
+        >
+          <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
+        </View>
+      )}
+      <Text style={styles.itemTitle} numberOfLines={1}>
+        {item.title}
+      </Text>
+      <Text style={styles.itemBrand}>
+        {item.designerBrand || '–'}
+      </Text>
+      {item.price ? (
+        <Text style={styles.itemPrice}>${item.price}</Text>
+      ) : null}
+      {item.marketplace ? (
+        <Text style={styles.itemMarketplace} numberOfLines={1}>
+          {item.marketplace}
+        </Text>
+      ) : null}
+    </TouchableOpacity>
+  );
+});
+
+const ListItem = React.memo(({
+  item,
+  onPress
+}: {
+  item: CatalogItem;
+  onPress: (item: CatalogItem) => void;
+}) => {
+  return (
+    <TouchableOpacity
+      style={styles.listItem}
+      onPress={() => onPress(item)}
+    >
+      {item.photoUrl && (
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={[styles.listThumbnail, { width: 64, height: 64 }]}
+          resizeMode="cover"
+        />
+      )}
+      <View style={styles.listTextContainer}>
+        <Text style={styles.listTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={styles.listSubtitle} numberOfLines={1}>
+          {item.designerBrand} • {item.size} • {item.condition}
+        </Text>
+        {item.price && (
+          <Text style={styles.listPrice}>${item.price}</Text>
+        )}
+        {item.marketplace && (
+          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+});
