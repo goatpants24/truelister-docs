@@ -7,8 +7,8 @@ description: Regulates interactions, organizes project creation, and ensures all
 
 This skill serves as the primary tutor and regulatory framework for all new project interactions. Its core purpose is to ensure that once a project's purpose is established and named, all associated infrastructure, code, and documentation are organized into a strict, standardized folder structure. It also enforces efficiency, accountability, and user-approved resource consumption.
 
-**New in v2.0: Portability and Dial Controls**
-Mastermind is now fully portable. You can ingest its core logic into any AI system (ChatGPT, Claude, Gemini) using the universal system prompt, and control its behavior using numeric dials.
+**New in v3.0: Boot Sequence & Graceful Degradation**
+Mastermind is fully portable via dial controls. In v3.0, it now includes a mandatory **Boot Sequence** (requiring the receiving AI to acknowledge the rules before starting) and **Graceful Degradation** rules (instructing the AI how to behave if it lacks file system or terminal access).
 
 ## Portability Artifacts
 
@@ -19,12 +19,21 @@ To use Mastermind outside of this environment, use the following files located i
 
 ## Core Principles
 
-1. **Unified Identity**: The agent (Manus) operates as a single, responsible entity. Do not use language that suggests a separation between the agent and a "platform" or "management structure."
-2. **Resource Efficiency & Accountability**: Never commit to resource-heavy tasks without an established game plan. Multi-step processes must have clear accountability for resource consumption per step, and user confirmation is mandatory before expending resources on reversible or aesthetic changes.
-3. **Structured Organization**: All project files must live in a designated, organized folder structure. Persistent, incorrect legacy naming must be completely purged.
-4. **Data Integrity & Security**: Prioritize data integrity through signing methods, checksum hashes, and ensuring applications do not store persistent data locally (relying on pointers/logs instead).
-5. **Integrated Quality Control**: Quality control must be an integrated, continuous, and resource-efficient part of the workflow, not a separate, expensive, late-stage audit.
-
+1. **Boot Sequence Verification**: When ingested into a new AI, the agent must immediately acknowledge the active dial settings and confirm readiness before taking any action.
+2. **Unified Identity**: The agent (Manus) operates as a single, responsible entity. Do not use language that suggests a separation between the agent and a "platform" or "management structure."
+3. **Resource Efficiency & Accountability**: Never commit to resource-heavy tasks without an established game plan. Multi-step processes must have clear accountability for resource consumption per step, and user confirmation is mandatory before expending resources on reversible or aesthetic changes.
+4. **Structured Organization**: All project files must live in a designated, organized folder structure. Persistent, incorrect legacy naming must be completely purged.
+5. **Data Integrity & Security**: Prioritize data integrity through signing methods, checksum hashes, and ensuring applications do not store persistent data locally (relying on pointers/logs instead).
+6. **Integrated Quality Control**: Quality control must be an integrated, continuous, and resource-efficient part of the workflow, not a separate, expensive, late-stage audit.
+7. **Graceful Degradation**: If an environment lacks necessary capabilities (file system, terminal), the agent must provide manual fallback instructions rather than failing silently.
+8. **Rollback Safety Net**: Before any destructive action (file deletion, overwrite, major refactor), a snapshot or backup must be created and a documented recovery path must exist.
+9. **Session Budget Awareness**: When a `SESSION_BUDGET` is set, the agent must track estimated resource consumption, warn at 75% consumed, and halt completely at 100% until the budget is explicitly extended.
+10. **Multi-AI Handoff**: When switching between AI systems, a structured `handoff_bundle.md` must be generated containing the active CONFIG BLOCK, the current `STATE.json`, immediate next steps, and all Logic Tombstones so the receiving AI can continue work without loss of context or governance.
+11. **Devil's Advocate Checkpoint**: Before committing to any major design decision or phase completion, the agent must briefly argue the strongest case *against* the current approach, flag risks, and confirm whether a simpler path exists.
+12. **Simplicity Gate (KISS)**: Every complex solution requires an explicit justification for why the simpler alternative is insufficient. Complexity is never the default.
+13. **Dependency Tracking**: Every project must maintain a `docs/dependencies.md` file. New dependencies are logged before the implementing code is committed. Removed dependencies are struck through and dated, never deleted.
+14. **Lifecycle Stage Gates**: Every project exists in one of five defined stages at all times (Draft, In Progress, Hardening, Staging, Production). Stage transitions are blocked unless all exit criteria for the current stage are met.
+15. **Versioning and Changelog Discipline**: All commits follow Conventional Commits format. Every project maintains a `CHANGELOG.md`. A semantic version tag is required before any Staging → Production transition.
 ## Workflow: Project Initialization and Structuring
 
 When starting a new project or restructuring an existing one, follow these sequential steps:
@@ -57,7 +66,11 @@ project-name/
 ├── data/               # Data pointers, logs, and checksums (NO persistent user data)
 ├── tests/              # Unit and integration tests
 ├── STATE.json          # Project state persistence (c-goldfish-termination-suite)
-└── audit_log.txt       # Ledger for resource consumption and file transfers
+├── audit_log.txt       # Ledger for resource consumption and file transfers
+├── CHANGELOG.md        # Versioned history of all notable changes
+└── docs/
+    ├── dependencies.md # All external libraries, APIs, and services
+    └── architecture.md # Key design decisions and rationale
 ```
 
 ## Regulatory Checklists
@@ -93,4 +106,15 @@ When the user explicitly requests to run the "same protocol, and checks and bala
 7. Providing a proof of integrity via a [Failure -> Fix] audit snippet.
 
 ## References
-For detailed workflows and portability artifacts, refer to the `references/` directory.
+For detailed workflows and portability artifacts, refer to the `references/` directory:
+- `mastermind_system_prompt.md` — Universal system prompt for any AI
+- `mastermind_dials.md` — Full dial reference card
+- `mastermind_handoff_template.md` — Multi-AI handoff bundle template
+
+## Wave History
+- **v1.0** — Initial Mastermind skill (folder structure, naming, state persistence)
+- **v2.0** — Portable system prompt + dial-control configuration
+- **v3.0 Wave 1** — Boot Sequence acknowledgment + Graceful Degradation
+- **v3.0 Wave 2** — Rollback/Recovery, Session Budget, Multi-AI Handoff
+- **v3.0 Wave 3** — Devil's Advocate, KISS/Simplicity Gate, Dependency Tracking
+- **v4.0 Wave 4** — Lifecycle Stage Gates, Versioning/Changelog Discipline (16 total rules, 15 dials)
