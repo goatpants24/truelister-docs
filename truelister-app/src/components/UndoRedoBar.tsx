@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 
 interface Props {
@@ -9,7 +9,11 @@ interface Props {
   historyLength?: number;
 }
 
-export default function UndoRedoBar({
+/**
+ * Bolt: Wrap UndoRedoBar in React.memo to prevent unnecessary re-renders
+ * when parent form state changes but undo/redo availability and history remain the same.
+ */
+export default memo(function UndoRedoBar({
   canUndo,
   canRedo,
   onUndo,
@@ -47,7 +51,7 @@ export default function UndoRedoBar({
       </TouchableOpacity>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   bar: {

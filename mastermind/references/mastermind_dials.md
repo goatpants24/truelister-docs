@@ -34,15 +34,17 @@ This document describes every configurable dial in the Mastermind CONFIG BLOCK, 
 
 ---
 
-## SESSION_BUDGET
-**Controls the session credit/point ceiling and halt behavior.**
+## HANDOFF_MODE
+**Controls the generation of the Multi-AI Handoff Bundle.**
 
 | Level | Behavior |
 |-------|----------|
-| 0 | Off. No budget tracked. *(Default)* |
-| > 0 | Active. Agent tracks estimated consumption in `audit_log.txt`. Pauses for approval at 75% consumed. Halts all work at 100% consumed until the budget is explicitly increased via override. |
+| 0 | Off. No handoff bundles generated. |
+| 1 | On request only. Agent generates the bundle only when explicitly asked. *(Default)* |
+| 2 | Auto-generate at milestones. Agent generates the bundle at the end of every major project phase. |
+| 3 | Auto-generate at session end. Agent generates the bundle before the session terminates or hibernates. |
 
-**Recommended:** 0 for local/free models. Set to your daily credit limit (e.g., 50) when using paid agents.
+**Recommended:** 1 for single-platform work. 3 when actively moving a project between ChatGPT, Claude, and Manus.
 
 ---
 
@@ -156,6 +158,63 @@ This document describes every configurable dial in the Mastermind CONFIG BLOCK, 
 
 ---
 
+## DEVILS_ADVOCATE
+**Controls the mandatory pre-commit design challenge.**
+
+| Level | Behavior |
+|-------|----------|
+| 0 | Off. No design challenges. |
+| 1 | Challenge before major commits. Agent argues against the current approach and flags risks before any major commit or phase completion. *(Default)* |
+| 2 | Challenge at every phase gate. No phase may be marked complete without a documented devil's advocate review. |
+| 3 | Challenge before every action. Agent logs every challenge and its resolution in `audit_log.txt`. |
+
+**Recommended:** 1 for standard work. 2 for high-stakes architectural decisions.
+
+---
+
+## SIMPLICITY_GATE
+**Controls KISS (Keep It Simple) enforcement.**
+
+| Level | Behavior |
+|-------|----------|
+| 0 | Off. No simplicity checks. |
+| 1 | Flag over-engineering. Agent notes when a simpler alternative exists. |
+| 2 | Require KISS justification. Before implementing a complex solution, agent must state why the simpler alternative is insufficient. *(Default)* |
+| 3 | Reject complexity by default. Complex solutions are rejected unless the agent proves no simpler alternative exists. |
+| 4 | Enforce KISS + log. All complexity decisions are logged in `audit_log.txt` with a justification entry. |
+
+**Recommended:** 2 for standard work. 3 when a project has been repeatedly over-engineered.
+
+---
+
+## VERSIONING_GATE
+**Controls commit discipline and changelog enforcement.**
+
+| Level | Behavior |
+|-------|----------|
+| 0 | Off. No versioning rules. |
+| 1 | Suggest Conventional Commits. Agent recommends format but does not enforce. |
+| 2 | Enforce Conventional Commits + Changelog. Agent uses strict commit formatting and maintains `CHANGELOG.md`. *(Default)* |
+| 3 | Enforce + Require Version Tag. Agent blocks the Staging → Production transition until a semantic version tag is applied. |
+
+**Recommended:** 2 for standard work. 3 for production software.
+
+---
+
+## STAGE_GATE
+**Controls the enforcement of project lifecycle stages.**
+
+| Level | Behavior |
+|-------|----------|
+| 0 | Off. No stage tracking. |
+| 1 | Track stage in STATE.json. Agent updates the `stage` field but does not enforce transition criteria. |
+| 2 | Enforce entry/exit criteria. Agent blocks stage transitions unless all criteria for the current stage are met. *(Default)* |
+| 3 | Enforce + Require Approval. Agent enforces criteria AND requires explicit user approval before moving to the next stage. |
+
+**Recommended:** 2 for structured progression. 3 when strict oversight of the deployment pipeline is required.
+
+---
+
 ## Inline Override Syntax
 
 Override any dial mid-conversation without editing the system prompt:
@@ -187,3 +246,4 @@ For convenience, the following preset combinations are recommended:
 | **Watchdog** | RESOURCE_GATE=4, CONFIRMATION_MODE=4, QC_INTENSITY=3, VERBOSITY=3 | After a resource dispute or quality issue |
 | **Lockdown** | RESOURCE_GATE=5, CONFIRMATION_MODE=5, QC_INTENSITY=5, NAMING_STRICTNESS=5 | Pre-production hardening or forensic audit |
 | **Stealth** | VERBOSITY=0, CONFIRMATION_MODE=0, STATE_SYNC=5 | Silent background execution with full state tracking |
+| **Architect** | DEVILS_ADVOCATE=2, SIMPLICITY_GATE=3, QC_INTENSITY=4, CONFIRMATION_MODE=3 | Deep design review mode for complex architectural decisions |
