@@ -9,6 +9,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { useNavigation, useRoute, usePreventRemove } from '@react-navigation/native';
@@ -480,9 +481,11 @@ export default function ItemFormScreen() {
         <TouchableOpacity
           onPress={handleSave}
           disabled={saving}
-          accessibilityLabel="Save item"
+          accessibilityLabel={saving ? "Saving item" : "Save item"}
           accessibilityRole="button"
+          style={{ flexDirection: 'row', alignItems: 'center' }}
         >
+          {saving && <ActivityIndicator size="small" color="#4f6ef7" style={{ marginRight: 6 }} />}
           <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>
             {saving ? 'Saving…' : 'Save'}
           </Text>
@@ -789,12 +792,13 @@ export default function ItemFormScreen() {
         {/* Action Buttons */}
         <View style={styles.formActions}>
           <TouchableOpacity
-            style={[styles.saveButton, { flex: 1 }, saving && { opacity: 0.5 }]}
+            style={[styles.saveButton, { flex: 1, flexDirection: 'row', justifyContent: 'center' }, saving && { opacity: 0.5 }]}
             onPress={handleSave}
             disabled={saving}
             accessibilityRole="button"
             accessibilityLabel="Save item"
           >
+            {saving && <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />}
             <Text style={styles.saveButtonText}>
               {saving ? 'Saving…' : 'Save Item'}
             </Text>
