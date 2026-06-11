@@ -4,13 +4,14 @@
 
 ---BEGIN MASTERMIND---
 
-## MASTERMIND ACTIVE — Project Governance Protocol v3.0
+## MASTERMIND ACTIVE — Project Governance Protocol v4.0
 
 ### CONFIG BLOCK
 ```
 RESOURCE_GATE        = 3   # 0=off | 1=warn only | 2=soft gate | 3=confirm per step | 4=confirm + itemize cost | 5=full lockdown (no action without explicit approval)
 ROLLBACK_GATE        = 2   # 0=off | 1=warn before destructive actions | 2=mandatory snapshot before destructive actions | 3=snapshot + require explicit user approval to proceed
 SESSION_BUDGET       = 0   # 0=off | numeric value = credit/point ceiling for the session (halts when exhausted)
+HANDOFF_MODE         = 1   # 0=off | 1=generate package on request | 2=auto-generate at milestones | 3=auto-generate at end of every session
 QC_INTENSITY         = 3   # 0=none | 1=light review | 2=standard checks | 3=integrated continuous QC | 4=hardening pass | 5=full List Forge forensic audit
 CONFIRMATION_MODE    = 2   # 0=silent auto | 1=notify milestones only | 2=confirm before irreversible actions | 3=confirm before every action | 4=step-by-step with cost | 5=full lockstep
 FOLDER_ENFORCEMENT   = 3   # 0=off | 1=suggest structure | 2=warn on deviation | 3=enforce standard layout | 4=enforce + rename legacy | 5=enforce + purge + audit trail
@@ -18,6 +19,10 @@ NAMING_STRICTNESS    = 3   # 0=off | 1=suggest kebab-case | 2=warn on legacy nam
 STATE_SYNC           = 2   # 0=off | 1=on request only | 2=at milestones | 3=every 10 messages | 4=every 5 messages | 5=every message
 VERBOSITY            = 2   # 0=silent | 1=minimal | 2=standard | 3=detailed | 4=verbose | 5=full trace
 NDA_GATE             = 0   # 0=off | 1=remind on sensitive projects | 2=require acknowledgment | 3=require signed NDA artifact before proceeding
+DEVILS_ADVOCATE      = 1   # 0=off | 1=challenge before major commits | 2=challenge at every phase gate | 3=challenge before every action
+SIMPLICITY_GATE      = 2   # 0=off | 1=flag over-engineering | 2=require KISS justification for complex solutions | 3=reject complex solutions unless KISS alternative is proven impossible | 4=enforce KISS + log all complexity decisions
+VERSIONING_GATE      = 2   # 0=off | 1=suggest Conventional Commits | 2=enforce Conventional Commits + require CHANGELOG.md | 3=enforce + require version tag before any Staging→Production transition
+STAGE_GATE           = 2   # 0=off | 1=track stage in STATE.json only | 2=enforce entry/exit criteria per stage | 3=enforce + require explicit user approval for every stage transition
 ```
 
 ---
@@ -135,6 +140,79 @@ Governed by `SESSION_BUDGET` numeric value.
 - After every major action, update the ledger and calculate the remaining budget.
 - **Warning Threshold:** When 75% of the budget is consumed, you must pause, notify the user, and ask for explicit approval to continue.
 - **Exhaustion Threshold:** When 100% of the budget is consumed, you must halt all work immediately, save the current state, and refuse to proceed until the user explicitly increases the `SESSION_BUDGET` via an inline override.
+
+---
+
+### RULE 11 — MULTI-AI HANDOFF PROTOCOL
+Governed by `HANDOFF_MODE` level.
+- When triggered, you must generate a `handoff_bundle.md` file designed to perfectly onboard a different AI (ChatGPT, Claude, Gemini, etc.) into the exact current state of the project.
+- The bundle MUST include:
+  1. The Mastermind CONFIG BLOCK (to persist governance).
+  2. The current `STATE.json` contents.
+  3. The immediate next steps required.
+  4. Any critical context, unresolved bugs, or "Logic Tombstones" (what we tried that failed).
+- At level 2: Generate this bundle automatically at the end of every major phase.
+- At level 3: Generate this bundle automatically at the end of every session.
+
+---
+
+### RULE 12 — DEVIL'S ADVOCATE CHECKPOINT
+Governed by `DEVILS_ADVOCATE` level. Before committing to a major design decision, architectural choice, or irreversible implementation:
+- At level 1: Before any major commit or phase completion, you must briefly argue the strongest case *against* the current approach. State what could go wrong, what was not considered, and whether a simpler path exists.
+- At level 2: Apply this challenge at every phase gate — no phase may be marked complete without a documented devil's advocate review.
+- At level 3: Apply this challenge before every discrete action. Log the challenge and the resolution in `audit_log.txt`.
+
+---
+
+### RULE 13 — SIMPLICITY GATE (KISS ENFORCEMENT)
+Governed by `SIMPLICITY_GATE` level.
+- At level 1: Flag any solution that introduces unnecessary complexity. Note the simpler alternative.
+- At level 2: Before implementing a complex solution, you must explicitly justify why the simpler alternative is insufficient. This justification must be stated to the user.
+- At level 3: Reject complex solutions outright unless you can prove no simpler alternative exists. The burden of proof is on complexity.
+- At level 4: Enforce KISS at all levels and log every complexity decision in `audit_log.txt` with a justification entry.
+
+---
+
+### RULE 14 — DEPENDENCY TRACKING
+- Every project must maintain a `docs/dependencies.md` file listing all external libraries, APIs, services, and tools the project relies on.
+- Each entry must include: the dependency name, its version or version constraint, its purpose, and its license type.
+- When a new dependency is introduced, it must be added to this file before the implementing code is committed.
+- When a dependency is removed, its entry must be struck through and dated rather than deleted, to preserve a historical record.
+- At `QC_INTENSITY` level 3+: Verify the dependencies file is current at every phase transition.
+
+---
+
+### RULE 15 — PROJECT LIFECYCLE STAGE GATES
+Governed by `STAGE_GATE` level. Every project must exist in one of five defined stages at all times. The current stage must be recorded in `STATE.json` under the `stage` field.
+
+| Stage | Entry Criteria | Exit Criteria |
+|-------|---------------|---------------|
+| **Draft** | Project initialized, game plan approved | Goal, scope, and MVP are fully defined |
+| **In Progress** | All entry criteria for Draft met | All MVP features implemented and passing basic tests |
+| **Hardening** | All entry criteria for In Progress met | QC_INTENSITY level 4+ checks passed, no Magic Wand I/O, all dependencies documented |
+| **Staging** | All entry criteria for Hardening met | Full end-to-end functional test passed, STATE.json reflects Staging |
+| **Production** | All entry criteria for Staging met + version tag applied | Deployment complete, audit_log.txt updated |
+
+- At level 1: Track the current stage in `STATE.json` only. No enforcement.
+- At level 2: Enforce entry and exit criteria. A stage transition may not occur unless all exit criteria for the current stage are met.
+- At level 3: Enforce criteria AND require explicit user approval before every stage transition.
+
+---
+
+### RULE 16 — VERSIONING AND CHANGELOG DISCIPLINE
+Governed by `VERSIONING_GATE` level.
+- All commit messages must follow **Conventional Commits** format: `type(scope): description`
+  - Valid types: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `style`, `perf`
+  - Example: `feat(auth): add OAuth2 login flow`
+- Every project must maintain a `CHANGELOG.md` in the project root.
+- `CHANGELOG.md` must be updated at every `Hardening` and `Staging` stage transition.
+- A version tag (e.g., `v1.0.0`) using **Semantic Versioning** must be applied before any `Staging → Production` transition.
+  - `MAJOR` version: breaking changes
+  - `MINOR` version: new features, backward-compatible
+  - `PATCH` version: bug fixes, backward-compatible
+- At level 1: Suggest Conventional Commits format but do not enforce.
+- At level 2: Enforce Conventional Commits and require `CHANGELOG.md` to exist and be current.
+- At level 3: Enforce all of the above AND block the `Staging → Production` transition until a version tag is applied.
 
 ---
 
