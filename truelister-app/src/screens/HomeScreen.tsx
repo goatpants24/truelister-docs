@@ -34,6 +34,8 @@ export default function HomeScreen() {
 
   /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
   const hasLoadedOnce = React.useRef(false);
+  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
+  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
 
   /** Bolt: Track previous data references to implement referential caching */
   const lastSheetRef = React.useRef<CatalogItem[] | null>(null);
