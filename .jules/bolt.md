@@ -38,6 +38,26 @@
 **Learning:** Implementing `getItemLayout` for `FlatList` significantly improves scroll performance for large catalogs by eliminating dynamic measurements. However, it requires strictly enforced fixed heights on item components and `overflow: 'hidden'` to prevent content-driven expansion from invalidating the pre-calculated offsets.
 **Action:** When using `getItemLayout`, always verify that item styles (including margins and padding) perfectly match the mathematical formula used for offset calculation.
 
-## 2026-05-28 - [In-place Cache Update]
-**Learning:** Automatically invalidating a large memory cache after a mutation (like `appendItem`) forces a redundant and expensive network refetch on the next screen focus. Updating the cache in-place with the returned data provides an instant UI update and eliminates significant latency (2-4s for large catalogs).
-**Action:** Prefer in-place cache updates for simple mutations (append/update/delete) over full invalidation when the data source is remote and large.
+## 2026-05-27 - [Item Number Generation Optimization]
+**Learning:** Using `RegExp.match()` inside a loop to parse patterned identifiers (e.g., "TL-001") is significantly slower than direct string slicing and character-based prefix checks. Benchmarks showed that `s.slice(3)` and index-based checks are ~45% faster than regex in this specific use case.
+**Action:** Prefer direct string manipulation over Regular Expressions for simple, fixed-prefix pattern parsing in hot paths or large data loops.
+
+## 2025-05-28 - [Memoized QuickActionsBar]
+**Learning:** In a large form component like , updating any single field (e.g., Title) triggers a full re-render of all child elements, including the complex action button grid. This causes measurable frame-rate drops during rapid typing.
+**Action:** Extract and memoize static or semi-static UI blocks (like action bars) and stabilize their callbacks via `useCallback` to prevent unnecessary re-renders.
+
+## 2025-05-28 - [Memoized QuickActionsBar]
+**Learning:** In a large form component like `ItemFormScreen.tsx`, updating any single field (e.g., Title) triggers a full re-render of all child elements, including the complex action button grid. This causes measurable frame-rate drops during rapid typing.
+**Action:** Extract and memoize static or semi-static UI blocks (like action bars) and stabilize their callbacks via `useCallback` to prevent unnecessary re-renders.
+
+## 2026-06-11 - [Hoisted Configuration & Data-Driven Rendering]
+**Learning:** Hardcoding complex UI structures like button grids within a component lead to redundant object/array allocations on every render and make maintenance difficult. Hoisting the configuration to module level and using `.map()` ensures referential stability for static data.
+**Action:** Hoist static configuration arrays outside of components and use data-driven rendering to keep components slim and efficient.
+
+## 2026-06-10 - [Streaming CSV Parser]
+**Learning:** Standard CSV parsing that returns a full `string[][]` structure creates a massive $O(N)$ memory bottleneck for large catalogs, doubling or tripling peak heap usage before any object hydration begins. Refactoring the parser to use an `onRow` callback allows for immediate hydration and data processing, effectively eliminating the intermediate collection overhead.
+**Action:** Always prefer callback-based "streaming" patterns for large data parsing tasks (CSV, JSON, etc.) to minimize peak memory pressure in resource-constrained environments like mobile.
+
+## 2025-05-29 - [Hoisted Configuration Allocation Guard]
+**Learning:** Initializing large configuration objects or arrays inside a React component's render body causes redundant allocations on every render cycle. For complex forms where typing triggers high-frequency re-renders, this can lead to memory pressure and UI stuttering.
+**Action:** Always hoist static configuration arrays and objects outside of the component definition or memoize them to ensure referential stability and zero-allocation renders.
