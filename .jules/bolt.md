@@ -57,3 +57,7 @@
 ## 2026-06-10 - [Streaming CSV Parser]
 **Learning:** Standard CSV parsing that returns a full `string[][]` structure creates a massive $O(N)$ memory bottleneck for large catalogs, doubling or tripling peak heap usage before any object hydration begins. Refactoring the parser to use an `onRow` callback allows for immediate hydration and data processing, effectively eliminating the intermediate collection overhead.
 **Action:** Always prefer callback-based "streaming" patterns for large data parsing tasks (CSV, JSON, etc.) to minimize peak memory pressure in resource-constrained environments like mobile.
+
+## 2025-05-29 - [Hoisted Configuration Allocation Guard]
+**Learning:** Initializing large configuration objects or arrays inside a React component's render body causes redundant allocations on every render cycle. For complex forms where typing triggers high-frequency re-renders, this can lead to memory pressure and UI stuttering.
+**Action:** Always hoist static configuration arrays and objects outside of the component definition or memoize them to ensure referential stability and zero-allocation renders.
