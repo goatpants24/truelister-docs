@@ -152,10 +152,10 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   }
 
   // ── Size Detection ──
-  for (const pattern of SIZE_PATTERNS) {
-    const match = text.match(pattern);
+  for (let i = 0; i < SIZE_PATTERNS.length; i++) {
+    const match = text.match(SIZE_PATTERNS[i]);
     if (match) {
-      if (match[0].includes('x') || match[0].includes('X') || match[0].includes('×')) {
+      if (match[0].indexOf('x') !== -1 || match[0].indexOf('X') !== -1 || match[0].indexOf('×') !== -1) {
         result.size = match[0].toUpperCase();
       } else {
         result.size = (match[2] || match[1] || match[0]).toUpperCase();
