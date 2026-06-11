@@ -70,7 +70,10 @@ export default function HomeScreen() {
       // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case)
       let combined = sheetItems;
       if (draftItems.length > 0) {
-        const sheetNumbers = new Set(sheetItems.map(i => i.itemNumber));
+        const sheetNumbers = new Set<string>();
+        for (let i = 0; i < sheetItems.length; i++) {
+          sheetNumbers.add(sheetItems[i].itemNumber);
+        }
         const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
         combined = [...sheetItems, ...uniqueDrafts];
       }
