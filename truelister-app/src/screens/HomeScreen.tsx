@@ -32,6 +32,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const hasLoadedOnce = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedOnce = useRef(false);
 
   /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
   const hasLoadedOnce = React.useRef(false);
@@ -57,7 +58,8 @@ export default function HomeScreen() {
   const lastCombinedItems = React.useRef<CatalogItem[]>([]);
 
   const loadItems = useCallback(async (isRefresh = false) => {
-    if (isRefresh) {
+    // SWR Pattern: skip full-screen loading if we already have data
+    if (isRefresh || hasLoadedOnce.current) {
       setRefreshing(true);
     } else if (!hasLoadedOnce.current) {
       setLoading(true);
