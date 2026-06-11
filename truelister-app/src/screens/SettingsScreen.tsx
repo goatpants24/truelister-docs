@@ -80,6 +80,8 @@ export default function SettingsScreen() {
                 'https://docs.google.com/spreadsheets/d/1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI/edit'
               )
             }
+            accessibilityRole="button"
+            accessibilityLabel="Open inventory sheet in browser"
           >
             <Text style={styles.linkBtnText}>Open Sheet ↗</Text>
           </TouchableOpacity>
@@ -97,6 +99,8 @@ export default function SettingsScreen() {
               );
             }}
             disabled={testing}
+            accessibilityRole="button"
+            accessibilityLabel="Test connection to Google Sheet"
           >
             <Text style={styles.testBtnText}>Test Connection</Text>
           </TouchableOpacity>
@@ -115,6 +119,7 @@ export default function SettingsScreen() {
           style={styles.input}
           value={appsScriptUrl}
           onChangeText={setAppsScriptUrl}
+          accessibilityLabel="Apps Script deployment URL"
           placeholder="https://script.google.com/macros/s/..."
           placeholderTextColor="#4a4d60"
           autoCapitalize="none"
@@ -140,6 +145,8 @@ export default function SettingsScreen() {
               );
             }}
             disabled={testing}
+            accessibilityRole="button"
+            accessibilityLabel="Test Apps Script connection"
           >
             <Text style={styles.testBtnText}>Test Script Connection</Text>
           </TouchableOpacity>
@@ -158,6 +165,7 @@ export default function SettingsScreen() {
           style={styles.input}
           value={driveFolderId}
           onChangeText={setDriveFolderId}
+          accessibilityLabel="Google Drive folder ID for photos"
           placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
           placeholderTextColor="#4a4d60"
           autoCapitalize="none"
@@ -182,6 +190,8 @@ export default function SettingsScreen() {
       <TouchableOpacity
         style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
         onPress={handleSave}
+        accessibilityRole="button"
+        accessibilityLabel="Save settings"
       >
         <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save Settings'}</Text>
       </TouchableOpacity>
@@ -189,7 +199,12 @@ export default function SettingsScreen() {
       {/* Danger zone */}
       <View style={styles.dangerSection}>
         <Text style={styles.dangerTitle}>Danger Zone</Text>
-        <TouchableOpacity style={styles.dangerBtn} onPress={handleClearData}>
+        <TouchableOpacity
+          style={styles.dangerBtn}
+          onPress={handleClearData}
+          accessibilityRole="button"
+          accessibilityLabel="Clear all local data and reset app"
+        >
           <Text style={styles.dangerBtnText}>Clear All Local Data</Text>
         </TouchableOpacity>
       </View>
