@@ -70,11 +70,11 @@ export default function PublishScreen({ route, navigation }: Props) {
               onPress={() => toggleMarketplace(m.id)}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel={`Select ${m.name}`}
+              accessibilityLabel={m.name}
               accessibilityState={{ selected: isSelected }}
             >
               <Text style={[styles.platformName, isSelected && { color: m.color }]}>
-                {m.name}
+                {isSelected ? '✓ ' : ''}{m.name}
               </Text>
               <Text style={[
                 styles.platformStatus,
@@ -96,7 +96,7 @@ export default function PublishScreen({ route, navigation }: Props) {
           onPress={handlePublish}
           disabled={publishing}
           accessibilityRole="button"
-          accessibilityLabel={publishing ? 'Publishing' : `Publish to ${selected.size} platforms`}
+          accessibilityLabel={publishing ? 'Publishing' : `Publish to ${selected.size} platform${selected.size !== 1 ? 's' : ''}`}
         >
           {publishing ? (
             <ActivityIndicator color="#fff" />
@@ -135,8 +135,8 @@ export default function PublishScreen({ route, navigation }: Props) {
                     {r.listingUrl && (
                       <TouchableOpacity
                         onPress={() => Linking.openURL(r.listingUrl!)}
-                        accessibilityRole="button"
-                        accessibilityLabel={`View ${meta.name} listing`}
+                        accessibilityRole="link"
+                        accessibilityLabel={`View listing on ${meta.name}`}
                       >
                         <Text style={styles.resultLink}>View listing ↗</Text>
                       </TouchableOpacity>
@@ -153,7 +153,6 @@ export default function PublishScreen({ route, navigation }: Props) {
             style={styles.doneBtn}
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
-            accessibilityLabel="Done"
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
