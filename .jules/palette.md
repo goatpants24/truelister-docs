@@ -13,3 +13,7 @@
 ## 2025-03-24 - [Maintaining Component Memoization in Forms]
 **Learning:** In high-frequency render paths like complex forms, breaking `React.memo` by passing new object literals as props (e.g., `prop={{...}}`) can cause significant performance degradation (jank) during typing.
 **Action:** When passing multiple state-derived values to memoized sub-components, pass them as individual primitive props or ensure the object itself is memoized via `useMemo` in the parent.
+
+## 2025-05-15 - [Consistent Feedback for Batch Actions]
+**Learning:** Using a data-driven approach (mapping over an array of actions) for a group of similar interactive elements ensures that visual feedback (like checkmarks) and accessibility states (like 'Captured') stay synchronized across all elements, preventing bugs where one action provides better feedback than others.
+**Action:** When creating groups of similar action buttons (e.g., photo capture fields), prefer mapping over a configuration array to guarantee consistent UX and accessibility across the entire set.
