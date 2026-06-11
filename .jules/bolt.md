@@ -50,6 +50,10 @@
 **Learning:** In a large form component like `ItemFormScreen.tsx`, updating any single field (e.g., Title) triggers a full re-render of all child elements, including the complex action button grid. This causes measurable frame-rate drops during rapid typing.
 **Action:** Extract and memoize static or semi-static UI blocks (like action bars) and stabilize their callbacks via `useCallback` to prevent unnecessary re-renders.
 
+## 2026-06-11 - [Hoisted Configuration & Data-Driven Rendering]
+**Learning:** Hardcoding complex UI structures like button grids within a component lead to redundant object/array allocations on every render and make maintenance difficult. Hoisting the configuration to module level and using `.map()` ensures referential stability for static data.
+**Action:** Hoist static configuration arrays outside of components and use data-driven rendering to keep components slim and efficient.
+
 ## 2026-06-10 - [Streaming CSV Parser]
 **Learning:** Standard CSV parsing that returns a full `string[][]` structure creates a massive $O(N)$ memory bottleneck for large catalogs, doubling or tripling peak heap usage before any object hydration begins. Refactoring the parser to use an `onRow` callback allows for immediate hydration and data processing, effectively eliminating the intermediate collection overhead.
 **Action:** Always prefer callback-based "streaming" patterns for large data parsing tasks (CSV, JSON, etc.) to minimize peak memory pressure in resource-constrained environments like mobile.
