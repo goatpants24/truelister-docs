@@ -149,7 +149,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
         <TouchableOpacity
           onPress={onCancel}
           accessibilityRole="button"
-          accessibilityLabel="Cancel and go back"
+          accessibilityLabel="Cancel photo capture"
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
@@ -179,7 +179,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             style={styles.libraryButton}
             onPress={handlePickFromLibrary}
             accessibilityRole="button"
-            accessibilityLabel="Pick photo from library"
+            accessibilityLabel="Open photo library"
           >
             <Text style={styles.libraryIcon}>🖼</Text>
           </TouchableOpacity>
