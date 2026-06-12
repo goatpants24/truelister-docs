@@ -473,8 +473,18 @@ export default function HomeScreen() {
           <Text style={styles.emptyTitle}>No Items Found</Text>
           <Text style={styles.emptyText}>Add your first item or check your Google Sheet connection.</Text>
           <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
+            accessibilityRole="button"
+            accessibilityLabel="Create first item"
+          >
+            <Text style={styles.createButtonText}>Create First Item</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.settingsLink}
             onPress={() => navigation.navigate('Settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Check connection settings"
           >
             <Text style={styles.settingsLinkText}>Check Connection Settings</Text>
           </TouchableOpacity>
@@ -888,6 +898,19 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48, marginBottom: 16, opacity: 0.5 },
   emptyTitle: { color: '#e8eaf6', fontSize: 20, fontWeight: '700', marginBottom: 8 },
   emptyText: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginBottom: 24 },
+  createButton: {
+    backgroundColor: '#4f6ef7',
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#4f6ef7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  createButtonText: { color: 'white', fontSize: 16, fontWeight: '700' },
   gridItem: {
     backgroundColor: '#1a1d27',
     marginHorizontal: 8,
