@@ -94,8 +94,16 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: Marketplace
   );
 });
 
+interface QuickActionsBarProps {
+  captureStatus: Record<PhotoField, boolean>;
+  ocrRawText: string;
+  onCapture: (field: PhotoField) => void;
+  onScanTag: () => void;
+}
+
 /**
  * Bolt: Hoisted photo action configuration to module level to avoid re-creation on render.
+ * Measured impact: Avoids O(N) object allocations per render, improving memory efficiency.
  */
 const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
   { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
@@ -106,26 +114,6 @@ const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
   { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔬' },
   { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
   { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
-];
-
-interface QuickActionsBarProps {
-  captureStatus: Record<PhotoField, boolean>;
-  ocrRawText: string;
-  onCapture: (field: PhotoField) => void;
-  onScanTag: () => void;
-}
-
-/**
- * Bolt: Hoisted configuration array outside the component to prevent recreation on every render.
- * Measured impact: Avoids O(N) object allocations per render, improving memory efficiency.
- */
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
-  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
-  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
-  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
-  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
 ];
 
 /**
