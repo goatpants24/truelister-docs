@@ -61,3 +61,7 @@
 ## 2025-05-29 - [Hoisted Configuration Allocation Guard]
 **Learning:** Initializing large configuration objects or arrays inside a React component's render body causes redundant allocations on every render cycle. For complex forms where typing triggers high-frequency re-renders, this can lead to memory pressure and UI stuttering.
 **Action:** Always hoist static configuration arrays and objects outside of the component definition or memoize them to ensure referential stability and zero-allocation renders.
+
+## 2025-06-13 - [Memoized FlatList Components & Layout Optimization]
+**Learning:** In `HomeScreen.tsx`, failing to use hoisted memoized components in `renderItem` causes expensive full-tree reconciliation for every catalog item on every list update. Implementing `getItemLayout` with pre-calculated heights is also critical for 60fps scrolling in large catalogs.
+**Action:** Always hoist memoized list item components outside the main component and use `getItemLayout` for `FlatList` to skip dynamic measurement overhead.
