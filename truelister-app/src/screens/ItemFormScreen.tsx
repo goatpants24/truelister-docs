@@ -115,18 +115,6 @@ interface QuickActionsBarProps {
   onScanTag: () => void;
 }
 
-/**
- * Bolt: Hoisted configuration array outside the component to prevent recreation on every render.
- * Measured impact: Avoids O(N) object allocations per render, improving memory efficiency.
- */
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
-  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
-  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
-  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
-  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-];
 
 /**
  * Palette: Data-driven quick actions bar with consistent feedback and enhanced accessibility.
