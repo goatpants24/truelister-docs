@@ -17,10 +17,9 @@ import * as Linking from 'expo-linking';
 import { Picker } from '@react-native-picker/picker';
 import { CatalogItem, DropdownOptions, ImageResult, PhotoField } from '../types';
 import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
-import { fetchDropdowns, generateItemNumber, appendItem } from '../services/sheets';
+import { fetchDropdowns, appendItem } from '../services/sheets';
 import { saveDraftItem, addPendingUpload } from '../services/localStorage';
 import { uploadToDrive } from '../services/driveUpload';
-import { formatFileSize } from '../services/imageProcessor';
 import CameraScreen from './CameraScreen';
 import TagScanner from '../components/TagScanner';
 import UndoRedoBar from '../components/UndoRedoBar';
@@ -116,19 +115,6 @@ interface QuickActionsBarProps {
 }
 
 /**
- * Bolt: Hoisted configuration array outside the component to prevent recreation on every render.
- * Measured impact: Avoids O(N) object allocations per render, improving memory efficiency.
- */
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
-  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
-  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
-  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
-  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-];
-
-/**
  * Palette: Data-driven quick actions bar with consistent feedback and enhanced accessibility.
  * Bolt: Optimized with a referentially stable captureStatus object to maintain React.memo efficiency.
  * This prevents re-renders during form typing while preserving clean maintainability.
@@ -191,7 +177,6 @@ export default function ItemFormScreen() {
     colors: [],
     sizes: [],
   });
-  const [photo, setPhoto] = useState<{ compressed: ImageResult; originalUri: string } | null>(null);
   const [photoField, setPhotoField] = useState<PhotoField | null>(null); // which field we're capturing
   const [saving, setSaving] = useState(false);
   const [ocrRawText, setOcrRawText] = useState('');
@@ -291,7 +276,6 @@ export default function ItemFormScreen() {
   }, [setItem]);
 
   const handlePhotoCapture = (compressed: ImageResult, originalUri: string) => {
-    setPhoto({ compressed, originalUri });
     setMode('form');
 
     if (!photoField) return;
@@ -307,7 +291,7 @@ export default function ItemFormScreen() {
         if (fieldName === 'photoUrlCard' || !item.photoUrl) {
           updates.photoUrl = uploadResult.driveUrl;
         }
-        setItem({ ...item, ...updates }, true);
+        setItem((prev) => ({ ...prev, ...updates }), true);
       } else {
         addPendingUpload({
           itemNumber: item.itemNumber,
@@ -324,14 +308,16 @@ export default function ItemFormScreen() {
     fields: Partial<CatalogItem>,
     rawText: string
   ) => {
-    const updated = { ...item };
-    for (const [key, value] of Object.entries(fields)) {
-      const k = key as keyof CatalogItem;
-      if (value && !item[k]) {
-        (updated as Record<string, string>)[k] = value as string;
+    setItem((prev) => {
+      const updated = { ...prev };
+      for (const [key, value] of Object.entries(fields)) {
+        const k = key as keyof CatalogItem;
+        if (value && !prev[k]) {
+          (updated as Record<string, string>)[k] = value as string;
+        }
       }
-    }
-    setItem(updated, true); // immediate — OCR fill is one undo step
+      return updated;
+    }, true);
     setOcrRawText(rawText);
     setMode('form');
   };
@@ -513,14 +499,14 @@ export default function ItemFormScreen() {
             photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
             photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
           }), [
-            !!item.photoUrlCard,
-            !!item.photoUrlFront,
-            !!item.photoUrlBack,
-            !!item.photoUrlDetail,
-            !!item.photoUrlTabletopWide,
-            !!item.photoUrlTabletopDetail,
-            !!item.photoUrlTabletopMeasure1,
-            !!item.photoUrlTabletopMeasure2,
+            item.photoUrlCard,
+            item.photoUrlFront,
+            item.photoUrlBack,
+            item.photoUrlDetail,
+            item.photoUrlTabletopWide,
+            item.photoUrlTabletopDetail,
+            item.photoUrlTabletopMeasure1,
+            item.photoUrlTabletopMeasure2,
           ])}
           ocrRawText={ocrRawText}
           onCapture={onCapturePress}
@@ -839,18 +825,6 @@ export default function ItemFormScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-// ────────────────────────────────────────────────────────────────
-// CatalogItem photos: wire these into UI as needed in the future
-//   photoUrlCard
-//   photoUrlFront
-//   photoUrlBack
-//   photoUrlDetail
-//   photoUrlTabletopWide
-//   photoUrlTabletopDetail
-//   photoUrlTabletopMeasure1
-//   photoUrlTabletopMeasure2
-// ────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117' },
