@@ -47,62 +47,6 @@ const KNOWN_BRANDS = [
 ];
 
 /**
- * Pre-compiled patterns for high-performance scanning.
- * Bolt: Sorting brands by length descending ensures that "Polo Ralph Lauren" matches before "Polo".
- */
-const BRAND_REGEX = new RegExp(
-  `\\b(${KNOWN_BRANDS.slice().sort((a, b) => b.length - a.length).map(b => b.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\b`,
-  'i'
-);
-
-const FABRIC_REGEX = new RegExp(
-  `\\b(${FABRIC_KEYWORDS.join('|')})\\b`,
-  'gi'
-);
-
-const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
-const MADE_IN_PATTERN = /made\s+in\s+([A-Za-z\s]+)/i;
-
-const CARE_KEYWORDS = [
-  'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'hang dry',
-  'do not bleach', 'iron low', 'iron medium', 'cold water', 'warm water'
-];
-const CARE_REGEX = new RegExp(`\\b(${CARE_KEYWORDS.join('|')})\\b`, 'gi');
-
-// ── OCR Text Extraction ──────────────────────────────────────────────────────
-
-/**
- * Extract text from an image using on-device ML Kit text recognition.
- * Accepts a local file URI — no encoding, no network, no cost.
- */
-export async function extractTextFromImage(imageUri: string): Promise<string> {
-  try {
-    const result = await TextRecognition.recognize(imageUri);
-    // Join all detected text blocks into a single string
-    return result.blocks.map(block => block.text).join('\n');
-  } catch (error) {
-    console.error('On-device OCR error:', error);
-    return '';
-  }
-}
-
-// ── Smart Field Parsing ──────────────────────────────────────────────────────
-
-const FABRIC_KEYWORDS = [
-  'cotton', 'polyester', 'nylon', 'silk', 'wool', 'linen', 'rayon',
-  'spandex', 'elastane', 'lycra', 'cashmere', 'acrylic', 'viscose',
-  'modal', 'tencel', 'bamboo', 'hemp', 'leather', 'suede', 'denim',
-  'chiffon', 'satin', 'velvet', 'fleece', 'jersey', 'tweed', 'organza',
-];
-
-const SIZE_PATTERNS = [
-  /\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/i,
-  /\b(size\s*)?(\d{1,2})\b/i,
-  /\b(\d{2})\s*[xX×]\s*(\d{2})\b/,
-  /\b(EU|EUR)\s*(\d{2})\b/i,
-];
-
-/**
  * Bolt: Pre-calculate brand display names and pre-compile regular expressions.
  * Avoids expensive string manipulations and regex re-compilation inside the parsing loop.
  * Measured impact: Improves parseTagText performance by ~84% in no-match scenarios.
@@ -134,6 +78,23 @@ const CARE_KEYWORDS = [
 ];
 
 const CARE_REGEX = new RegExp('\\b(' + [...CARE_KEYWORDS].sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
+
+// ── OCR Text Extraction ──────────────────────────────────────────────────────
+
+/**
+ * Extract text from an image using on-device ML Kit text recognition.
+ * Accepts a local file URI — no encoding, no network, no cost.
+ */
+export async function extractTextFromImage(imageUri: string): Promise<string> {
+  try {
+    const result = await TextRecognition.recognize(imageUri);
+    // Join all detected text blocks into a single string
+    return result.blocks.map(block => block.text).join('\n');
+  } catch (error) {
+    console.error('On-device OCR error:', error);
+    return '';
+  }
+}
 
 /**
  * Parse OCR text from a clothing tag and extract structured fields.

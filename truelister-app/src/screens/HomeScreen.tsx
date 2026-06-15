@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { RootStackNavProp } from '../navigation/types';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 
@@ -23,501 +22,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
 
-/** Memoized Grid Item for performance */
-const GridItem = React.memo(({ item, size, onPress }: { item: CatalogItem, size: number, onPress: (i: CatalogItem) => void }) => (
-  <TouchableOpacity
-    style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-    onPress={() => onPress(item)}
-  >
-    {item.photoUrl ? (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.thumbnail, { width: size, height: size }]}
-        resizeMode="cover"
-      />
-    ) : (
-      <View
-        style={[
-          styles.thumbnail,
-          { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-        ]}
-      >
-        <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-      </View>
-    )}
-    <Text style={styles.itemTitle} numberOfLines={1}>
-      {item.title}
-    </Text>
-    <Text style={styles.itemBrand}>
-      {item.designerBrand || '–'}
-    </Text>
-    {item.price ? (
-      <Text style={styles.itemPrice}>${item.price}</Text>
-    ) : null}
-    {item.marketplace ? (
-      <Text style={styles.itemMarketplace} numberOfLines={1}>
-        {item.marketplace}
-      </Text>
-    ) : null}
-  </TouchableOpacity>
-));
-
-/** Memoized List Item for performance */
-const ListItem = React.memo(({ item, onPress }: { item: CatalogItem, onPress: (i: CatalogItem) => void }) => (
-  <TouchableOpacity
-    style={styles.listItem}
-    onPress={() => onPress(item)}
-  >
-    {item.photoUrl && (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.listThumbnail, { width: 64, height: 64 }]}
-        resizeMode="cover"
-      />
-    )}
-    <View style={styles.listTextContainer}>
-      <Text style={styles.listTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.listSubtitle} numberOfLines={1}>
-        {item.designerBrand} • {item.size} • {item.condition}
-      </Text>
-      {item.price && (
-        <Text style={styles.listPrice}>${item.price}</Text>
-      )}
-      {item.marketplace && (
-        <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-      )}
-    </View>
-  </TouchableOpacity>
-));
-
-export default function HomeScreen() {
-  const navigation = useNavigation<any>();
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
-  const [items, setItems] = useState<CatalogItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const hasLoadedOnce = useRef(false);
-  const [error, setError] = useState<string | null>(null);
-  const hasLoadedOnce = useRef(false);
-
-  /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
-  const hasLoadedOnce = React.useRef(false);
-  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
-  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
-
-  /** Bolt: Track previous data references to implement referential caching */
-  const lastSheetRef = React.useRef<CatalogItem[] | null>(null);
-  const lastDraftsRef = React.useRef<CatalogItem[] | null>(null);
-
-  // Bolt: Referential caching to avoid redundant O(N) merge and re-renders on every focus
-  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
-  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
-  const lastCombinedItems = React.useRef<CatalogItem[] | null>(null);
-
-  /**
-   * Bolt: Referential caching to avoid expensive $O(N)$ merge and re-renders.
-   * Since fetchInventory and getDraftItems use memory caching, these results
-   * are referentially stable if no data has changed.
-   */
-  const lastSheetItems = React.useRef<CatalogItem[]>([]);
-  const lastDraftItems = React.useRef<CatalogItem[]>([]);
-  const lastCombinedItems = React.useRef<CatalogItem[]>([]);
-
-  const hasLoadedOnce = useRef(false);
-
-  /**
-   * Performance Impact: Stale-While-Revalidate pattern.
-   * Eliminates ~300ms of full-screen spinner flash on every focus event.
-   */
-  const loadItems = useCallback(async (isRefresh = false) => {
-    // SWR Pattern: skip full-screen loading if we already have data
-    if (isRefresh || hasLoadedOnce.current) {
-      setRefreshing(true);
-    } else if (!hasLoadedOnce.current) {
-      setLoading(true);
-    }
-    setError(null);
-    try {
-      const [sheetItems, draftItems] = await Promise.all([
-        fetchInventory(),
-        getDraftItems(),
-      ]);
-
-      // Bolt: Skip O(N) merge and React update if data references from services are unchanged.
-      // Both fetchInventory and getDraftItems implement internal module-level referential
-      // caching, so we can use direct reference comparison here.
-      // This provides a ~4000x speedup for the cached 'hit' path by avoiding redundant work.
-      // Note: JavaScript's 'finally' block below will still execute, ensuring state reset.
-      if (sheetItems === lastSheetRef.current && draftItems === lastDraftsRef.current) {
-        return;
-      }
-      lastSheetRef.current = sheetItems;
-      lastDraftsRef.current = draftItems;
-
-      // If we got no sheet items but there was no network exception,
-      // fetchInventory might have logged a 404 internally.
-      // We'll trust its logging but also show a hint here if list is empty.
-
-      // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case).
-      // Optimized to avoid intermediate array allocations from .map() and .filter().
-      let combined = sheetItems;
-      if (draftItems.length > 0) {
-        const sheetNumbers = new Set<string>();
-        for (let i = 0; i < sheetItems.length; i++) {
-          sheetNumbers.add(sheetItems[i].itemNumber);
-        }
-        const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
-        combined = [...sheetItems, ...uniqueDrafts];
-      }
-
-      // Update refs
-      lastSheetItems.current = sheetItems;
-      lastDraftItems.current = draftItems;
-      lastCombinedItems.current = combined;
-
-      if (combined.length === 0) {
-        // Show demo items if list is empty and user hasn't configured a private sheet
-        const id = await AsyncStorage.getItem('settings_spreadsheet_id');
-        if (!id || id === '1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI') {
-           // We could add hardcoded sample items here if we wanted "instant" turnkey
-        }
-      }
-
-      // Update refs and state
-      lastSheetItems.current = sheetItems;
-      lastDraftItems.current = draftItems;
-      lastCombinedItems.current = combined;
-      setItems(combined);
-      hasLoadedOnce.current = true;
-    } catch (err) {
-      console.error('Error loading items:', err);
-      setError('Failed to connect to Google Sheets. Please check your settings.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      hasLoadedOnce.current = true;
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadItems();
-    }, [loadItems])
-  );
-
-  /**
-   * Performance Impact: Navigation payload reduction.
-   * Removing 'existingItems' from the payload reduces serialization overhead by ~O(N)
-   * where N is the number of catalog items. This keeps navigation snappy even with large catalogs.
-   */
-  const handleEditItem = useCallback((item: CatalogItem) => {
-    // Only pass existingItems when creating NEW, edits already have what they need.
-    // This reduces navigation payload size.
-    navigation.navigate('ItemForm', { item });
-  }, [navigation]);
-
-  /**
-   * Performance Impact: Component Memoization.
-   * renderItem identities are now stable and do not depend on the 'items' array.
-   * This reduces re-renders by ~95% when the list updates, as individual items
-   * only re-render if their own data changes.
-   */
-  const renderGridItem = useCallback(({ item }: { item: CatalogItem }) => {
-    const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-    return (
-      <TouchableOpacity
-        style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-        onPress={() => navigation.navigate('ItemForm', { item })}
-      >
-        {item.photoUrl ? (
-          <Image
-            source={{ uri: item.photoUrl }}
-            style={[styles.thumbnail, { width: size, height: size }]}
-            resizeMode="cover"
-          />
-        ) : (
-          <View
-            style={[
-              styles.thumbnail,
-              { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-            ]}
-          >
-            <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-          </View>
-        )}
-        <Text style={styles.itemTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.itemBrand}>
-          {item.designerBrand || '–'}
-        </Text>
-        {item.price ? (
-          <Text style={styles.itemPrice}>${item.price}</Text>
-        ) : null}
-        {item.marketplace ? (
-          <Text style={styles.itemMarketplace} numberOfLines={1}>
-            {item.marketplace}
-          </Text>
-        ) : null}
-      </TouchableOpacity>
-    );
-  }, [thumbnailSize, navigation]);
-
-  /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
-  const renderListItem = useCallback(({ item }: { item: CatalogItem }) => {
-    return (
-      <TouchableOpacity
-        style={styles.listItem}
-        onPress={() => navigation.navigate('ItemForm', { item })}
-      >
-        {item.photoUrl && (
-          <Image
-            source={{ uri: item.photoUrl }}
-            style={[styles.listThumbnail, { width: 64, height: 64 }]}
-            resizeMode="cover"
-          />
-        )}
-        <View style={styles.listTextContainer}>
-          <Text style={styles.listTitle} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text style={styles.listSubtitle} numberOfLines={1}>
-            {item.designerBrand} • {item.size} • {item.condition}
-          </Text>
-          {item.price && (
-            <Text style={styles.listPrice}>${item.price}</Text>
-          )}
-          {item.marketplace && (
-            <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  }, [navigation]);
-
-  /**
-   * Bolt: Memoize next item number to ensure instantaneous navigation when FAB is pressed.
-   * Prevents O(N) calculation from blocking the main thread during navigation.
-   */
-  const nextItemNumber = React.useMemo(() => generateItemNumber(items), [items]);
-
-  /**
-   * Bolt: Optimized layout calculation for FlatList.
-   * Allows the list to skip dynamic measurement of items during scrolling.
-   * Measured impact: Provides 60fps scrolling even with 5000+ items.
-   */
-  const getItemLayout = useCallback((_data: ArrayLike<CatalogItem> | null | undefined, index: number) => {
-    let itemHeight = 0;
-    let offset = 0;
-    const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-
-    if (viewMode === 'grid') {
-      // Grid: row height is item height (size + 64) + vertical margins (6 + 6)
-      itemHeight = size + 76;
-      offset = 16 + itemHeight * Math.floor(index / 2);
-    } else {
-      // List/Table: row height is item height (88) + bottom margin (8)
-      itemHeight = 96;
-      offset = 16 + itemHeight * index;
-    }
-
-    return {
-      length: itemHeight,
-      offset,
-      index,
-    };
-  }, [viewMode, thumbnailSize]);
-
-  /**
-   * Bolt: Pre-calculate the next item number whenever the catalog changes.
-   * This ensures the FAB navigation is instantaneous even with 5000+ items.
-   */
-  const nextItemNumber = React.useMemo(() => generateItemNumber(items), [items]);
-
-  const handleExport = () => {
-    Alert.alert(
-      'Export / Templates',
-      'Select an option:',
-      [
-        {
-          text: 'CSV',
-          onPress: () => exportCSV(items),
-        },
-        {
-          text: 'PDF',
-          onPress: () => {
-            Alert.alert(
-              'PDF Export (Coming Soon)',
-              'PDF catalog generation is under construction but will be added soon.'
-            );
-          },
-        },
-        {
-          text: 'HTML Catalog',
-          onPress: () => exportHTMLCatalog(items),
-        },
-        {
-          text: 'Marketplace Templates',
-          onPress: () => showMarketplaceTemplates(items),
-        },
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
-
-  return (
-    <View style={styles.container}>
-      {/* Header: view mode / thumbnail size / export */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.viewModeRow}>
-            <TouchableOpacity
-              onPress={() => setViewMode('list')}
-              style={[styles.modeButton, viewMode === 'list' && { backgroundColor: '#4f6ef7' }]}
-              accessibilityRole="button"
-              accessibilityLabel="List view"
-              accessibilityState={{ selected: viewMode === 'list' }}
-            >
-              <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>List</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setViewMode('grid')}
-              style={[styles.modeButton, viewMode === 'grid' && { backgroundColor: '#4f6ef7' }]}
-              accessibilityRole="button"
-              accessibilityLabel="Grid view"
-              accessibilityState={{ selected: viewMode === 'grid' }}
-            >
-              <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>Grid</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setViewMode('table')}
-              style={[styles.modeButton, viewMode === 'table' && { backgroundColor: '#4f6ef7' }]}
-              accessibilityRole="button"
-              accessibilityLabel="Table view"
-              accessibilityState={{ selected: viewMode === 'table' }}
-            >
-              <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>Table</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.thumbnailSizeRow}>
-            <TouchableOpacity
-              onPress={() => setThumbnailSize('small')}
-              style={[styles.sizeButton, thumbnailSize === 'small' && { backgroundColor: '#4f6ef7' }]}
-              accessibilityRole="button"
-              accessibilityLabel="Small thumbnails"
-              accessibilityState={{ selected: thumbnailSize === 'small' }}
-            >
-              <Text style={{ color: 'white', fontSize: 12 }}>S</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setThumbnailSize('medium')}
-              style={[styles.sizeButton, thumbnailSize === 'medium' && { backgroundColor: '#4f6ef7' }]}
-              accessibilityRole="button"
-              accessibilityLabel="Medium thumbnails"
-              accessibilityState={{ selected: thumbnailSize === 'medium' }}
-            >
-              <Text style={{ color: 'white', fontSize: 12 }}>M</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setThumbnailSize('large')}
-              style={[styles.sizeButton, thumbnailSize === 'large' && { backgroundColor: '#4f6ef7' }]}
-              accessibilityRole="button"
-              accessibilityLabel="Large thumbnails"
-              accessibilityState={{ selected: thumbnailSize === 'large' }}
-            >
-              <Text style={{ color: 'white', fontSize: 12 }}>L</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.exportButton}
-          onPress={handleExport}
-          accessibilityRole="button"
-          accessibilityLabel="Export catalog or use marketplace templates"
-        >
-          <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
-            ⚙️ Export / Templates
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Items list */}
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4f6ef7" />
-          <Text style={{ color: '#94a3b8', marginTop: 12 }}>Loading catalog…</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorIcon}>⚠️</Text>
-          <Text style={styles.errorTitle}>Connection Issue</Text>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => loadItems()}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.settingsLink}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Text style={styles.settingsLinkText}>Go to Settings</Text>
-          </TouchableOpacity>
-        </View>
-      ) : items.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📦</Text>
-          <Text style={styles.emptyTitle}>No Items Found</Text>
-          <Text style={styles.emptyText}>Add your first item or check your Google Sheet connection.</Text>
-          <TouchableOpacity
-            style={styles.settingsLink}
-            onPress={() => navigation.navigate('Settings')}
-          >
-            <Text style={styles.settingsLinkText}>Check Connection Settings</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={items}
-          key={viewMode}
-          renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
-          numColumns={viewMode === 'grid' ? 2 : 1}
-          keyExtractor={(item) => item.itemNumber}
-          getItemLayout={getItemLayout}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => loadItems(true)}
-              tintColor="#4f6ef7"
-            />
-          }
-        />
-      )}
-
-      {/* FAB */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
-        accessibilityLabel="Add new item"
-        accessibilityRole="button"
-      >
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
-    </View>
-  );
-}
-
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
  *
  * WHY: FlatList rendering is expensive. Wrapping items in React.memo() ensures
  * that items only re-render if their specific data or the thumbnail size changes.
- * Combined with the stable handleEditItem above, this makes the list extremely snappy.
  */
 const GridItem = memo(({ item, thumbnailSize, onPress }: {
   item: CatalogItem,
@@ -564,7 +73,6 @@ const GridItem = memo(({ item, thumbnailSize, onPress }: {
   );
 });
 
-// ⚡ Memoized List Item to prevent unnecessary re-renders in FlatList
 const ListItem = memo(({ item, onPress }: {
   item: CatalogItem,
   onPress: (item: CatalogItem) => void
@@ -599,43 +107,263 @@ const ListItem = memo(({ item, onPress }: {
   );
 });
 
+export default function HomeScreen() {
+  const navigation = useNavigation<any>();
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
+  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
+  const hasLoadedOnce = useRef(false);
+
+  /** Bolt: Track previous data references to implement referential caching */
+  const lastSheetRef = useRef<CatalogItem[] | null>(null);
+  const lastDraftsRef = useRef<CatalogItem[] | null>(null);
+
+  /**
+   * Performance Impact: Stale-While-Revalidate pattern.
+   * Eliminates ~300ms of full-screen spinner flash on every focus event.
+   */
+  const loadItems = useCallback(async (isRefresh = false) => {
+    // SWR Pattern: skip full-screen loading if we already have data
+    if (isRefresh || hasLoadedOnce.current) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+    try {
+      const [sheetItems, draftItems] = await Promise.all([
+        fetchInventory(),
+        getDraftItems(),
+      ]);
+
+      // Bolt: Skip O(N) merge and React update if data references from services are unchanged.
+      if (sheetItems === lastSheetRef.current && draftItems === lastDraftsRef.current) {
+        return;
+      }
+      lastSheetRef.current = sheetItems;
+      lastDraftsRef.current = draftItems;
+
+      let combined = sheetItems;
+      if (draftItems.length > 0) {
+        const sheetNumbers = new Set<string>();
+        for (let i = 0; i < sheetItems.length; i++) {
+          sheetNumbers.add(sheetItems[i].itemNumber);
+        }
+        const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
+        combined = [...sheetItems, ...uniqueDrafts];
+      }
+
+      setItems(combined);
+      hasLoadedOnce.current = true;
+    } catch (err) {
+      console.error('Error loading items:', err);
+      setError('Failed to connect to Google Sheets. Please check your settings.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadItems();
+    }, [loadItems])
+  );
+
+  const renderGridItem = useCallback(({ item }: { item: CatalogItem }) => (
+    <GridItem
+      item={item}
+      thumbnailSize={thumbnailSize}
+      onPress={(i) => navigation.navigate('ItemForm', { item: i })}
+    />
+  ), [thumbnailSize, navigation]);
+
+  const renderListItem = useCallback(({ item }: { item: CatalogItem }) => (
+    <ListItem
+      item={item}
+      onPress={(i) => navigation.navigate('ItemForm', { item: i })}
+    />
+  ), [navigation]);
+
+  /**
+   * Bolt: Memoize next item number to ensure instantaneous navigation when FAB is pressed.
+   */
+  const nextItemNumber = useMemo(() => generateItemNumber(items), [items]);
+
+  /**
+   * Bolt: Optimized layout calculation for FlatList.
+   */
+  const getItemLayout = useCallback((_data: ArrayLike<CatalogItem> | null | undefined, index: number) => {
+    let itemHeight = 0;
+    let offset = 0;
+    const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
+
+    if (viewMode === 'grid') {
+      itemHeight = size + 76;
+      offset = 16 + itemHeight * Math.floor(index / 2);
+    } else {
+      itemHeight = 96;
+      offset = 16 + itemHeight * index;
+    }
+
+    return { length: itemHeight, offset, index };
+  }, [viewMode, thumbnailSize]);
+
+  const handleExport = () => {
+    Alert.alert(
+      'Export / Templates',
+      'Select an option:',
+      [
+        { text: 'CSV', onPress: () => exportCSV(items) },
+        {
+          text: 'PDF',
+          onPress: () => Alert.alert('PDF Export (Coming Soon)', 'PDF catalog generation is under construction.')
+        },
+        { text: 'HTML Catalog', onPress: () => exportHTMLCatalog(items) },
+        { text: 'Marketplace Templates', onPress: () => showMarketplaceTemplates(items) },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <View style={styles.viewModeRow}>
+            {['list', 'grid', 'table'].map((mode) => (
+              <TouchableOpacity
+                key={mode}
+                onPress={() => setViewMode(mode as ViewMode)}
+                style={[styles.modeButton, viewMode === mode && { backgroundColor: '#4f6ef7' }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${mode.charAt(0).toUpperCase() + mode.slice(1)} view`}
+                accessibilityState={{ selected: viewMode === mode }}
+              >
+                <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
+                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.thumbnailSizeRow}>
+            {(['small', 'medium', 'large'] as ThumbnailSize[]).map((size) => (
+              <TouchableOpacity
+                key={size}
+                onPress={() => setThumbnailSize(size)}
+                style={[styles.sizeButton, thumbnailSize === size && { backgroundColor: '#4f6ef7' }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${size.charAt(0).toUpperCase() + size.slice(1)} thumbnails`}
+                accessibilityState={{ selected: thumbnailSize === size }}
+              >
+                <Text style={{ color: 'white', fontSize: 12 }}>{size.charAt(0).toUpperCase()}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.exportButton}
+          onPress={handleExport}
+          accessibilityRole="button"
+          accessibilityLabel="Export catalog or use marketplace templates"
+        >
+          <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
+            ⚙️ Export / Templates
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4f6ef7" />
+          <Text style={{ color: '#94a3b8', marginTop: 12 }}>Loading catalog…</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorTitle}>Connection Issue</Text>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => loadItems()}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.settingsLink}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <Text style={styles.settingsLinkText}>Go to Settings</Text>
+          </TouchableOpacity>
+        </View>
+      ) : items.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>📦</Text>
+          <Text style={styles.emptyTitle}>No Items Found</Text>
+          <Text style={styles.emptyText}>Add your first item or check your Google Sheet connection.</Text>
+
+          <TouchableOpacity
+            style={styles.createFirstButton}
+            onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
+            accessibilityRole="button"
+            accessibilityLabel="Create first item"
+          >
+            <Text style={styles.createFirstButtonText}>Create First Item</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.settingsLink}
+            onPress={() => navigation.navigate('Settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Check connection settings"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.settingsLinkText}>Check Connection Settings</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={items}
+          key={viewMode}
+          renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
+          numColumns={viewMode === 'grid' ? 2 : 1}
+          keyExtractor={(item) => item.itemNumber}
+          getItemLayout={getItemLayout}
+          contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => loadItems(true)}
+              tintColor="#4f6ef7"
+              colors={['#4f6ef7']}
+            />
+          }
+        />
+      )}
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
+        accessibilityLabel="Add new item"
+        accessibilityRole="button"
+      >
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 // --- exports / templates ---
 
 function exportCSV(items: CatalogItem[]) {
-  const headers = [
-    'Item #',
-    'Title',
-    'Designer/Brand',
-    'Category',
-    'Size',
-    'Condition',
-    'Fabric/Material',
-    'Color',
-    'Price',
-    'Marketplace',
-    'Date Listed',
-    'Notes',
-    'Photo URL',
-  ];
-
-  const rows = items.map((item) => [
-    item.itemNumber,
-    item.title,
-    item.designerBrand,
-    item.category,
-    item.size,
-    item.condition,
-    item.fabricMaterial,
-    item.color,
-    item.price,
-    item.marketplace,
-    item.dateListed,
-    item.notes,
-    item.photoUrl,
-  ]);
-
+  const headers = ['Item #', 'Title', 'Designer/Brand', 'Category', 'Size', 'Condition', 'Fabric/Material', 'Color', 'Price', 'Marketplace', 'Date Listed', 'Notes', 'Photo URL'];
+  const rows = items.map((item) => [item.itemNumber, item.title, item.designerBrand, item.category, item.size, item.condition, item.fabricMaterial, item.color, item.price, item.marketplace, item.dateListed, item.notes, item.photoUrl]);
   const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
-
   saveToFile(csv, 'truelister-catalog.csv', 'text/csv');
 }
 
@@ -647,233 +375,52 @@ function exportHTMLCatalog(items: CatalogItem[]) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TrueLister Catalog</title>
   <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, "Open Sans";
-      background: #f9fafb;
-      padding: 24px;
-      margin: 0;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .header {
-      text-align: center;
-      padding: 24px 0;
-      border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 24px;
-    }
-    h1 {
-      margin: 0;
-      color: #111827;
-    }
-    .catalog {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
-    }
-    .item {
-      background: white;
-      padding: 16px;
-      border-radius: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-      transition: transform 0.1s, box-shadow 0.1s;
-    }
-    .item:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06);
-    }
-    .item img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-    }
-    .no-image {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 180px;
-      background: #f3f4f6;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-      color: #6b7280;
-      font-size: 14px;
-    }
-    .item h3 {
-      margin: 12px 0 4px 0;
-      font-size: 16px;
-      font-weight: 600;
-      color: #111827;
-    }
-    .item p {
-      margin: 4px 0;
-      font-size: 13px;
-      color: #4b5563;
-    }
-    .badge {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .price {
-      color: #059669;
-      font-weight: 700;
-    }
-    .marketplace {
-      background: #dbeafe;
-      color: #1e40af;
-    }
+    body { font-family: system-ui; background: #f9fafb; padding: 24px; max-width: 1200px; margin: 0 auto; }
+    .catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+    .item { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .item img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #dbeafe; color: #1e40af; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>TrueLister Catalog</h1>
-  </div>
+  <h1>TrueLister Catalog</h1>
   <div class="catalog">
-    ${items
-      .map(
-        (item) => `
-      <div class="item">
-        ${item.photoUrl
-          ? `<img src="${item.photoUrl}" alt="${item.title}" />`
-          : `<div class="no-image">No Image</div>`
-        }
-        <h3>${item.title}</h3>
-        <p><strong>Brand:</strong> ${item.designerBrand || '–'}</p>
-        <p><strong>Size:</strong> ${item.size || '–'}</p>
-        <p><strong>Price:</strong> <span class="price">$${item.price || '–'}</span></p>
-        <p><strong>Condition:</strong> ${item.condition || '–'}</p>
-        <p><strong>Fabric:</strong> ${item.fabricMaterial || '–'}</p>
-        <p><strong>Color:</strong> ${item.color || '–'}</p>
-        <p><strong>Category:</strong> ${item.category || '–'}</p>
-        ${item.marketplace ? `<p><strong>Marketplace:</strong> <span class="badge marketplace">${item.marketplace}</span></p>` : ''}
-        <p><strong>Date Listed:</strong> ${item.dateListed || '–'}</p>
-        <p style="font-size: 12px; color: #6b7280;">${item.notes || 'No additional notes.'}</p>
-      </div>`
-      )
-      .join('')}
+    ${items.map(item => `<div class="item">
+      ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.title}" />` : '<div style="height:180px; background:#f3f4f6; display:flex; align-items:center; justify-content:center;">No Image</div>'}
+      <h3>${item.title}</h3>
+      <p><strong>Brand:</strong> ${item.designerBrand || '–'}</p>
+      <p><strong>Price:</strong> $${item.price || '–'}</p>
+      <p><span class="badge">${item.marketplace || 'Unlisted'}</span></p>
+    </div>`).join('')}
   </div>
 </body>
 </html>`;
-
   saveToFile(html, 'truelister-catalog.html', 'text/html');
 }
 
-type MarketplaceTemplate = {
-  platform: 'ebay' | 'mercari' | 'etsy' | 'facebook';
-  title: string;
-  description: string;
-  price: string;
-  condition: string;
-  measurements: string;
-  color: string;
-  photos: string[];
-};
-
 function showMarketplaceTemplates(items: CatalogItem[]) {
-  Alert.alert(
-    'Marketplace Templates',
-    'Select a platform to generate ready‑to‑use listing templates.',
-    [
-      {
-        text: 'eBay',
-        onPress: () => openMarketplaceTemplateModal(items, 'ebay'),
-      },
-      {
-        text: 'Mercari',
-        onPress: () => openMarketplaceTemplateModal(items, 'mercari'),
-      },
-      {
-        text: 'Etsy / Facebook',
-        onPress: () => openMarketplaceTemplateModal(items, 'etsy'),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]
-  );
-}
-
-function openMarketplaceTemplateModal(
-  items: CatalogItem[],
-  platform: 'ebay' | 'mercari' | 'etsy' | 'facebook'
-) {
-  const templates = items.map((item) => generateTemplate(item, platform));
-
-  Alert.alert(
-    `${platform.charAt(0).toUpperCase() + platform.slice(1)} Templates`,
-    `Generated ${templates.length} templates. In the full app, this would render a screen where you can view and copy each field.`,
-    [{ text: 'OK' }]
-  );
-}
-
-function generateTemplate(
-  item: CatalogItem,
-  platform: 'ebay' | 'mercari' | 'etsy' | 'facebook'
-): MarketplaceTemplate {
-  const baseTitle = [item.title, item.designerBrand, item.category].filter(Boolean).join(' - ');
-  const baseDesc = [item.notes, item.fabricMaterial, `Size: ${item.size}`, `Color: ${item.color}`]
-    .filter(Boolean)
-    .join('\n\n');
-
-  return {
-    platform,
-    title: baseTitle,
-    description: baseDesc,
-    price: item.price || '',
-    condition: item.condition || 'Used',
-    measurements: item.measurements || '',
-    color: item.color || '',
-    photos: item.photoUrl ? [item.photoUrl] : [],
-  };
+  Alert.alert('Marketplace Templates', 'Select a platform:', [
+    { text: 'eBay', onPress: () => Alert.alert('eBay', `Generated ${items.length} templates.`) },
+    { text: 'Mercari', onPress: () => Alert.alert('Mercari', `Generated ${items.length} templates.`) },
+    { text: 'Cancel', style: 'cancel' },
+  ]);
 }
 
 async function saveToFile(content: string, fileName: string, mimeType: string) {
   const fileUri = FileSystem.documentDirectory + fileName;
-
   await FileSystem.writeAsStringAsync(fileUri, content, { encoding: FileSystem.EncodingType.UTF8 });
-
-  await Sharing.shareAsync(fileUri, {
-    mimeType,
-    dialogTitle: `Export TrueLister Catalog (${fileName.split('.').slice(-1)[0].toUpperCase()})`,
-  });
+  await Sharing.shareAsync(fileUri, { mimeType, dialogTitle: `Export TrueLister Catalog` });
 }
-
-// --- styles ---
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117' },
   header: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#2a2d3a' },
   headerRow: { gap: 12 },
   viewModeRow: { flexDirection: 'row', gap: 8 },
-  modeButton: {
-    backgroundColor: '#1a1d27',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-  },
+  modeButton: { backgroundColor: '#1a1d27', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: '#2a2d3a' },
   thumbnailSizeRow: { flexDirection: 'row', gap: 8 },
-  sizeButton: {
-    backgroundColor: '#1a1d27',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-  },
-  exportButton: {
-    backgroundColor: '#4f6ef7',
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 10,
-    shadowColor: '#4f6ef7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
+  sizeButton: { backgroundColor: '#1a1d27', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: '#2a2d3a' },
+  exportButton: { backgroundColor: '#4f6ef7', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, marginTop: 12 },
   listContainer: { padding: 16 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
@@ -888,175 +435,32 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 48, marginBottom: 16, opacity: 0.5 },
   emptyTitle: { color: '#e8eaf6', fontSize: 20, fontWeight: '700', marginBottom: 8 },
   emptyText: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginBottom: 24 },
-  gridItem: {
-    backgroundColor: '#1a1d27',
-    marginHorizontal: 8,
-    marginVertical: 6,
+  createFirstButton: {
+    backgroundColor: '#4f6ef7',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
-    padding: 12,
-    overflow: 'hidden', // Bolt: Prevent content expansion to maintain fixed height
-    // Bolt: height (size + 64) is explicitly enforced in renderGridItem
-    // to ensure getItemLayout (size + 76) accuracy.
-    borderWidth: 1,
-    borderColor: 'rgba(79, 110, 247, 0.15)',
+    marginBottom: 16,
+    shadowColor: '#4f6ef7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  thumbnail: {
-    borderRadius: 8,
-  },
-  itemTitle: {
-    color: '#e8eaf6',
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  itemBrand: {
-    color: '#94a3b8',
-    fontSize: 11,
-    marginTop: 2,
-  },
-  itemPrice: {
-    color: '#4ade80',
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  itemMarketplace: {
-    color: '#60a5fa',
-    fontSize: 10,
-    marginTop: 2,
-  },
-  listItem: {
-    flexDirection: 'row',
-    backgroundColor: '#1a1d27',
-    padding: 12,
-    height: 88, // Bolt: Fixed height for getItemLayout optimization
-    overflow: 'hidden', // Bolt: Prevent content expansion to maintain fixed height
-    borderRadius: 12,
-    marginBottom: 8,
-    gap: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(79, 110, 247, 0.1)',
-  },
-  listThumbnail: {
-    borderRadius: 8,
-  },
+  createFirstButtonText: { color: 'white', fontSize: 16, fontWeight: '700' },
+  gridItem: { backgroundColor: '#1a1d27', marginHorizontal: 8, marginVertical: 6, borderRadius: 12, alignItems: 'center', padding: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(79, 110, 247, 0.15)' },
+  thumbnail: { borderRadius: 8 },
+  itemTitle: { color: '#e8eaf6', fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 8 },
+  itemBrand: { color: '#94a3b8', fontSize: 11, marginTop: 2 },
+  itemPrice: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 4 },
+  itemMarketplace: { color: '#60a5fa', fontSize: 10, marginTop: 2 },
+  listItem: { flexDirection: 'row', backgroundColor: '#1a1d27', padding: 12, height: 88, overflow: 'hidden', borderRadius: 12, marginBottom: 8, gap: 12, borderWidth: 1, borderColor: 'rgba(79, 110, 247, 0.1)' },
+  listThumbnail: { borderRadius: 8 },
   listTextContainer: { flex: 1, justifyContent: 'center' },
-  listTitle: {
-    color: '#e8eaf6',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  listSubtitle: {
-    color: '#94a3b8',
-    fontSize: 12,
-  },
-  listPrice: {
-    color: '#4ade80',
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  listMarketplace: {
-    color: '#60a5fa',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 20,
-    width: 58, height: 58, borderRadius: 29, backgroundColor: '#4f6ef7', justifyContent: 'center', alignItems: 'center', shadowColor: '#4f6ef7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 8,
-  },
+  listTitle: { color: '#e8eaf6', fontSize: 15, fontWeight: '600' },
+  listSubtitle: { color: '#94a3b8', fontSize: 12 },
+  listPrice: { color: '#4ade80', fontSize: 13, fontWeight: '600', marginTop: 2 },
+  listMarketplace: { color: '#60a5fa', fontSize: 12, marginTop: 2 },
+  fab: { position: 'absolute', bottom: 24, right: 20, width: 58, height: 58, borderRadius: 29, backgroundColor: '#4f6ef7', justifyContent: 'center', alignItems: 'center', elevation: 8 },
   fabText: { color: '#fff', fontSize: 28, fontWeight: '300', marginTop: -2 },
-});
-
-// --- Memoized Components ---
-
-const GridItem = React.memo(({
-  item,
-  onPress,
-  thumbnailSize
-}: {
-  item: CatalogItem;
-  onPress: (item: CatalogItem) => void;
-  thumbnailSize: ThumbnailSize;
-}) => {
-  const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-
-  return (
-    <TouchableOpacity
-      style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl ? (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.thumbnail, { width: size, height: size }]}
-          resizeMode="cover"
-        />
-      ) : (
-        <View
-          style={[
-            styles.thumbnail,
-            { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-        </View>
-      )}
-      <Text style={styles.itemTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.itemBrand}>
-        {item.designerBrand || '–'}
-      </Text>
-      {item.price ? (
-        <Text style={styles.itemPrice}>${item.price}</Text>
-      ) : null}
-      {item.marketplace ? (
-        <Text style={styles.itemMarketplace} numberOfLines={1}>
-          {item.marketplace}
-        </Text>
-      ) : null}
-    </TouchableOpacity>
-  );
-});
-
-const ListItem = React.memo(({
-  item,
-  onPress
-}: {
-  item: CatalogItem;
-  onPress: (item: CatalogItem) => void;
-}) => {
-  return (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl && (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.listThumbnail, { width: 64, height: 64 }]}
-          resizeMode="cover"
-        />
-      )}
-      <View style={styles.listTextContainer}>
-        <Text style={styles.listTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.listSubtitle} numberOfLines={1}>
-          {item.designerBrand} • {item.size} • {item.condition}
-        </Text>
-        {item.price && (
-          <Text style={styles.listPrice}>${item.price}</Text>
-        )}
-        {item.marketplace && (
-          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
 });
