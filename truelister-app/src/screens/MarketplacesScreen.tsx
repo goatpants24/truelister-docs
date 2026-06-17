@@ -146,6 +146,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
             autoCorrect={false}
             secureTextEntry={field.secure}
             keyboardType={field.key === 'email' ? 'email-address' : 'default'}
+            accessibilityLabel={`${marketplace.name} ${field.label}`}
           />
         </View>
       ))}
@@ -155,10 +156,17 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
         <TouchableOpacity
           style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
           onPress={handleSave}
+          accessibilityRole="button"
+          accessibilityLabel={`Save ${marketplace.name} credentials`}
         >
           <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.clearBtn} onPress={handleClear}>
+        <TouchableOpacity
+          style={styles.clearBtn}
+          onPress={handleClear}
+          accessibilityRole="button"
+          accessibilityLabel={`Clear ${marketplace.name} credentials`}
+        >
           <Text style={styles.clearBtnText}>Clear</Text>
         </TouchableOpacity>
       </View>
