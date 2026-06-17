@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
 import {
   View,
   Text,
@@ -24,74 +24,6 @@ type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
 
 /** Memoized Grid Item for performance */
-const GridItem = React.memo(({ item, size, onPress }: { item: CatalogItem, size: number, onPress: (i: CatalogItem) => void }) => (
-  <TouchableOpacity
-    style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-    onPress={() => onPress(item)}
-  >
-    {item.photoUrl ? (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.thumbnail, { width: size, height: size }]}
-        resizeMode="cover"
-      />
-    ) : (
-      <View
-        style={[
-          styles.thumbnail,
-          { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-        ]}
-      >
-        <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-      </View>
-    )}
-    <Text style={styles.itemTitle} numberOfLines={1}>
-      {item.title}
-    </Text>
-    <Text style={styles.itemBrand}>
-      {item.designerBrand || '–'}
-    </Text>
-    {item.price ? (
-      <Text style={styles.itemPrice}>${item.price}</Text>
-    ) : null}
-    {item.marketplace ? (
-      <Text style={styles.itemMarketplace} numberOfLines={1}>
-        {item.marketplace}
-      </Text>
-    ) : null}
-  </TouchableOpacity>
-));
-
-/** Memoized List Item for performance */
-const ListItem = React.memo(({ item, onPress }: { item: CatalogItem, onPress: (i: CatalogItem) => void }) => (
-  <TouchableOpacity
-    style={styles.listItem}
-    onPress={() => onPress(item)}
-  >
-    {item.photoUrl && (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.listThumbnail, { width: 64, height: 64 }]}
-        resizeMode="cover"
-      />
-    )}
-    <View style={styles.listTextContainer}>
-      <Text style={styles.listTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.listSubtitle} numberOfLines={1}>
-        {item.designerBrand} • {item.size} • {item.condition}
-      </Text>
-      {item.price && (
-        <Text style={styles.listPrice}>${item.price}</Text>
-      )}
-      {item.marketplace && (
-        <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-      )}
-    </View>
-  </TouchableOpacity>
-));
-
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -100,33 +32,13 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const hasLoadedOnce = useRef(false);
+  const lastSheetRef = useRef<CatalogItem[] | null>(null);
+  const lastDraftsRef = useRef<CatalogItem[] | null>(null);
+  const lastCombinedItems = useRef<CatalogItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const hasLoadedOnce = useRef(false);
 
   /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
-  const hasLoadedOnce = React.useRef(false);
-  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
-  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
 
-  /** Bolt: Track previous data references to implement referential caching */
-  const lastSheetRef = React.useRef<CatalogItem[] | null>(null);
-  const lastDraftsRef = React.useRef<CatalogItem[] | null>(null);
-
-  // Bolt: Referential caching to avoid redundant O(N) merge and re-renders on every focus
-  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
-  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
-  const lastCombinedItems = React.useRef<CatalogItem[] | null>(null);
-
-  /**
-   * Bolt: Referential caching to avoid expensive $O(N)$ merge and re-renders.
-   * Since fetchInventory and getDraftItems use memory caching, these results
-   * are referentially stable if no data has changed.
-   */
-  const lastSheetItems = React.useRef<CatalogItem[]>([]);
-  const lastDraftItems = React.useRef<CatalogItem[]>([]);
-  const lastCombinedItems = React.useRef<CatalogItem[]>([]);
-
-  const hasLoadedOnce = useRef(false);
 
   /**
    * Performance Impact: Stale-While-Revalidate pattern.
@@ -174,8 +86,8 @@ export default function HomeScreen() {
       }
 
       // Update refs
-      lastSheetItems.current = sheetItems;
-      lastDraftItems.current = draftItems;
+      lastSheetRef.current = sheetItems;
+      lastDraftsRef.current = draftItems;
       lastCombinedItems.current = combined;
 
       if (combined.length === 0) {
@@ -187,8 +99,8 @@ export default function HomeScreen() {
       }
 
       // Update refs and state
-      lastSheetItems.current = sheetItems;
-      lastDraftItems.current = draftItems;
+      lastSheetRef.current = sheetItems;
+      lastDraftsRef.current = draftItems;
       lastCombinedItems.current = combined;
       setItems(combined);
       hasLoadedOnce.current = true;
@@ -335,7 +247,6 @@ export default function HomeScreen() {
    * Bolt: Pre-calculate the next item number whenever the catalog changes.
    * This ensures the FAB navigation is instantaneous even with 5000+ items.
    */
-  const nextItemNumber = React.useMemo(() => generateItemNumber(items), [items]);
 
   const handleExport = () => {
     Alert.alert(
@@ -974,89 +885,3 @@ const styles = StyleSheet.create({
 
 // --- Memoized Components ---
 
-const GridItem = React.memo(({
-  item,
-  onPress,
-  thumbnailSize
-}: {
-  item: CatalogItem;
-  onPress: (item: CatalogItem) => void;
-  thumbnailSize: ThumbnailSize;
-}) => {
-  const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-
-  return (
-    <TouchableOpacity
-      style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl ? (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.thumbnail, { width: size, height: size }]}
-          resizeMode="cover"
-        />
-      ) : (
-        <View
-          style={[
-            styles.thumbnail,
-            { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-        </View>
-      )}
-      <Text style={styles.itemTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.itemBrand}>
-        {item.designerBrand || '–'}
-      </Text>
-      {item.price ? (
-        <Text style={styles.itemPrice}>${item.price}</Text>
-      ) : null}
-      {item.marketplace ? (
-        <Text style={styles.itemMarketplace} numberOfLines={1}>
-          {item.marketplace}
-        </Text>
-      ) : null}
-    </TouchableOpacity>
-  );
-});
-
-const ListItem = React.memo(({
-  item,
-  onPress
-}: {
-  item: CatalogItem;
-  onPress: (item: CatalogItem) => void;
-}) => {
-  return (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl && (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.listThumbnail, { width: 64, height: 64 }]}
-          resizeMode="cover"
-        />
-      )}
-      <View style={styles.listTextContainer}>
-        <Text style={styles.listTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.listSubtitle} numberOfLines={1}>
-          {item.designerBrand} • {item.size} • {item.condition}
-        </Text>
-        {item.price && (
-          <Text style={styles.listPrice}>${item.price}</Text>
-        )}
-        {item.marketplace && (
-          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-});
