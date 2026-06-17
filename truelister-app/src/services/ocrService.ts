@@ -29,7 +29,6 @@ const SIZE_PATTERNS = [
 
 /**
  * Brands with their preferred display casing.
- * Bolt: Using pre-cased brands eliminates redundant string manipulation in the hot path.
  */
 const KNOWN_BRANDS = [
   'Nike', 'Adidas', 'Gucci', 'Prada', 'Zara', 'H&M', 'Uniqlo',
@@ -95,6 +94,8 @@ export async function extractTextFromImage(imageUri: string): Promise<string> {
     return '';
   }
 }
+
+// ── Smart Field Parsing ──────────────────────────────────────────────────────
 
 /**
  * Parse OCR text from a clothing tag and extract structured fields.
