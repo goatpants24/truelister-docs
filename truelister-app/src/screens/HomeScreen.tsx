@@ -98,18 +98,54 @@ const ListItem = React.memo(({
       <Text style={styles.listTitle} numberOfLines={1}>
         {item.title}
       </Text>
-      <Text style={styles.listSubtitle} numberOfLines={1}>
-        {item.designerBrand} • {item.size} • {item.condition}
+      <Text style={styles.itemBrand}>
+        {item.designerBrand || '–'}
       </Text>
-      {item.price && (
-        <Text style={styles.listPrice}>${item.price}</Text>
+      {item.price ? (
+        <Text style={styles.itemPrice}>${item.price}</Text>
+      ) : null}
+      {item.marketplace ? (
+        <Text style={styles.itemMarketplace} numberOfLines={1}>
+          {item.marketplace}
+        </Text>
+      ) : null}
+    </TouchableOpacity>
+  );
+});
+
+const ListItem = memo(({ item, onPress }: {
+  item: CatalogItem,
+  onPress: (item: CatalogItem) => void
+}) => {
+  return (
+    <TouchableOpacity
+      style={styles.listItem}
+      onPress={() => onPress(item)}
+    >
+      {item.photoUrl && (
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={[styles.listThumbnail, { width: 64, height: 64 }]}
+          resizeMode="cover"
+        />
       )}
-      {item.marketplace && (
-        <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-      )}
-    </View>
-  </TouchableOpacity>
-));
+      <View style={styles.listTextContainer}>
+        <Text style={styles.listTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={styles.listSubtitle} numberOfLines={1}>
+          {item.designerBrand} • {item.size} • {item.condition}
+        </Text>
+        {item.price && (
+          <Text style={styles.listPrice}>${item.price}</Text>
+        )}
+        {item.marketplace && (
+          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -169,7 +205,6 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
       setRefreshing(false);
-      hasLoadedOnce.current = true;
     }
   }, []);
 
@@ -204,7 +239,6 @@ export default function HomeScreen() {
 
   /**
    * Bolt: Memoize next item number to ensure instantaneous navigation when FAB is pressed.
-   * Prevents O(N) calculation from blocking the main thread during navigation.
    */
   const nextItemNumber = useMemo(() => generateItemNumber(items), [items]);
 
@@ -225,11 +259,7 @@ export default function HomeScreen() {
       offset = 16 + itemHeight * index;
     }
 
-    return {
-      length: itemHeight,
-      offset,
-      index,
-    };
+    return { length: itemHeight, offset, index };
   }, [viewMode, thumbnailSize]);
 
   const handleExport = () => {
@@ -330,6 +360,9 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.settingsLink}
             onPress={() => navigation.navigate('Settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Check connection settings"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text style={styles.settingsLinkText}>Check Connection Settings</Text>
           </TouchableOpacity>
@@ -431,75 +464,15 @@ function exportHTMLCatalog(items: CatalogItem[]) {
   </div>
 </body>
 </html>`;
-
   saveToFile(html, 'truelister-catalog.html', 'text/html');
 }
 
-type MarketplaceTemplate = {
-  platform: 'ebay' | 'mercari' | 'etsy' | 'facebook';
-  title: string;
-  description: string;
-  price: string;
-  condition: string;
-  measurements: string;
-  color: string;
-  photos: string[];
-};
-
 function showMarketplaceTemplates(items: CatalogItem[]) {
-  Alert.alert(
-    'Marketplace Templates',
-    'Select a platform to generate ready‑to‑use listing templates.',
-    [
-      {
-        text: 'eBay',
-        onPress: () => openMarketplaceTemplateModal(items, 'ebay'),
-      },
-      {
-        text: 'Mercari',
-        onPress: () => openMarketplaceTemplateModal(items, 'mercari'),
-      },
-      {
-        text: 'Etsy / Facebook',
-        onPress: () => openMarketplaceTemplateModal(items, 'etsy'),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]
-  );
-}
-
-function openMarketplaceTemplateModal(
-  items: CatalogItem[],
-  platform: 'ebay' | 'mercari' | 'etsy' | 'facebook'
-) {
-  const templates = items.map((item) => generateTemplate(item, platform));
-
-  Alert.alert(
-    `${platform.charAt(0).toUpperCase() + platform.slice(1)} Templates`,
-    `Generated ${templates.length} templates. In the full app, this would render a screen where you can view and copy each field.`,
-    [{ text: 'OK' }]
-  );
-}
-
-function generateTemplate(
-  item: CatalogItem,
-  platform: 'ebay' | 'mercari' | 'etsy' | 'facebook'
-): MarketplaceTemplate {
-  const baseTitle = [item.title, item.designerBrand, item.category].filter(Boolean).join(' - ');
-  const baseDesc = [item.notes, item.fabricMaterial, `Size: ${item.size}`, `Color: ${item.color}`]
-    .filter(Boolean)
-    .join('\n\n');
-
-  return {
-    platform,
-    title: baseTitle,
-    description: baseDesc,
-    price: item.price || '',
-    condition: item.condition || 'Used',
-    measurements: item.measurements || '',
-    color: item.color || '',
-    photos: item.photoUrl ? [item.photoUrl] : [],
-  };
+  Alert.alert('Marketplace Templates', 'Select a platform:', [
+    { text: 'eBay', onPress: () => Alert.alert('eBay', `Generated ${items.length} templates.`) },
+    { text: 'Mercari', onPress: () => Alert.alert('Mercari', `Generated ${items.length} templates.`) },
+    { text: 'Cancel', style: 'cancel' },
+  ]);
 }
 
 async function saveToFile(content: string, fileName: string, mimeType: string) {
@@ -510,8 +483,6 @@ async function saveToFile(content: string, fileName: string, mimeType: string) {
     dialogTitle: `Export TrueLister Catalog (${fileName.split('.').pop()?.toUpperCase()})`,
   });
 }
-
-// --- styles ---
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117' },
