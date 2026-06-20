@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo, memo } from 'react';
 import {
   View,
   Text,
@@ -59,43 +59,6 @@ const GridItem = React.memo(({
         </View>
       )}
       <Text style={styles.itemTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.itemBrand}>
-        {item.designerBrand || '–'}
-      </Text>
-      {item.price ? (
-        <Text style={styles.itemPrice}>${item.price}</Text>
-      ) : null}
-      {item.marketplace ? (
-        <Text style={styles.itemMarketplace} numberOfLines={1}>
-          {item.marketplace}
-        </Text>
-      ) : null}
-    </TouchableOpacity>
-  );
-});
-
-const ListItem = React.memo(({
-  item,
-  onPress
-}: {
-  item: CatalogItem,
-  onPress: (item: CatalogItem) => void
-}) => (
-  <TouchableOpacity
-    style={styles.listItem}
-    onPress={() => onPress(item)}
-  >
-    {item.photoUrl && (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.listThumbnail, { width: 64, height: 64 }]}
-        resizeMode="cover"
-      />
-    )}
-    <View style={styles.listTextContainer}>
-      <Text style={styles.listTitle} numberOfLines={1}>
         {item.title}
       </Text>
       <Text style={styles.itemBrand}>
