@@ -38,6 +38,12 @@ const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 
 /**
+ * Bolt: Hoisted configuration constants to ensure referential stability and zero-allocation renders.
+ */
+const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
+const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
+
+/**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
  * Wrapping items in React.memo() ensures that items only re-render if their
  * specific data or the thumbnail size changes.
@@ -194,6 +200,13 @@ export default function HomeScreen() {
       loadItems();
     }, [loadItems])
   );
+
+  /**
+   * Bolt: Memoize the onRefresh handler to prevent unnecessary re-renders of the RefreshControl.
+   */
+  const handleRefresh = useCallback(() => {
+    loadItems(true);
+  }, [loadItems]);
 
   const handleEditItem = useCallback((item: CatalogItem) => {
     navigation.navigate('ItemForm', { item });
