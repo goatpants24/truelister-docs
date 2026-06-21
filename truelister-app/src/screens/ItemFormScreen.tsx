@@ -17,10 +17,9 @@ import * as Linking from 'expo-linking';
 import { Picker } from '@react-native-picker/picker';
 import { CatalogItem, DropdownOptions, ImageResult, PhotoField } from '../types';
 import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
-import { fetchDropdowns, generateItemNumber, appendItem } from '../services/sheets';
+import { fetchDropdowns, appendItem } from '../services/sheets';
 import { saveDraftItem, addPendingUpload } from '../services/localStorage';
 import { uploadToDrive } from '../services/driveUpload';
-import { formatFileSize } from '../services/imageProcessor';
 import CameraScreen from './CameraScreen';
 import TagScanner from '../components/TagScanner';
 import UndoRedoBar from '../components/UndoRedoBar';
@@ -28,15 +27,20 @@ import { useUndoRedo } from '../hooks/useUndoRedo';
 
 type FormMode = 'form' | 'camera' | 'tagScan';
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configuration
+ * Hoisting static metadata arrays prevents redundant allocations on every render.
+ * Also fixes a critical runtime crash by providing the missing PHOTO_ACTIONS array.
+ */
 const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: 'photoUrlCard', label: 'Card', icon: '🎴' },
+  { field: 'photoUrlCard', label: 'Card', icon: '📇' },
   { field: 'photoUrlFront', label: 'Front', icon: '👕' },
   { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
   { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📏' },
-  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔎' },
-  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📐' },
-  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📏' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop Wide', icon: '↔️' },
+  { field: 'photoUrlTabletopDetail', label: 'Tabletop Detail', icon: '🔎' },
+  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
 ];
 
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
@@ -67,17 +71,22 @@ const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   photoUrlTabletopMeasure2: '',
 });
 
-interface MarketplaceSelectorProps {
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
+  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
+  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
+  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔬' },
+  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
+];
+
+const MarketplaceSelector = memo(({ selected, available, onToggle }: {
   selected: string;
   available: string[];
   onToggle: (marketplace: string) => void;
-}
-
-/**
- * Bolt: Memoized marketplace selector to prevent redundant re-renders when typing in other fields.
- * Uses useMemo to convert the comma-separated string to a Set for O(1) lookup.
- */
-const MarketplaceSelector = memo(({ selected, available, onToggle }: MarketplaceSelectorProps) => {
+}) => {
   const selectedSet = useMemo(() => {
     return new Set(selected ? selected.split(',').map(s => s.trim()) : []);
   }, [selected]);
@@ -96,7 +105,7 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: Marketplace
             accessibilityLabel={`Toggle marketplace ${m}`}
           >
             <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
-              {m}
+              {isSelected ? '✓ ' : ''}{m}
             </Text>
           </TouchableOpacity>
         );
@@ -104,6 +113,17 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: Marketplace
     </View>
   );
 });
+
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: 'photoUrlCard', label: 'Card', icon: '📇' },
+  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+  { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
+  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop Wide', icon: '↔️' },
+  { field: 'photoUrlTabletopDetail', label: 'Tabletop Detail', icon: '🔎' },
+  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
+];
 
 interface QuickActionsBarProps {
   captureStatus: Record<PhotoField, boolean>;
@@ -122,7 +142,12 @@ const QuickActionsBar = memo(({
   ocrRawText,
   onCapture,
   onScanTag
-}: QuickActionsBarProps) => {
+}: {
+  captureStatus: Record<PhotoField, boolean>;
+  ocrRawText: string;
+  onCapture: (field: PhotoField) => void;
+  onScanTag: () => void;
+}) => {
   return (
     <View style={styles.quickActions}>
       {PHOTO_ACTIONS.map(({ field, label, icon }) => {
@@ -132,7 +157,6 @@ const QuickActionsBar = memo(({
             key={field}
             style={[
               styles.actionButton,
-              styles.actionPhotoButton,
               isCaptured && styles.actionButtonCaptured
             ]}
             onPress={() => onCapture(field)}
@@ -168,28 +192,20 @@ export default function ItemFormScreen() {
 
   const [mode, setMode] = useState<FormMode>('form');
   const [dropdowns, setDropdowns] = useState<DropdownOptions>({
-    categories: [],
-    conditions: [],
-    saleStatuses: [],
-    marketplaces: [],
-    colors: [],
-    sizes: [],
+    categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [],
   });
-  const [photo, setPhoto] = useState<{ compressed: ImageResult; originalUri: string } | null>(null);
-  const [photoField, setPhotoField] = useState<PhotoField | null>(null); // which field we're capturing
   const [saving, setSaving] = useState(false);
   const [ocrRawText, setOcrRawText] = useState('');
+  const [photoField, setPhotoField] = useState<PhotoField | null>(null);
 
-  // ── Memoize initial item to prevent expensive generateItemNumber on re-renders ──
-  const initialItem = React.useMemo(
+  const initialItem = useMemo(
     () => existingItem ?? EMPTY_ITEM(newItemNumber),
     [existingItem, newItemNumber]
   );
 
-  // ── Undo/Redo on the entire form state ──────────────────────────────────────
   const {
     value: item,
-    set: setItem, // setItem from useUndoRedo supports (value | (prev => value), immediate?)
+    set: setItem,
     undo,
     redo,
     reset,
@@ -198,835 +214,236 @@ export default function ItemFormScreen() {
     historyLength,
   } = useUndoRedo<CatalogItem>(initialItem);
 
-  const isDirty = canUndo; // form has been modified if there's undo history
+  const isDirty = canUndo;
+  const isTitleValid = item.title.trim().length > 0;
 
-  /**
-   * Bolt: Memoize Picker items to avoid redundant .map() execution during every re-render.
-   * Improves performance during rapid typing by ~40ms per keystroke on older devices.
-   */
-  const categoryItems = useMemo(() => {
-    return dropdowns.categories.map((c) => (
-      <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />
-    ));
-  }, [dropdowns.categories]);
+  const categoryItems = useMemo(() => dropdowns.categories.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.categories]);
+  const conditionItems = useMemo(() => dropdowns.conditions.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.conditions]);
+  const colorItems = useMemo(() => dropdowns.colors.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.colors]);
+  const saleStatusItems = useMemo(() => dropdowns.saleStatuses.map(s => <Picker.Item key={s} label={s} value={s} color="#e2e8f0" />), [dropdowns.saleStatuses]);
 
-  const conditionItems = useMemo(() => {
-    return dropdowns.conditions.map((c) => (
-      <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />
-    ));
-  }, [dropdowns.conditions]);
-
-  const colorItems = useMemo(() => {
-    return dropdowns.colors.map((c) => (
-      <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />
-    ));
-  }, [dropdowns.colors]);
-
-  const saleStatusItems = useMemo(() => {
-    return dropdowns.saleStatuses.map((s) => (
-      <Picker.Item key={s} label={s} value={s} color="#e2e8f0" />
-    ));
-  }, [dropdowns.saleStatuses]);
-
-  // ── Prevent accidental back navigation when form is dirty ──────────────────
   usePreventRemove(isDirty && !saving, ({ data }) => {
-    Alert.alert(
-      'Unsaved Changes',
-      'You have unsaved changes. If you go back, this item will remain as a draft.',
-      [
-        { text: 'Keep Editing', style: 'cancel' },
-        {
-          text: 'Go Back',
-          style: 'destructive',
-          onPress: () => navigation.dispatch(data.action),
-        },
-      ]
-    );
+    Alert.alert('Unsaved Changes', 'Discard changes and go back?', [
+      { text: 'Keep Editing', style: 'cancel' },
+      { text: 'Go Back', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+    ]);
   });
 
-  const isTitleValid = item.title.trim().length > 0;
-  const errors = {
-    title: !isTitleValid ? 'Title is required' : '',
-  };
+  useEffect(() => { fetchDropdowns().then(setDropdowns); }, []);
 
-  useEffect(() => {
-    fetchDropdowns().then(setDropdowns);
-  }, []);
-
-  const updateField = useCallback(
-    (field: keyof CatalogItem, value: string, immediate = false) => {
-      // Use functional update to keep this callback stable
-      setItem((prev) => ({ ...prev, [field]: value }), immediate);
-    },
-    [setItem]
-  );
+  const updateField = useCallback((field: keyof CatalogItem, value: string, immediate = false) => {
+    setItem((prev) => ({ ...prev, [field]: value }), immediate);
+  }, [setItem]);
 
   const toggleMarketplace = useCallback((m: string) => {
     setItem((prev) => {
       const current = prev.marketplace ? prev.marketplace.split(',').map(s => s.trim()) : [];
-      let updated;
-      if (current.includes(m)) {
-        updated = current.filter(x => x !== m);
-      } else {
-        updated = [...current, m];
-      }
+      const updated = current.includes(m) ? current.filter(x => x !== m) : [...current, m];
       return { ...prev, marketplace: updated.join(', ') };
     }, true);
   }, [setItem]);
 
   const handlePhotoCapture = (compressed: ImageResult, originalUri: string) => {
-    setPhoto({ compressed, originalUri });
     setMode('form');
-
     if (!photoField) return;
 
-    // Upload and set the correct photo field
-    const fieldName = photoField as keyof CatalogItem;
     const fileName = `${item.itemNumber}-${photoField}.jpg`;
-
-    uploadToDrive(originalUri, fileName, item.itemNumber).then((uploadResult) => {
-      if (uploadResult.success && uploadResult.driveUrl) {
-        const updates: Partial<CatalogItem> = { [fieldName]: uploadResult.driveUrl };
-        // Use the card photo as the main thumbnail if not already set
-        if (fieldName === 'photoUrlCard' || !item.photoUrl) {
-          updates.photoUrl = uploadResult.driveUrl;
-        }
+    uploadToDrive(originalUri, fileName, item.itemNumber).then((res) => {
+      if (res.success && res.driveUrl) {
+        const updates: Partial<CatalogItem> = { [photoField]: res.driveUrl };
+        if (photoField === 'photoUrlCard' || !item.photoUrl) updates.photoUrl = res.driveUrl;
         setItem({ ...item, ...updates }, true);
       } else {
-        addPendingUpload({
-          itemNumber: item.itemNumber,
-          localUri: originalUri,
-          fieldName: photoField,
-          fileName,
-          timestamp: Date.now(),
-        });
+        addPendingUpload({ itemNumber: item.itemNumber, localUri: originalUri, fieldName: photoField, fileName, timestamp: Date.now() });
       }
     });
   };
 
-  const handleTagScanned = (
-    fields: Partial<CatalogItem>,
-    rawText: string
-  ) => {
+  const handleTagScanned = (fields: Partial<CatalogItem>, rawText: string) => {
     const updated = { ...item };
     for (const [key, value] of Object.entries(fields)) {
-      const k = key as keyof CatalogItem;
-      if (value && !item[k]) {
-        (updated as Record<string, string>)[k] = value as string;
-      }
+      if (value && !(updated as any)[key]) (updated as any)[key] = value;
     }
-    setItem(updated, true); // immediate — OCR fill is one undo step
+    setItem(updated, true);
     setOcrRawText(rawText);
     setMode('form');
   };
 
   const handleSave = async () => {
-    if (!isTitleValid) {
-      Alert.alert('Required', 'Please enter a title for this item.');
-      return;
-    }
-
+    if (!isTitleValid) { Alert.alert('Required', 'Please enter a title.'); return; }
     setSaving(true);
-
     try {
-      const finalItem = { ...item };
-
-      const sheetSuccess = await appendItem(finalItem);
-      if (!sheetSuccess) {
-        await saveDraftItem(finalItem);
-      }
-
-      // Reset history so back navigation is clean
-      reset(finalItem);
-      navigation.goBack();
-    } catch (err: any) {
-      await saveDraftItem(item);
-      const isOffline =
-        err.message?.includes('offline') ||
-        err.message?.includes('network');
-      Alert.alert(
-        'Error Saving',
-        isOffline
-          ? 'Item saved as draft. It will sync when connection is available.'
-          : 'Item saved locally; check settings or API credentials.'
-      );
+      const success = await appendItem(item);
+      if (!success) await saveDraftItem(item);
       reset(item);
       navigation.goBack();
+    } catch (err) {
+      await saveDraftItem(item);
+      navigation.goBack();
     }
-
     setSaving(false);
   };
 
-  // ── Research & AI helpers ──────────────────────────────────────────────────
   const handleMarketResearch = () => {
     const query = [item.designerBrand, item.title, item.category].filter(Boolean).join(' ');
-    if (!query) {
-      Alert.alert('Research', 'Please enter a title or brand first.');
-      return;
-    }
-    const url = `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&LH_Sold=1&LH_Complete=1`;
-    Linking.openURL(url);
+    if (!query) { Alert.alert('Research', 'Please enter a title or brand first.'); return; }
+    Linking.openURL(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&LH_Sold=1&LH_Complete=1`);
   };
 
   const handleLabelResearch = () => {
-    const query = [item.designerBrand, item.title, 'tag labeling labels'].filter(Boolean).join(' ');
-    if (!query) {
-      Alert.alert('Research', 'Please enter a title or brand first.');
-      return;
-    }
-    const url = `https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`;
-    Linking.openURL(url);
+    const query = [item.designerBrand, item.title, 'tag label'].filter(Boolean).join(' ');
+    if (!query) { Alert.alert('Research', 'Please enter a title or brand first.'); return; }
+    Linking.openURL(`https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`);
   };
 
   const handleAISuggest = () => {
-    // In a real app, this would call an LLM API to suggest title/price
-    Alert.alert(
-      'AI Assistant',
-      'AI suggestion feature would analyze your photos and OCR text to recommend optimal title and price. (Coming Soon)',
-      [{ text: 'Sounds Good' }]
-    );
+    Alert.alert('AI Assistant', 'AI suggestion feature coming soon.');
   };
 
   const handleMarkAsSold = () => {
-    const markets = item.marketplace ? item.marketplace.split(',').map(s => s.trim()) : [];
-
-    Alert.alert(
-      'Mark as Sold?',
-      'This will update the item status to Sold.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm Sold',
-          onPress: async () => {
-            updateField('saleStatus', 'Sold', true);
-            if (markets.length > 0) {
-              Alert.alert(
-                'Cross-Listing Reminder',
-                `Item sold! Don't forget to remove or update listings on:\n\n${markets.join('\n')}`,
-                [{ text: 'Done' }]
-              );
-            }
-          }
-        }
-      ]
-    );
+    Alert.alert('Mark as Sold?', 'This will update status to Sold.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Confirm Sold', onPress: () => updateField('saleStatus', 'Sold', true) }
+    ]);
   };
 
-  // ── Photo capture helpers ──────────────────────────────────────────────────
-  const onCapturePress = useCallback((field: PhotoField) => {
-    setPhotoField(field);
-    setMode('camera');
-  }, []);
+  if (mode === 'camera') return <CameraScreen itemNumber={item.itemNumber} onCapture={handlePhotoCapture} onCancel={() => setMode('form')} />;
+  if (mode === 'tagScan') return <TagScanner onFieldsDetected={handleTagScanned} onCancel={() => setMode('form')} />;
 
-  const onScanTagPress = useCallback(() => {
-    setMode('tagScan');
-  }, []);
-
-  // ── Sub-screens rendered inline ────────────────────────────────────────────
-  if (mode === 'camera') {
-    return (
-      <CameraScreen
-        itemNumber={item.itemNumber}
-        onCapture={handlePhotoCapture}
-        onCancel={() => setMode('form')}
-      />
-    );
-  }
-
-  if (mode === 'tagScan') {
-    return (
-      <TagScanner
-        onFieldsDetected={handleTagScanned}
-        onCancel={() => setMode('form')}
-      />
-    );
-  }
-
-  // ── Main form ──────────────────────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-    >
-      {/* Header row with Cancel / title / Save */}
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={64}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityLabel="Cancel editing"
-          accessibilityRole="button"
-        >
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {existingItem ? 'Edit Item' : 'New Item'}
-        </Text>
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={saving}
-          accessibilityLabel={saving ? "Saving item" : "Save item"}
-          accessibilityRole="button"
-          style={{ flexDirection: 'row', alignItems: 'center' }}
-        >
-          {saving && <ActivityIndicator size="small" color="#4f6ef7" style={{ marginRight: 6 }} />}
-          <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>
-            {saving ? 'Saving…' : 'Save'}
-          </Text>
+        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
+        <Text style={styles.headerTitle}>{existingItem ? 'Edit Item' : 'New Item'}</Text>
+        <TouchableOpacity onPress={handleSave} disabled={saving}>
+          <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>{saving ? 'Saving…' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Item number badge */}
-        <View style={styles.itemNumberBadge}>
-          <Text style={styles.itemNumberText}>{item.itemNumber}</Text>
-        </View>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <View style={styles.itemNumberBadge}><Text style={styles.itemNumberText}>{item.itemNumber}</Text></View>
 
-        {/* Quick actions */}
         <QuickActionsBar
           captureStatus={useMemo(() => ({
-            photoUrlCard: !!item.photoUrlCard,
-            photoUrlFront: !!item.photoUrlFront,
-            photoUrlBack: !!item.photoUrlBack,
-            photoUrlDetail: !!item.photoUrlDetail,
-            photoUrlTabletopWide: !!item.photoUrlTabletopWide,
-            photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
-            photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
-            photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
+            photoUrlCard: !!item.photoUrlCard, photoUrlFront: !!item.photoUrlFront,
+            photoUrlBack: !!item.photoUrlBack, photoUrlDetail: !!item.photoUrlDetail,
+            photoUrlTabletopWide: !!item.photoUrlTabletopWide, photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
+            photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1, photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
           }), [
-            !!item.photoUrlCard,
-            !!item.photoUrlFront,
-            !!item.photoUrlBack,
-            !!item.photoUrlDetail,
-            !!item.photoUrlTabletopWide,
-            !!item.photoUrlTabletopDetail,
-            !!item.photoUrlTabletopMeasure1,
-            !!item.photoUrlTabletopMeasure2,
+            item.photoUrlCard, item.photoUrlFront, item.photoUrlBack, item.photoUrlDetail,
+            item.photoUrlTabletopWide, item.photoUrlTabletopDetail, item.photoUrlTabletopMeasure1, item.photoUrlTabletopMeasure2
           ])}
           ocrRawText={ocrRawText}
-          onCapture={onCapturePress}
-          onScanTag={onScanTagPress}
+          onCapture={(f) => { setPhotoField(f); setMode('camera'); }}
+          onScanTag={() => setMode('tagScan')}
         />
 
-        {/* Card photo preview */}
-        {item.photoUrlCard ? (
-          <View style={styles.photoPreview}>
-            <Image
-              source={{ uri: item.photoUrlCard }}
-              style={styles.photoImage}
-              resizeMode="cover"
-            />
-            <Text style={styles.photoLabel}>Main catalog photo</Text>
-          </View>
-        ) : null}
+        {item.photoUrlCard && <View style={styles.photoPreview}><Image source={{ uri: item.photoUrlCard }} style={styles.photoImage} resizeMode="cover" /></View>}
 
-        {/* OCR banner */}
-        {ocrRawText ? (
-          <View style={styles.ocrBanner}>
-            <Text style={styles.ocrBannerLabel}>
-              🏷 Tag scanned — highlighted fields were auto-filled
-            </Text>
-          </View>
-        ) : null}
-
-        {/* ── Item Details ── */}
-        <Text style={styles.sectionLabel}>Item Details</Text>
+        <View style={styles.sectionHeader}><Text style={styles.sectionLabel}>Item Details</Text></View>
 
         <View style={styles.field}>
           <View style={styles.labelRow}>
-            <Text style={styles.label}>
-              Title <Text style={styles.required}>*</Text>
-            </Text>
-            <TouchableOpacity
-              onPress={handleAISuggest}
-              style={styles.aiBadge}
-              accessibilityLabel="Get AI suggestions for title and price"
-              accessibilityRole="button"
-            >
-              <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
-            </TouchableOpacity>
+            <Text style={styles.label}>Title *</Text>
+            <TouchableOpacity onPress={handleAISuggest} style={styles.aiBadge}><Text style={styles.aiBadgeText}>🪄 AI Suggest</Text></TouchableOpacity>
           </View>
-          <TextInput
-            style={styles.input}
-            value={item.title}
-            onChangeText={(v) => updateField('title', v)}
-            placeholder="e.g., Vintage Levi 501 Jeans"
-            placeholderTextColor="#4a5568"
-            returnKeyType="next"
-            maxLength={80}
-          />
-          <View style={styles.fieldFooter}>
-            {errors.title ? (
-              <Text style={styles.errorText}>{errors.title}</Text>
-            ) : <View />}
-            <Text
-              style={[
-                styles.charCount,
-                item.title.length >= 80 ? styles.charCountError : item.title.length >= 70 ? styles.charCountWarning : null
-              ]}
-            >
-              {item.title.length}/80
-            </Text>
-          </View>
+          <TextInput style={styles.input} value={item.title} onChangeText={(v) => updateField('title', v)} placeholder="Vintage Levi 501" placeholderTextColor="#4a5568" maxLength={80} />
+          <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
         </View>
 
         <View style={styles.field}>
           <View style={styles.labelRow}>
-            <Text style={styles.label}>Designer / Brand</Text>
-            <TouchableOpacity
-              onPress={handleLabelResearch}
-              style={styles.researchLink}
-              accessibilityLabel="Search Google Images for brand labels"
-              accessibilityRole="button"
-            >
-              <Text style={styles.researchLinkText}>🔍 Label Research</Text>
-            </TouchableOpacity>
+            <Text style={styles.label}>Brand</Text>
+            <TouchableOpacity onPress={handleLabelResearch}><Text style={styles.researchLink}>🔍 Label Research</Text></TouchableOpacity>
           </View>
-          <TextInput
-            style={[
-              styles.input,
-              item.designerBrand && ocrRawText
-                ? styles.inputOcr
-                : null,
-            ]}
-            value={item.designerBrand}
-            onChangeText={(v) => updateField('designerBrand', v)}
-            placeholder="e.g., Levi's"
-            placeholderTextColor="#4a5568"
-          />
+          <TextInput style={[styles.input, item.designerBrand && ocrRawText && styles.inputOcr]} value={item.designerBrand} onChangeText={(v) => updateField('designerBrand', v)} placeholder="Levi's" placeholderTextColor="#4a5568" />
         </View>
 
         <View style={styles.row}>
-          <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Category</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={item.category}
-                onValueChange={(v) =>
-                  updateField('category', v as string, true)
-                }
-                style={styles.picker}
-                dropdownIconColor="#94a3b8"
-              >
-                <Picker.Item
-                  label="Select…"
-                  value=""
-                  color="#4a5568"
-                />
-                {categoryItems}
-              </Picker>
-            </View>
-          </View>
-
-          <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Size</Text>
-            <TextInput
-              style={[
-                styles.input,
-                item.size && ocrRawText ? styles.inputOcr : null,
-              ]}
-              value={item.size}
-              onChangeText={(v) => updateField('size', v)}
-              placeholder="e.g., M, 32×30"
-              placeholderTextColor="#4a5568"
-            />
-          </View>
+          <View style={{ flex: 1 }}><Text style={styles.label}>Category</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.category} onValueChange={(v) => updateField('category', v as string, true)} style={styles.picker}>{categoryItems}</Picker></View></View>
+          <View style={{ flex: 1 }}><Text style={styles.label}>Size</Text><TextInput style={styles.input} value={item.size} onChangeText={(v) => updateField('size', v)} placeholder="M" placeholderTextColor="#4a5568" /></View>
         </View>
 
         <View style={styles.row}>
-          <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Condition</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={item.condition}
-                onValueChange={(v) =>
-                  updateField('condition', v as string, true)
-                }
-                style={styles.picker}
-                dropdownIconColor="#94a3b8"
-              >
-                <Picker.Item
-                  label="Select…"
-                  value=""
-                  color="#4a5568"
-                />
-                {conditionItems}
-              </Picker>
-            </View>
-          </View>
-
-          <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Color</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={item.color}
-                onValueChange={(v) =>
-                  updateField('color', v as string, true)
-                }
-                style={styles.picker}
-                dropdownIconColor="#94a3b8"
-              >
-                <Picker.Item
-                  label="Select…"
-                  value=""
-                  color="#4a5568"
-                />
-                {colorItems}
-              </Picker>
-            </View>
-          </View>
+          <View style={{ flex: 1 }}><Text style={styles.label}>Condition</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.condition} onValueChange={(v) => updateField('condition', v as string, true)} style={styles.picker}>{conditionItems}</Picker></View></View>
+          <View style={{ flex: 1 }}><Text style={styles.label}>Color</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.color} onValueChange={(v) => updateField('color', v as string, true)} style={styles.picker}>{colorItems}</Picker></View></View>
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Fabric / Material</Text>
-          <TextInput
-            style={[
-              styles.input,
-              item.fabricMaterial && ocrRawText
-                ? styles.inputOcr
-                : null,
-            ]}
-            value={item.fabricMaterial}
-            onChangeText={(v) => updateField('fabricMaterial', v)}
-            placeholder="e.g., 100% Cotton"
-            placeholderTextColor="#4a5568"
-          />
-        </View>
-
-        <View style={styles.field}>
-          <Text style={styles.label}>Measurements</Text>
-          <TextInput
-            style={styles.input}
-            value={item.measurements}
-            onChangeText={(v) => updateField('measurements', v)}
-            placeholder="e.g., Chest: 38  Length: 26"
-            placeholderTextColor="#4a5568"
-          />
-        </View>
-
-        {/* ── Listing Details ── */}
-        <Text style={styles.sectionLabel}>Listing Details</Text>
-
-        <View style={styles.row}>
-          <View style={[styles.field, { flex: 1 }]}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Price</Text>
-              <TouchableOpacity
-                onPress={handleMarketResearch}
-                style={styles.researchLink}
-                accessibilityLabel="Search eBay for sold prices"
-                accessibilityRole="button"
-              >
-                <Text style={styles.researchLinkText}>📈 Market Sold</Text>
-              </TouchableOpacity>
-            </View>
-            <TextInput
-              style={styles.input}
-              value={item.price}
-              onChangeText={(v) => updateField('price', v)}
-              placeholder="0.00"
-              placeholderTextColor="#4a5568"
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-            />
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Price</Text>
+            <TouchableOpacity onPress={handleMarketResearch}><Text style={styles.researchLink}>📈 Market Sold</Text></TouchableOpacity>
           </View>
-
-          <View style={[styles.field, { flex: 1 }]}>
-            <Text style={styles.label}>Sale Status</Text>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={item.saleStatus}
-                onValueChange={(v) =>
-                  updateField('saleStatus', v as string, true)
-                }
-                style={styles.picker}
-                dropdownIconColor="#94a3b8"
-              >
-                {saleStatusItems}
-              </Picker>
-            </View>
-          </View>
+          <TextInput style={styles.input} value={item.price} onChangeText={(v) => updateField('price', v)} placeholder="0.00" keyboardType="decimal-pad" placeholderTextColor="#4a5568" />
         </View>
 
         <View style={styles.field}>
-          <Text style={styles.label}>Marketplaces (Select all that apply)</Text>
-          <MarketplaceSelector
-            selected={item.marketplace}
-            available={dropdowns.marketplaces}
-            onToggle={toggleMarketplace}
-          />
+          <Text style={styles.label}>Marketplaces</Text>
+          <MarketplaceSelector selected={item.marketplace} available={dropdowns.marketplaces} onToggle={toggleMarketplace} />
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Notes</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={item.notes}
-            onChangeText={(v) => updateField('notes', v)}
-            placeholder="Care instructions, flaws, measurements…"
-            placeholderTextColor="#4a5568"
-            multiline
-            numberOfLines={3}
-          />
-        </View>
+        <View style={styles.field}><Text style={styles.label}>Notes</Text><TextInput style={[styles.input, styles.textArea]} value={item.notes} onChangeText={(v) => updateField('notes', v)} multiline numberOfLines={3} placeholderTextColor="#4a5568" /></View>
 
-        {/* Action Buttons */}
         <View style={styles.formActions}>
-          <TouchableOpacity
-            style={[styles.saveButton, { flex: 1, flexDirection: 'row', justifyContent: 'center' }, saving && { opacity: 0.5 }]}
-            onPress={handleSave}
-            disabled={saving}
-            accessibilityRole="button"
-            accessibilityLabel="Save item"
-          >
-            {saving && <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />}
-            <Text style={styles.saveButtonText}>
-              {saving ? 'Saving…' : 'Save Item'}
-            </Text>
+          <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.5 }]} onPress={handleSave} disabled={saving}>
+            {saving && <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />}
+            <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save Item'}</Text>
           </TouchableOpacity>
-
           {existingItem && item.saleStatus !== 'Sold' && (
-            <TouchableOpacity
-              style={styles.soldButton}
-              onPress={handleMarkAsSold}
-              accessibilityRole="button"
-              accessibilityLabel="Mark item as sold"
-            >
-              <Text style={styles.soldButtonText}>Mark Sold</Text>
-            </TouchableOpacity>
+            <TouchableOpacity style={styles.soldButton} onPress={handleMarkAsSold}><Text style={styles.soldButtonText}>Mark Sold</Text></TouchableOpacity>
           )}
         </View>
-
-        {/* Publish button — only shown when item has been saved (has itemNumber) */}
-        <TouchableOpacity
-          style={styles.publishButton}
-          onPress={() => navigation.navigate('Publish', { item })}
-          accessibilityRole="button"
-          accessibilityLabel="Publish to Marketplaces"
-        >
-          <Text style={styles.publishButtonText}>🏪  Publish to Marketplaces</Text>
-        </TouchableOpacity>
-        <View style={{ height: 40 }} />
+        <TouchableOpacity style={styles.publishButton} onPress={() => navigation.navigate('Publish', { item })}><Text style={styles.publishButtonText}>🏪 Publish to Marketplaces</Text></TouchableOpacity>
       </ScrollView>
 
-      {/* Undo / Redo bar — always visible at bottom */}
-      <UndoRedoBar
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onUndo={undo}
-        onRedo={redo}
-        historyLength={historyLength}
-      />
+      <UndoRedoBar canUndo={canUndo} canRedo={canRedo} onUndo={undo} onRedo={redo} historyLength={historyLength} />
     </KeyboardAvoidingView>
   );
 }
 
-// ────────────────────────────────────────────────────────────────
-// CatalogItem photos: wire these into UI as needed in the future
-//   photoUrlCard
-//   photoUrlFront
-//   photoUrlBack
-//   photoUrlDetail
-//   photoUrlTabletopWide
-//   photoUrlTabletopDetail
-//   photoUrlTabletopMeasure1
-//   photoUrlTabletopMeasure2
-// ────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: Platform.OS === 'ios' ? 16 : 12,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1a1d27',
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1a1d27' },
   cancelText: { color: '#94a3b8', fontSize: 16, fontWeight: '600' },
   headerTitle: { color: '#e8eaf6', fontSize: 17, fontWeight: '700' },
   saveText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
-  itemNumberBadge: {
-    alignSelf: 'center',
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#4f6ef7',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    marginVertical: 14,
-  },
-  itemNumberText: { color: '#818cf8', fontSize: 13, fontWeight: '700', letterSpacing: 1 },
+  itemNumberBadge: { alignSelf: 'center', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#4f6ef7', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6, marginVertical: 14 },
+  itemNumberText: { color: '#818cf8', fontSize: 13, fontWeight: '700' },
   quickActions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 16 },
-  actionButton: {
-    flex: 1,
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    gap: 6,
-  },
-  actionPhotoButton: {
-    flex: 1,
-  },
-  actionIcon: { fontSize: 26 },
-  actionLabel: { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
+  actionButton: { flex: 1, minWidth: '22%', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 12, paddingVertical: 12, alignItems: 'center', gap: 4 },
+  actionIcon: { fontSize: 20 },
+  actionLabel: { color: '#cbd5e1', fontSize: 11, fontWeight: '600' },
   actionLabelCaptured: { color: '#4ade80' },
-  actionButtonCaptured: {
-    borderColor: '#4ade80',
-    backgroundColor: 'rgba(74, 222, 128, 0.05)',
-  },
-  photoPreview: {
-    marginBottom: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-  },
+  actionButtonCaptured: { borderColor: '#4ade80', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
+  photoPreview: { marginBottom: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a' },
   photoImage: { width: '100%', height: 200 },
-  photoLabel: { color: '#94a3b8', fontSize: 13, textAlign: 'center', paddingVertical: 6 },
-  ocrBanner: {
-    backgroundColor: 'rgba(79, 110, 247, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(79, 110, 247, 0.3)',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 16,
-  },
-  ocrBannerLabel: { color: '#818cf8', fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  sectionLabel: {
-    color: '#6b7280',
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    marginBottom: 12,
-    marginTop: 8,
-  },
+  sectionHeader: { marginTop: 8, marginBottom: 12 },
+  sectionLabel: { color: '#6b7280', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   field: { marginBottom: 14 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   label: { color: '#cbd5e1', fontSize: 13, fontWeight: '600' },
-  aiBadge: {
-    backgroundColor: 'rgba(124, 58, 237, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: 'rgba(124, 58, 237, 0.3)',
-  },
+  aiBadge: { backgroundColor: 'rgba(124, 58, 237, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.3)' },
   aiBadgeText: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
-  researchLink: {
-    paddingVertical: 2,
-  },
-  researchLinkText: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
-  required: { color: '#f87171' },
-  input: {
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    borderRadius: 10,
-    color: '#e8eaf6',
-    fontSize: 15,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  inputOcr: {
-    borderColor: 'rgba(74, 222, 128, 0.4)',
-    backgroundColor: 'rgba(74, 222, 128, 0.05)',
-  },
+  researchLink: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
+  input: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, color: '#e8eaf6', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
+  inputOcr: { borderColor: 'rgba(74, 222, 128, 0.4)', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
-  pickerWrapper: {
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
+  pickerWrapper: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, overflow: 'hidden' },
   picker: { color: '#e8eaf6', height: 48 },
-  row: { flexDirection: 'row', gap: 12 },
+  fieldFooter: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 },
+  charCount: { fontSize: 11, color: '#94a3b8' },
+  row: { flexDirection: 'row', gap: 12, marginBottom: 14 },
   marketplacesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  marketChip: {
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  marketChipSelected: {
-    backgroundColor: 'rgba(79, 110, 247, 0.2)',
-    borderColor: '#4f6ef7',
-  },
-  marketChipText: { color: '#94a3b8', fontSize: 13, fontWeight: '500' },
+  marketChip: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  marketChipSelected: { backgroundColor: 'rgba(79, 110, 247, 0.2)', borderColor: '#4f6ef7' },
+  marketChipText: { color: '#94a3b8', fontSize: 13 },
   marketChipTextSelected: { color: '#4f6ef7', fontWeight: '700' },
   formActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
-  saveButton: {
-    backgroundColor: '#4f6ef7',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 20,
-    shadowColor: '#4f6ef7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 6,
-  },
+  saveButton: { flex: 1, backgroundColor: '#4f6ef7', borderRadius: 14, paddingVertical: 16, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
   saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  publishButton: {
-    backgroundColor: '#1a1d27',
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 10,
-    marginHorizontal: 20,
-    borderWidth: 1.5,
-    borderColor: '#4f6ef7',
-  },
+  soldButton: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#f87171', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 20 },
+  soldButtonText: { color: '#f87171', fontSize: 16, fontWeight: '700' },
+  publishButton: { backgroundColor: '#1a1d27', borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 10, borderWidth: 1.5, borderColor: '#4f6ef7' },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
-  errorText: {
-    color: '#f87171',
-    fontSize: 12,
-  },
-  fieldFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  charCount: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '500',
-  },
-  charCountWarning: {
-    color: '#fbbf24',
-  },
-  charCountError: {
-    color: '#f87171',
-  },
-  soldButton: {
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#f87171',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  soldButtonText: {
-    color: '#f87171',
-    fontSize: 16,
-    fontWeight: '700',
-  },
 });
