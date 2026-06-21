@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -23,74 +23,99 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
 
-/** Memoized Grid Item for performance */
-const GridItem = React.memo(({ item, size, onPress }: { item: CatalogItem, size: number, onPress: (i: CatalogItem) => void }) => (
-  <TouchableOpacity
-    style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-    onPress={() => onPress(item)}
-  >
-    {item.photoUrl ? (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.thumbnail, { width: size, height: size }]}
-        resizeMode="cover"
-      />
-    ) : (
-      <View
-        style={[
-          styles.thumbnail,
-          { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-        ]}
-      >
-        <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-      </View>
-    )}
-    <Text style={styles.itemTitle} numberOfLines={1}>
-      {item.title}
-    </Text>
-    <Text style={styles.itemBrand}>
-      {item.designerBrand || '–'}
-    </Text>
-    {item.price ? (
-      <Text style={styles.itemPrice}>${item.price}</Text>
-    ) : null}
-    {item.marketplace ? (
-      <Text style={styles.itemMarketplace} numberOfLines={1}>
-        {item.marketplace}
-      </Text>
-    ) : null}
-  </TouchableOpacity>
-));
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
+ *
+ * WHY: FlatList rendering is expensive. Wrapping items in React.memo() ensures
+ * that items only re-render if their specific data or the thumbnail size changes.
+ * This makes the list extremely snappy even with thousands of items.
+ */
+const GridItem = React.memo(({
+  item,
+  onPress,
+  thumbnailSize
+}: {
+  item: CatalogItem;
+  onPress: (item: CatalogItem) => void;
+  thumbnailSize: ThumbnailSize;
+}) => {
+  const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
 
-/** Memoized List Item for performance */
-const ListItem = React.memo(({ item, onPress }: { item: CatalogItem, onPress: (i: CatalogItem) => void }) => (
-  <TouchableOpacity
-    style={styles.listItem}
-    onPress={() => onPress(item)}
-  >
-    {item.photoUrl && (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.listThumbnail, { width: 64, height: 64 }]}
-        resizeMode="cover"
-      />
-    )}
-    <View style={styles.listTextContainer}>
-      <Text style={styles.listTitle} numberOfLines={1}>
+  return (
+    <TouchableOpacity
+      style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
+      onPress={() => onPress(item)}
+    >
+      {item.photoUrl ? (
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={[styles.thumbnail, { width: size, height: size }]}
+          resizeMode="cover"
+        />
+      ) : (
+        <View
+          style={[
+            styles.thumbnail,
+            { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
+          ]}
+        >
+          <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
+        </View>
+      )}
+      <Text style={styles.itemTitle} numberOfLines={1}>
         {item.title}
       </Text>
-      <Text style={styles.listSubtitle} numberOfLines={1}>
-        {item.designerBrand} • {item.size} • {item.condition}
+      <Text style={styles.itemBrand}>
+        {item.designerBrand || '–'}
       </Text>
-      {item.price && (
-        <Text style={styles.listPrice}>${item.price}</Text>
+      {item.price ? (
+        <Text style={styles.itemPrice}>${item.price}</Text>
+      ) : null}
+      {item.marketplace ? (
+        <Text style={styles.itemMarketplace} numberOfLines={1}>
+          {item.marketplace}
+        </Text>
+      ) : null}
+    </TouchableOpacity>
+  );
+});
+
+const ListItem = React.memo(({
+  item,
+  onPress
+}: {
+  item: CatalogItem;
+  onPress: (item: CatalogItem) => void;
+}) => {
+  return (
+    <TouchableOpacity
+      style={styles.listItem}
+      onPress={() => onPress(item)}
+    >
+      {item.photoUrl && (
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={[styles.listThumbnail, { width: 64, height: 64 }]}
+          resizeMode="cover"
+        />
       )}
-      {item.marketplace && (
-        <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-      )}
-    </View>
-  </TouchableOpacity>
-));
+      <View style={styles.listTextContainer}>
+        <Text style={styles.listTitle} numberOfLines={1}>
+          {item.title}
+        </Text>
+        <Text style={styles.listSubtitle} numberOfLines={1}>
+          {item.designerBrand} • {item.size} • {item.condition}
+        </Text>
+        {item.price && (
+          <Text style={styles.listPrice}>${item.price}</Text>
+        )}
+        {item.marketplace && (
+          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -99,34 +124,15 @@ export default function HomeScreen() {
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const hasLoadedOnce = useRef(false);
   const [error, setError] = useState<string | null>(null);
-  const hasLoadedOnce = useRef(false);
 
   /** Track if we have already done the first load to implement Stale-While-Revalidate pattern */
-  const hasLoadedOnce = React.useRef(false);
-  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
-  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
+  const hasLoadedOnce = useRef(false);
 
   /** Bolt: Track previous data references to implement referential caching */
-  const lastSheetRef = React.useRef<CatalogItem[] | null>(null);
-  const lastDraftsRef = React.useRef<CatalogItem[] | null>(null);
-
-  // Bolt: Referential caching to avoid redundant O(N) merge and re-renders on every focus
-  const lastSheetItems = React.useRef<CatalogItem[] | null>(null);
-  const lastDraftItems = React.useRef<CatalogItem[] | null>(null);
-  const lastCombinedItems = React.useRef<CatalogItem[] | null>(null);
-
-  /**
-   * Bolt: Referential caching to avoid expensive $O(N)$ merge and re-renders.
-   * Since fetchInventory and getDraftItems use memory caching, these results
-   * are referentially stable if no data has changed.
-   */
-  const lastSheetItems = React.useRef<CatalogItem[]>([]);
-  const lastDraftItems = React.useRef<CatalogItem[]>([]);
-  const lastCombinedItems = React.useRef<CatalogItem[]>([]);
-
-  const hasLoadedOnce = useRef(false);
+  const lastSheetRef = useRef<CatalogItem[] | null>(null);
+  const lastDraftsRef = useRef<CatalogItem[] | null>(null);
+  const lastCombinedRef = useRef<CatalogItem[] | null>(null);
 
   /**
    * Performance Impact: Stale-While-Revalidate pattern.
@@ -147,22 +153,13 @@ export default function HomeScreen() {
       ]);
 
       // Bolt: Skip O(N) merge and React update if data references from services are unchanged.
-      // Both fetchInventory and getDraftItems implement internal module-level referential
-      // caching, so we can use direct reference comparison here.
-      // This provides a ~4000x speedup for the cached 'hit' path by avoiding redundant work.
-      // Note: JavaScript's 'finally' block below will still execute, ensuring state reset.
-      if (sheetItems === lastSheetRef.current && draftItems === lastDraftsRef.current) {
+      if (sheetItems === lastSheetRef.current && draftItems === lastDraftsRef.current && lastCombinedRef.current) {
         return;
       }
       lastSheetRef.current = sheetItems;
       lastDraftsRef.current = draftItems;
 
-      // If we got no sheet items but there was no network exception,
-      // fetchInventory might have logged a 404 internally.
-      // We'll trust its logging but also show a hint here if list is empty.
-
       // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case).
-      // Optimized to avoid intermediate array allocations from .map() and .filter().
       let combined = sheetItems;
       if (draftItems.length > 0) {
         const sheetNumbers = new Set<string>();
@@ -173,23 +170,7 @@ export default function HomeScreen() {
         combined = [...sheetItems, ...uniqueDrafts];
       }
 
-      // Update refs
-      lastSheetItems.current = sheetItems;
-      lastDraftItems.current = draftItems;
-      lastCombinedItems.current = combined;
-
-      if (combined.length === 0) {
-        // Show demo items if list is empty and user hasn't configured a private sheet
-        const id = await AsyncStorage.getItem('settings_spreadsheet_id');
-        if (!id || id === '1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI') {
-           // We could add hardcoded sample items here if we wanted "instant" turnkey
-        }
-      }
-
-      // Update refs and state
-      lastSheetItems.current = sheetItems;
-      lastDraftItems.current = draftItems;
-      lastCombinedItems.current = combined;
+      lastCombinedRef.current = combined;
       setItems(combined);
       hasLoadedOnce.current = true;
     } catch (err) {
@@ -208,95 +189,24 @@ export default function HomeScreen() {
     }, [loadItems])
   );
 
-  /**
-   * Performance Impact: Navigation payload reduction.
-   * Removing 'existingItems' from the payload reduces serialization overhead by ~O(N)
-   * where N is the number of catalog items. This keeps navigation snappy even with large catalogs.
-   */
   const handleEditItem = useCallback((item: CatalogItem) => {
-    // Only pass existingItems when creating NEW, edits already have what they need.
-    // This reduces navigation payload size.
     navigation.navigate('ItemForm', { item });
   }, [navigation]);
 
-  /**
-   * Performance Impact: Component Memoization.
-   * renderItem identities are now stable and do not depend on the 'items' array.
-   * This reduces re-renders by ~95% when the list updates, as individual items
-   * only re-render if their own data changes.
-   */
-  const renderGridItem = useCallback(({ item }: { item: CatalogItem }) => {
-    const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-    return (
-      <TouchableOpacity
-        style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-        onPress={() => navigation.navigate('ItemForm', { item })}
-      >
-        {item.photoUrl ? (
-          <Image
-            source={{ uri: item.photoUrl }}
-            style={[styles.thumbnail, { width: size, height: size }]}
-            resizeMode="cover"
-          />
-        ) : (
-          <View
-            style={[
-              styles.thumbnail,
-              { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-            ]}
-          >
-            <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-          </View>
-        )}
-        <Text style={styles.itemTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.itemBrand}>
-          {item.designerBrand || '–'}
-        </Text>
-        {item.price ? (
-          <Text style={styles.itemPrice}>${item.price}</Text>
-        ) : null}
-        {item.marketplace ? (
-          <Text style={styles.itemMarketplace} numberOfLines={1}>
-            {item.marketplace}
-          </Text>
-        ) : null}
-      </TouchableOpacity>
-    );
-  }, [thumbnailSize, navigation]);
+  const renderGridItem = useCallback(({ item }: { item: CatalogItem }) => (
+    <GridItem
+      item={item}
+      thumbnailSize={thumbnailSize}
+      onPress={handleEditItem}
+    />
+  ), [thumbnailSize, handleEditItem]);
 
-  /** Optimized render function using useCallback to prevent unnecessary FlatList re-renders */
-  const renderListItem = useCallback(({ item }: { item: CatalogItem }) => {
-    return (
-      <TouchableOpacity
-        style={styles.listItem}
-        onPress={() => navigation.navigate('ItemForm', { item })}
-      >
-        {item.photoUrl && (
-          <Image
-            source={{ uri: item.photoUrl }}
-            style={[styles.listThumbnail, { width: 64, height: 64 }]}
-            resizeMode="cover"
-          />
-        )}
-        <View style={styles.listTextContainer}>
-          <Text style={styles.listTitle} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <Text style={styles.listSubtitle} numberOfLines={1}>
-            {item.designerBrand} • {item.size} • {item.condition}
-          </Text>
-          {item.price && (
-            <Text style={styles.listPrice}>${item.price}</Text>
-          )}
-          {item.marketplace && (
-            <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  }, [navigation]);
+  const renderListItem = useCallback(({ item }: { item: CatalogItem }) => (
+    <ListItem
+      item={item}
+      onPress={handleEditItem}
+    />
+  ), [handleEditItem]);
 
   /**
    * Bolt: Memoize next item number to ensure instantaneous navigation when FAB is pressed.
@@ -307,7 +217,6 @@ export default function HomeScreen() {
   /**
    * Bolt: Optimized layout calculation for FlatList.
    * Allows the list to skip dynamic measurement of items during scrolling.
-   * Measured impact: Provides 60fps scrolling even with 5000+ items.
    */
   const getItemLayout = useCallback((_data: ArrayLike<CatalogItem> | null | undefined, index: number) => {
     let itemHeight = 0;
@@ -315,11 +224,9 @@ export default function HomeScreen() {
     const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
 
     if (viewMode === 'grid') {
-      // Grid: row height is item height (size + 64) + vertical margins (6 + 6)
       itemHeight = size + 76;
       offset = 16 + itemHeight * Math.floor(index / 2);
     } else {
-      // List/Table: row height is item height (88) + bottom margin (8)
       itemHeight = 96;
       offset = 16 + itemHeight * index;
     }
@@ -330,12 +237,6 @@ export default function HomeScreen() {
       index,
     };
   }, [viewMode, thumbnailSize]);
-
-  /**
-   * Bolt: Pre-calculate the next item number whenever the catalog changes.
-   * This ensures the FAB navigation is instantaneous even with 5000+ items.
-   */
-  const nextItemNumber = React.useMemo(() => generateItemNumber(items), [items]);
 
   const handleExport = () => {
     Alert.alert(
@@ -511,93 +412,6 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-/**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
- *
- * WHY: FlatList rendering is expensive. Wrapping items in React.memo() ensures
- * that items only re-render if their specific data or the thumbnail size changes.
- * Combined with the stable handleEditItem above, this makes the list extremely snappy.
- */
-const GridItem = memo(({ item, thumbnailSize, onPress }: {
-  item: CatalogItem,
-  thumbnailSize: ThumbnailSize,
-  onPress: (item: CatalogItem) => void
-}) => {
-  const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-  return (
-    <TouchableOpacity
-      style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl ? (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.thumbnail, { width: size, height: size }]}
-          resizeMode="cover"
-        />
-      ) : (
-        <View
-          style={[
-            styles.thumbnail,
-            { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-        </View>
-      )}
-      <Text style={styles.itemTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.itemBrand}>
-        {item.designerBrand || '–'}
-      </Text>
-      {item.price ? (
-        <Text style={styles.itemPrice}>${item.price}</Text>
-      ) : null}
-      {item.marketplace ? (
-        <Text style={styles.itemMarketplace} numberOfLines={1}>
-          {item.marketplace}
-        </Text>
-      ) : null}
-    </TouchableOpacity>
-  );
-});
-
-// ⚡ Memoized List Item to prevent unnecessary re-renders in FlatList
-const ListItem = memo(({ item, onPress }: {
-  item: CatalogItem,
-  onPress: (item: CatalogItem) => void
-}) => {
-  return (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl && (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.listThumbnail, { width: 64, height: 64 }]}
-          resizeMode="cover"
-        />
-      )}
-      <View style={styles.listTextContainer}>
-        <Text style={styles.listTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.listSubtitle} numberOfLines={1}>
-          {item.designerBrand} • {item.size} • {item.condition}
-        </Text>
-        {item.price && (
-          <Text style={styles.listPrice}>${item.price}</Text>
-        )}
-        {item.marketplace && (
-          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-});
 
 // --- exports / templates ---
 
@@ -895,9 +709,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     padding: 12,
-    overflow: 'hidden', // Bolt: Prevent content expansion to maintain fixed height
-    // Bolt: height (size + 64) is explicitly enforced in renderGridItem
-    // to ensure getItemLayout (size + 76) accuracy.
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(79, 110, 247, 0.15)',
   },
@@ -931,8 +743,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#1a1d27',
     padding: 12,
-    height: 88, // Bolt: Fixed height for getItemLayout optimization
-    overflow: 'hidden', // Bolt: Prevent content expansion to maintain fixed height
+    height: 88,
+    overflow: 'hidden',
     borderRadius: 12,
     marginBottom: 8,
     gap: 12,
@@ -970,93 +782,4 @@ const styles = StyleSheet.create({
     width: 58, height: 58, borderRadius: 29, backgroundColor: '#4f6ef7', justifyContent: 'center', alignItems: 'center', shadowColor: '#4f6ef7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 8,
   },
   fabText: { color: '#fff', fontSize: 28, fontWeight: '300', marginTop: -2 },
-});
-
-// --- Memoized Components ---
-
-const GridItem = React.memo(({
-  item,
-  onPress,
-  thumbnailSize
-}: {
-  item: CatalogItem;
-  onPress: (item: CatalogItem) => void;
-  thumbnailSize: ThumbnailSize;
-}) => {
-  const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-
-  return (
-    <TouchableOpacity
-      style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl ? (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.thumbnail, { width: size, height: size }]}
-          resizeMode="cover"
-        />
-      ) : (
-        <View
-          style={[
-            styles.thumbnail,
-            { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-        </View>
-      )}
-      <Text style={styles.itemTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.itemBrand}>
-        {item.designerBrand || '–'}
-      </Text>
-      {item.price ? (
-        <Text style={styles.itemPrice}>${item.price}</Text>
-      ) : null}
-      {item.marketplace ? (
-        <Text style={styles.itemMarketplace} numberOfLines={1}>
-          {item.marketplace}
-        </Text>
-      ) : null}
-    </TouchableOpacity>
-  );
-});
-
-const ListItem = React.memo(({
-  item,
-  onPress
-}: {
-  item: CatalogItem;
-  onPress: (item: CatalogItem) => void;
-}) => {
-  return (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl && (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.listThumbnail, { width: 64, height: 64 }]}
-          resizeMode="cover"
-        />
-      )}
-      <View style={styles.listTextContainer}>
-        <Text style={styles.listTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.listSubtitle} numberOfLines={1}>
-          {item.designerBrand} • {item.size} • {item.condition}
-        </Text>
-        {item.price && (
-          <Text style={styles.listPrice}>${item.price}</Text>
-        )}
-        {item.marketplace && (
-          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
 });
