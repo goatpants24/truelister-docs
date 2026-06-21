@@ -1,5 +1,5 @@
 import * as ImageManipulator from 'expo-image-manipulator';
-import { File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 import { IMAGE_CONFIG } from '../config';
 import { ImageResult, WhiteBalanceSettings } from '../types';
 
@@ -39,11 +39,12 @@ export function getWhiteBalanceMultipliers(settings: WhiteBalanceSettings): {
 
 /**
  * Get file size from URI without reading into memory.
+ * Bolt: Using FileSystem.getInfoAsync ensures correct size measurement for iterative compression.
  */
 async function getFileSize(uri: string): Promise<number> {
   try {
-    const file = new File(uri);
-    return file.size || 0;
+    const info = await FileSystem.getInfoAsync(uri);
+    return info.exists ? info.size : 0;
   } catch {
     return 0;
   }

@@ -29,7 +29,6 @@ const SIZE_PATTERNS = [
 
 /**
  * Brands with their preferred display casing.
- * Bolt: Using pre-cased brands eliminates redundant string manipulation in the hot path.
  */
 const KNOWN_BRANDS = [
   'Nike', 'Adidas', 'Gucci', 'Prada', 'Zara', 'H&M', 'Uniqlo',
@@ -44,11 +43,6 @@ const KNOWN_BRANDS = [
   'Anthropologie', 'Madewell', 'Everlane', 'Reformation',
   'Patagonia', 'North Face', 'Columbia', "Arc'teryx",
   'Lululemon', 'Athleta', 'Under Armour', 'New Balance',
-];
-
-const CARE_KEYWORDS = [
-  'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'hang dry',
-  'do not bleach', 'iron low', 'iron medium', 'cold water', 'warm water',
 ];
 
 /**
@@ -82,6 +76,25 @@ const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
 
 const CARE_REGEX = new RegExp('\\b(' + [...CARE_KEYWORDS].sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
+
+// ── OCR Text Extraction ──────────────────────────────────────────────────────
+
+/**
+ * Extract text from an image using on-device ML Kit text recognition.
+ * Accepts a local file URI — no encoding, no network, no cost.
+ */
+export async function extractTextFromImage(imageUri: string): Promise<string> {
+  try {
+    const result = await TextRecognition.recognize(imageUri);
+    // Join all detected text blocks into a single string
+    return result.blocks.map(block => block.text).join('\n');
+  } catch (error) {
+    console.error('On-device OCR error:', error);
+    return '';
+  }
+}
+
+// ── Smart Field Parsing ──────────────────────────────────────────────────────
 
 // ── OCR Text Extraction ──────────────────────────────────────────────────────
 
