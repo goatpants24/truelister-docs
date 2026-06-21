@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo, memo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,18 @@ import {
   Image,
   RefreshControl,
 } from 'react-native';
+
+type ViewMode = 'list' | 'grid' | 'table';
+type ThumbnailSize = 'small' | 'medium' | 'large';
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configurations
+ * Moving static arrays out of the render loop ensures referential stability,
+ * preventing redundant allocations and skips deep equality checks in child components.
+ */
+const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
+const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
+const REFRESH_COLORS = ['#4f6ef7'];
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -18,9 +30,6 @@ import { CatalogItem } from '../types';
 import { fetchInventory, generateItemNumber } from '../services/sheets';
 import { getDraftItems } from '../services/localStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-type ViewMode = 'list' | 'grid' | 'table';
-type ThumbnailSize = 'small' | 'medium' | 'large';
 
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
@@ -76,7 +85,7 @@ const GridItem = React.memo(({
   );
 });
 
-const ListItem = React.memo(({
+const ListItem = memo(({
   item,
   onPress
 }: {
@@ -98,54 +107,20 @@ const ListItem = React.memo(({
       <Text style={styles.listTitle} numberOfLines={1}>
         {item.title}
       </Text>
-      <Text style={styles.itemBrand}>
-        {item.designerBrand || '–'}
+      <Text style={styles.listSubtitle} numberOfLines={1}>
+        {item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}
       </Text>
       {item.price ? (
-        <Text style={styles.itemPrice}>${item.price}</Text>
+        <Text style={styles.listPrice}>${item.price}</Text>
       ) : null}
       {item.marketplace ? (
-        <Text style={styles.itemMarketplace} numberOfLines={1}>
+        <Text style={styles.listMarketplace} numberOfLines={1}>
           {item.marketplace}
         </Text>
       ) : null}
-    </TouchableOpacity>
-  );
-});
-
-const ListItem = memo(({ item, onPress }: {
-  item: CatalogItem,
-  onPress: (item: CatalogItem) => void
-}) => {
-  return (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl && (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.listThumbnail, { width: 64, height: 64 }]}
-          resizeMode="cover"
-        />
-      )}
-      <View style={styles.listTextContainer}>
-        <Text style={styles.listTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.listSubtitle} numberOfLines={1}>
-          {item.designerBrand} • {item.size} • {item.condition}
-        </Text>
-        {item.price && (
-          <Text style={styles.listPrice}>${item.price}</Text>
-        )}
-        {item.marketplace && (
-          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-});
+    </View>
+  </TouchableOpacity>
+));
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -286,7 +261,7 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.viewModeRow}>
-            {(['list', 'grid', 'table'] as ViewMode[]).map((mode) => (
+            {VIEW_MODES.map((mode) => (
               <TouchableOpacity
                 key={mode}
                 onPress={() => setViewMode(mode)}
@@ -303,7 +278,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.thumbnailSizeRow}>
-            {(['small', 'medium', 'large'] as ThumbnailSize[]).map((size) => (
+            {THUMBNAIL_SIZES.map((size) => (
               <TouchableOpacity
                 key={size}
                 onPress={() => setThumbnailSize(size)}
@@ -382,7 +357,7 @@ export default function HomeScreen() {
               refreshing={refreshing}
               onRefresh={() => loadItems(true)}
               tintColor="#4f6ef7"
-              colors={['#4f6ef7']}
+              colors={REFRESH_COLORS}
             />
           }
         />
