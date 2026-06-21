@@ -28,6 +28,22 @@ import { useUndoRedo } from '../hooks/useUndoRedo';
 
 type FormMode = 'form' | 'camera' | 'tagScan';
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configuration
+ * Defining the button grid structure at the module level ensures referential
+ * stability and prevents redundant object/array allocations on every render.
+ */
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: 'photoUrlCard', label: 'Card', icon: '📇' },
+  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+  { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
+  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Wide', icon: '📐' },
+  { field: 'photoUrlTabletopDetail', label: 'Detail', icon: '🤏' },
+  { field: 'photoUrlTabletopMeasure1', label: 'M1', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'M2', icon: '📏' },
+];
+
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   itemNumber: newItemNumber || 'TL-000',
   title: '',

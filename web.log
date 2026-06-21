@@ -1,1 +1,13 @@
- ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND  No package.json (or package.yaml, or package.json5) was found in "/app".
+
+> trucatlog@1.0.0 web /app/truelister-app
+> expo start --web
+
+Starting project at /app/truelister-app
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 63.5% ( 85/155)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓░░░░░░ 63.5% (320/438)
+Web Bundled 10054ms index.ts (654 modules)
+ LOG  [web] Logs will appear in the browser console
