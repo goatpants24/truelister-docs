@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useMemo, memo } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,18 @@ import {
   Image,
   RefreshControl,
 } from 'react-native';
+
+type ViewMode = 'list' | 'grid' | 'table';
+type ThumbnailSize = 'small' | 'medium' | 'large';
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configurations
+ * Moving static arrays out of the render loop ensures referential stability,
+ * preventing redundant allocations and skips deep equality checks in child components.
+ */
+const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
+const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
+const REFRESH_COLORS = ['#4f6ef7'];
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -79,7 +91,7 @@ const GridItem = React.memo(({
   );
 });
 
-const ListItem = React.memo(({
+const ListItem = memo(({
   item,
   onPress
 }: {
@@ -355,7 +367,7 @@ export default function HomeScreen() {
               refreshing={refreshing}
               onRefresh={onRefresh}
               tintColor="#4f6ef7"
-              colors={['#4f6ef7']}
+              colors={REFRESH_COLORS}
             />
           }
         />
