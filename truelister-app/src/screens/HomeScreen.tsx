@@ -31,6 +31,12 @@ import { fetchInventory, generateItemNumber } from '../services/sheets';
 import { getDraftItems } from '../services/localStorage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+type ViewMode = 'list' | 'grid' | 'table';
+type ThumbnailSize = 'small' | 'medium' | 'large';
+
+const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
+const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
+
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
  * Wrapping items in React.memo() ensures that items only re-render if their
@@ -237,7 +243,7 @@ export default function HomeScreen() {
     return { length: itemHeight, offset, index };
   }, [viewMode, thumbnailSize]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     Alert.alert(
       'Export / Templates',
       'Select an option:',
@@ -254,7 +260,11 @@ export default function HomeScreen() {
         { text: 'Cancel', style: 'cancel' },
       ]
     );
-  };
+  }, [items]);
+
+  const onRefresh = useCallback(() => {
+    loadItems(true);
+  }, [loadItems]);
 
   return (
     <View style={styles.container}>
@@ -355,7 +365,7 @@ export default function HomeScreen() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => loadItems(true)}
+              onRefresh={onRefresh}
               tintColor="#4f6ef7"
               colors={REFRESH_COLORS}
             />
