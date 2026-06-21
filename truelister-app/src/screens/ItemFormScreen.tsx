@@ -28,6 +28,22 @@ import { useUndoRedo } from '../hooks/useUndoRedo';
 
 type FormMode = 'form' | 'camera' | 'tagScan';
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configuration
+ * Hoisting static metadata arrays prevents redundant allocations on every render.
+ * Also fixes a critical runtime crash by providing the missing PHOTO_ACTIONS array.
+ */
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: 'photoUrlCard', label: 'Card', icon: '📇' },
+  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+  { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
+  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop Wide', icon: '↔️' },
+  { field: 'photoUrlTabletopDetail', label: 'Tabletop Detail', icon: '🔎' },
+  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
+];
+
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   itemNumber: newItemNumber || 'TL-000',
   title: '',
@@ -94,16 +110,13 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: Marketplace
   );
 });
 
-/**
- * Bolt: Hoisted photo action configuration to module level to avoid re-creation on render.
- */
 const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
+  { field: 'photoUrlCard', label: 'Card', icon: '📇' },
   { field: 'photoUrlFront', label: 'Front', icon: '👕' },
-  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
+  { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
   { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
-  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔬' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop Wide', icon: '↔️' },
+  { field: 'photoUrlTabletopDetail', label: 'Tabletop Detail', icon: '🔎' },
   { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
   { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
 ];

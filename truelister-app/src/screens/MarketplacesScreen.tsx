@@ -27,7 +27,11 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
   }[status];
 
   return (
-    <View style={[styles.badge, { backgroundColor: config.bg, borderColor: config.border }]}>
+    <View
+      style={[styles.badge, { backgroundColor: config.bg, borderColor: config.border }]}
+      accessible={true}
+      accessibilityLabel={`API Status: ${config.label}`}
+    >
       <Text style={[styles.badgeText, { color: config.text }]}>{config.label}</Text>
     </View>
   );
@@ -94,7 +98,11 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
       </View>
 
       {/* Docs link */}
-      <TouchableOpacity onPress={() => Linking.openURL(marketplace.docsUrl)}>
+      <TouchableOpacity
+        onPress={() => Linking.openURL(marketplace.docsUrl)}
+        accessibilityRole="link"
+        accessibilityLabel={`View API documentation for ${marketplace.name}`}
+      >
         <Text style={styles.docsLink}>View API Docs ↗</Text>
       </TouchableOpacity>
 
@@ -107,6 +115,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
             <Text
               style={styles.link}
               onPress={() => Linking.openURL('https://vendoo.co')}
+              accessibilityRole="link"
             >
               Vendoo
             </Text>{' '}
@@ -114,6 +123,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
             <Text
               style={styles.link}
               onPress={() => Linking.openURL('https://listperfectly.com')}
+              accessibilityRole="link"
             >
               List Perfectly
             </Text>
@@ -146,7 +156,8 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
             autoCorrect={false}
             secureTextEntry={field.secure}
             keyboardType={field.key === 'email' ? 'email-address' : 'default'}
-            accessibilityLabel={`${marketplace.name} ${field.label}`}
+            accessibilityLabel={field.label}
+            accessibilityHint={field.hint || undefined}
           />
         </View>
       ))}
@@ -157,7 +168,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
           style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
           onPress={handleSave}
           accessibilityRole="button"
-          accessibilityLabel={`Save ${marketplace.name} credentials`}
+          accessibilityLabel={saved ? `Saved ${marketplace.name} credentials` : `Save ${marketplace.name} credentials`}
         >
           <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
         </TouchableOpacity>

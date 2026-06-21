@@ -18,10 +18,10 @@
 **Learning:** Using a data-driven approach (mapping over an array of actions) for a group of similar interactive elements ensures that visual feedback (like checkmarks) and accessibility states (like 'Captured') stay synchronized across all elements, preventing bugs where one action provides better feedback than others.
 **Action:** When creating groups of similar action buttons (e.g., photo capture fields), prefer mapping over a configuration array to guarantee consistent UX and accessibility across the entire set.
 
-## 2025-05-24 - [Visual Feedback for Selection Chips]
-**Learning:** Adding a visual prefix like a checkmark (✓) to selected chips in a multi-select list provides an additional layer of confirmation beyond just background color changes, which significantly improves usability for all users and ensures consistency with other parts of the application (like the Publish screen).
-**Action:** When implementing chip-based selection, always include a visual confirmation character (like ✓) for the selected state to provide unambiguous feedback.
+## 2026-06-17 - [Marketplace Accessibility]
+**Learning:** Marketplace credential screens often contain complex statuses and external links that need explicit accessibility roles and labels to be navigable by screen reader users. Dynamic labels for "Save" buttons that reflect the current "Saved" state provide immediate confirmation.
+**Action:** Always provide `accessibilityRole="link"` for external documentation links and use dynamic `accessibilityLabel` for action buttons that have success/saved states.
 
-## 2025-05-24 - [Onboarding Flow Accessibility]
-**Learning:** The onboarding flow is the most critical path for new users. Adding explicit accessibility labels to URL inputs and button roles to skip/next actions ensures that users relying on screen readers can successfully set up the application without frustration.
-**Action:** Always audit the onboarding flow for missing accessibility attributes to ensure a positive first-time experience for all users.
+## 2026-06-18 - [Visual Confirmation for Multi-Select Chips]
+**Learning:** In mobile interfaces using chip-based multi-selection, providing a visual indicator like a checkmark (✓) inside the selected chip significantly improves clarity, especially when the selection state is only indicated by subtle background color changes.
+**Action:** Always include a visual prefix (like ✓) for selected states in multi-select chip components to provide immediate, unambiguous feedback.
