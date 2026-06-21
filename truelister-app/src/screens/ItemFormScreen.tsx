@@ -94,6 +94,17 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: Marketplace
   );
 });
 
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: 'photoUrlCard', label: 'Card', icon: '📇' },
+  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
+  { field: 'photoUrlBack', label: 'Back', icon: '👕' },
+  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop Wide', icon: '📐' },
+  { field: 'photoUrlTabletopDetail', label: 'Tabletop Detail', icon: '🔍' },
+  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📏' },
+];
+
 interface QuickActionsBarProps {
   captureStatus: Record<PhotoField, boolean>;
   ocrRawText: string;
