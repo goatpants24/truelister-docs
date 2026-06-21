@@ -22,6 +22,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
 
+const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
+const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
+
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
  * Wrapping items in React.memo() ensures that items only re-render if their
@@ -98,54 +101,20 @@ const ListItem = React.memo(({
       <Text style={styles.listTitle} numberOfLines={1}>
         {item.title}
       </Text>
-      <Text style={styles.itemBrand}>
-        {item.designerBrand || '–'}
+      <Text style={styles.listSubtitle} numberOfLines={1}>
+        {item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}
       </Text>
       {item.price ? (
-        <Text style={styles.itemPrice}>${item.price}</Text>
+        <Text style={styles.listPrice}>${item.price}</Text>
       ) : null}
       {item.marketplace ? (
-        <Text style={styles.itemMarketplace} numberOfLines={1}>
+        <Text style={styles.listMarketplace} numberOfLines={1}>
           {item.marketplace}
         </Text>
       ) : null}
-    </TouchableOpacity>
-  );
-});
-
-const ListItem = memo(({ item, onPress }: {
-  item: CatalogItem,
-  onPress: (item: CatalogItem) => void
-}) => {
-  return (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl && (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.listThumbnail, { width: 64, height: 64 }]}
-          resizeMode="cover"
-        />
-      )}
-      <View style={styles.listTextContainer}>
-        <Text style={styles.listTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.listSubtitle} numberOfLines={1}>
-          {item.designerBrand} • {item.size} • {item.condition}
-        </Text>
-        {item.price && (
-          <Text style={styles.listPrice}>${item.price}</Text>
-        )}
-        {item.marketplace && (
-          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-});
+    </View>
+  </TouchableOpacity>
+));
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -262,7 +231,7 @@ export default function HomeScreen() {
     return { length: itemHeight, offset, index };
   }, [viewMode, thumbnailSize]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     Alert.alert(
       'Export / Templates',
       'Select an option:',
@@ -279,14 +248,18 @@ export default function HomeScreen() {
         { text: 'Cancel', style: 'cancel' },
       ]
     );
-  };
+  }, [items]);
+
+  const onRefresh = useCallback(() => {
+    loadItems(true);
+  }, [loadItems]);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.viewModeRow}>
-            {(['list', 'grid', 'table'] as ViewMode[]).map((mode) => (
+            {VIEW_MODES.map((mode) => (
               <TouchableOpacity
                 key={mode}
                 onPress={() => setViewMode(mode)}
@@ -303,7 +276,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.thumbnailSizeRow}>
-            {(['small', 'medium', 'large'] as ThumbnailSize[]).map((size) => (
+            {THUMBNAIL_SIZES.map((size) => (
               <TouchableOpacity
                 key={size}
                 onPress={() => setThumbnailSize(size)}
@@ -380,7 +353,7 @@ export default function HomeScreen() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => loadItems(true)}
+              onRefresh={onRefresh}
               tintColor="#4f6ef7"
               colors={['#4f6ef7']}
             />
