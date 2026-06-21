@@ -356,6 +356,14 @@ export default function HomeScreen() {
           <Text style={styles.emptyTitle}>No Items Found</Text>
           <Text style={styles.emptyText}>Add your first item or check your connection.</Text>
           <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
+            accessibilityRole="button"
+            accessibilityLabel="Create first item"
+          >
+            <Text style={styles.retryButtonText}>Create First Item</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.settingsLink}
             onPress={() => navigation.navigate('Settings')}
             accessibilityRole="button"
