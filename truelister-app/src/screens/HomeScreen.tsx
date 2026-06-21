@@ -76,44 +76,7 @@ const GridItem = React.memo(({
   );
 });
 
-const ListItem = React.memo(({
-  item,
-  onPress
-}: {
-  item: CatalogItem,
-  onPress: (item: CatalogItem) => void
-}) => (
-  <TouchableOpacity
-    style={styles.listItem}
-    onPress={() => onPress(item)}
-  >
-    {item.photoUrl && (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.listThumbnail, { width: 64, height: 64 }]}
-        resizeMode="cover"
-      />
-    )}
-    <View style={styles.listTextContainer}>
-      <Text style={styles.listTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.itemBrand}>
-        {item.designerBrand || '–'}
-      </Text>
-      {item.price ? (
-        <Text style={styles.itemPrice}>${item.price}</Text>
-      ) : null}
-      {item.marketplace ? (
-        <Text style={styles.itemMarketplace} numberOfLines={1}>
-          {item.marketplace}
-        </Text>
-      ) : null}
-    </TouchableOpacity>
-  );
-});
-
-const ListItem = memo(({ item, onPress }: {
+const ListItem = React.memo(({ item, onPress }: {
   item: CatalogItem,
   onPress: (item: CatalogItem) => void
 }) => {
@@ -357,6 +320,14 @@ export default function HomeScreen() {
           <Text style={styles.emptyIcon}>📦</Text>
           <Text style={styles.emptyTitle}>No Items Found</Text>
           <Text style={styles.emptyText}>Add your first item or check your connection.</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
+            accessibilityRole="button"
+            accessibilityLabel="Create first item"
+          >
+            <Text style={styles.retryButtonText}>Create First Item</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.settingsLink}
             onPress={() => navigation.navigate('Settings')}
