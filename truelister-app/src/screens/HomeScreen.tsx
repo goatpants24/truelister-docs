@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   errorIcon: { fontSize: 48, marginBottom: 16 },
   errorTitle: { color: '#e8eaf6', fontSize: 20, fontWeight: '700', marginBottom: 8 },
   errorText: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginBottom: 24 },
-  retryButton: { backgroundColor: '#4f6ef7', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, marginBottom: 12 },
+  retryButton: { backgroundColor: '#4f6ef7', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
   retryButtonText: { color: 'white', fontWeight: '700' },
   settingsLink: { padding: 10 },
   settingsLinkText: { color: '#4f6ef7', fontWeight: '600' },
