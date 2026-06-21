@@ -61,3 +61,7 @@
 ## 2025-05-29 - [Hoisted Configuration Allocation Guard]
 **Learning:** Initializing large configuration objects or arrays inside a React component's render body causes redundant allocations on every render cycle. For complex forms where typing triggers high-frequency re-renders, this can lead to memory pressure and UI stuttering.
 **Action:** Always hoist static configuration arrays and objects outside of the component definition or memoize them to ensure referential stability and zero-allocation renders.
+
+## 2025-06-12 - [Surgical Edit Precision & Hoisting]
+**Learning:** Using `replace_with_git_merge_diff` on files with internal code duplication (like `HomeScreen.tsx`) requires extreme hunk range precision to avoid leaving partial syntax or accidentally deleting functional logic. Hoisting static configuration arrays (VIEW_MODES, PHOTO_ACTIONS) provides a "double win": it improves performance via referential stability and prevents runtime ReferenceErrors by centralizing metadata.
+**Action:** Always verify the resulting file structure with `read_file` after complex multi-hunk replacements to ensure component boundaries and exports remain intact.
