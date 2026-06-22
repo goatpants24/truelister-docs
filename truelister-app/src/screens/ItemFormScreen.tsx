@@ -356,7 +356,15 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Title *</Text>
-            <TouchableOpacity onPress={handleAISuggest} style={styles.aiBadge}><Text style={styles.aiBadgeText}>🪄 AI Suggest</Text></TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleAISuggest}
+              style={styles.aiBadge}
+              accessibilityRole="button"
+              accessibilityLabel="AI Suggest title"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
+            </TouchableOpacity>
           </View>
           <TextInput style={styles.input} value={item.title} onChangeText={(v) => updateField('title', v)} placeholder="Vintage Levi 501" placeholderTextColor="#4a5568" maxLength={80} />
           <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
@@ -365,7 +373,14 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Brand</Text>
-            <TouchableOpacity onPress={handleLabelResearch}><Text style={styles.researchLink}>🔍 Label Research</Text></TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleLabelResearch}
+              accessibilityRole="button"
+              accessibilityLabel="Research brand label on Google"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.researchLink}>🔍 Label Research</Text>
+            </TouchableOpacity>
           </View>
           <TextInput style={[styles.input, item.designerBrand && ocrRawText && styles.inputOcr]} value={item.designerBrand} onChangeText={(v) => updateField('designerBrand', v)} placeholder="Levi's" placeholderTextColor="#4a5568" />
         </View>
@@ -383,7 +398,14 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Price</Text>
-            <TouchableOpacity onPress={handleMarketResearch}><Text style={styles.researchLink}>📈 Market Sold</Text></TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleMarketResearch}
+              accessibilityRole="button"
+              accessibilityLabel="Research market price on eBay"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.researchLink}>📈 Market Sold</Text>
+            </TouchableOpacity>
           </View>
           <TextInput style={styles.input} value={item.price} onChangeText={(v) => updateField('price', v)} placeholder="0.00" keyboardType="decimal-pad" placeholderTextColor="#4a5568" />
         </View>
