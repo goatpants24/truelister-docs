@@ -25,24 +25,12 @@ import TagScanner from '../components/TagScanner';
 import UndoRedoBar from '../components/UndoRedoBar';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 
-type FormMode = 'form' | 'camera' | 'tagScan';
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: "photoUrlCard", label: "Card", icon: "📇" },
-  { field: "photoUrlFront", label: "Front", icon: "👕" },
-  { field: "photoUrlBack", label: "Back", icon: "🔙" },
-  { field: "photoUrlDetail", label: "Detail", icon: "🔍" },
-  { field: "photoUrlTabletopWide", label: "Wide", icon: "↔️" },
-  { field: "photoUrlTabletopDetail", label: "Zoom", icon: "🔎" },
-  { field: "photoUrlTabletopMeasure1", label: "Measure 1", icon: "📏" },
-  { field: "photoUrlTabletopMeasure2", label: "Measure 2", icon: "📐" },
-];
-
-
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configuration
  * Hoisting static metadata arrays prevents redundant allocations on every render.
  * Also fixes a critical runtime crash by providing the missing PHOTO_ACTIONS array.
  */
+type FormMode = 'form' | 'camera' | 'tagScan';
 const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
   { field: 'photoUrlCard', label: 'Card', icon: '📇' },
   { field: 'photoUrlFront', label: 'Front', icon: '👕' },
@@ -82,16 +70,6 @@ const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   photoUrlTabletopMeasure2: '',
 });
 
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
-  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
-  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
-  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
-  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔬' },
-  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
-];
 
 const MarketplaceSelector = memo(({ selected, available, onToggle }: {
   selected: string;
@@ -125,16 +103,6 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: {
   );
 });
 
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: 'photoUrlCard', label: 'Card', icon: '📇' },
-  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
-  { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
-  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop Wide', icon: '↔️' },
-  { field: 'photoUrlTabletopDetail', label: 'Tabletop Detail', icon: '🔎' },
-  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
-];
 
 interface QuickActionsBarProps {
   captureStatus: Record<PhotoField, boolean>;
@@ -356,7 +324,15 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Title *</Text>
-            <TouchableOpacity onPress={handleAISuggest} style={styles.aiBadge}><Text style={styles.aiBadgeText}>🪄 AI Suggest</Text></TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleAISuggest}
+              style={styles.aiBadge}
+              accessibilityRole="button"
+              accessibilityLabel="Get AI suggestions for title"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
+            </TouchableOpacity>
           </View>
           <TextInput style={styles.input} value={item.title} onChangeText={(v) => updateField('title', v)} placeholder="Vintage Levi 501" placeholderTextColor="#4a5568" maxLength={80} />
           <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
@@ -365,9 +341,34 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Brand</Text>
-            <TouchableOpacity onPress={handleLabelResearch}><Text style={styles.researchLink}>🔍 Label Research</Text></TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleLabelResearch}
+              accessibilityRole="button"
+              accessibilityLabel="Research brand labels on Google"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.researchLink}>🔍 Label Research</Text>
+            </TouchableOpacity>
           </View>
-          <TextInput style={[styles.input, item.designerBrand && ocrRawText && styles.inputOcr]} value={item.designerBrand} onChangeText={(v) => updateField('designerBrand', v)} placeholder="Levi's" placeholderTextColor="#4a5568" />
+          <TextInput
+            style={[styles.input, item.designerBrand && ocrRawText && styles.inputOcr]}
+            value={item.designerBrand}
+            onChangeText={(v) => updateField('designerBrand', v)}
+            placeholder="Levi's"
+            placeholderTextColor="#4a5568"
+            maxLength={65}
+          />
+          <View style={styles.fieldFooter}>
+            <Text
+              style={[
+                styles.charCount,
+                item.designerBrand.length >= 55 && { color: '#fbbf24' },
+                item.designerBrand.length >= 65 && { color: '#f87171' },
+              ]}
+            >
+              {item.designerBrand.length}/65
+            </Text>
+          </View>
         </View>
 
         <View style={styles.row}>
@@ -383,7 +384,14 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Price</Text>
-            <TouchableOpacity onPress={handleMarketResearch}><Text style={styles.researchLink}>📈 Market Sold</Text></TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleMarketResearch}
+              accessibilityRole="button"
+              accessibilityLabel="Research sold prices on eBay"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.researchLink}>📈 Market Sold</Text>
+            </TouchableOpacity>
           </View>
           <TextInput style={styles.input} value={item.price} onChangeText={(v) => updateField('price', v)} placeholder="0.00" keyboardType="decimal-pad" placeholderTextColor="#4a5568" />
         </View>
@@ -401,10 +409,24 @@ export default function ItemFormScreen() {
             <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save Item'}</Text>
           </TouchableOpacity>
           {existingItem && item.saleStatus !== 'Sold' && (
-            <TouchableOpacity style={styles.soldButton} onPress={handleMarkAsSold}><Text style={styles.soldButtonText}>Mark Sold</Text></TouchableOpacity>
+            <TouchableOpacity
+              style={styles.soldButton}
+              onPress={handleMarkAsSold}
+              accessibilityRole="button"
+              accessibilityLabel="Mark item as sold"
+            >
+              <Text style={styles.soldButtonText}>Mark Sold</Text>
+            </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity style={styles.publishButton} onPress={() => navigation.navigate('Publish', { item })}><Text style={styles.publishButtonText}>🏪 Publish to Marketplaces</Text></TouchableOpacity>
+        <TouchableOpacity
+          style={styles.publishButton}
+          onPress={() => navigation.navigate('Publish', { item })}
+          accessibilityRole="button"
+          accessibilityLabel="Publish to marketplaces"
+        >
+          <Text style={styles.publishButtonText}>🏪 Publish to Marketplaces</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       <UndoRedoBar canUndo={canUndo} canRedo={canRedo} onUndo={undo} onRedo={redo} historyLength={historyLength} />
