@@ -11,6 +11,14 @@ import {
   RefreshControl,
 } from 'react-native';
 
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system/legacy';
+
+import { CatalogItem } from '../types';
+import { fetchInventory, generateItemNumber } from '../services/sheets';
+import { getDraftItems } from '../services/localStorage';
+
 type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
 
@@ -22,26 +30,6 @@ type ThumbnailSize = 'small' | 'medium' | 'large';
 const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
-
-import { CatalogItem } from '../types';
-import { fetchInventory, generateItemNumber } from '../services/sheets';
-import { getDraftItems } from '../services/localStorage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-type ViewMode = 'list' | 'grid' | 'table';
-type ThumbnailSize = 'small' | 'medium' | 'large';
-
-const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
-const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
-
-/**
- * Bolt: Hoisted configuration constants to ensure referential stability and zero-allocation renders.
- */
-const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
-const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements

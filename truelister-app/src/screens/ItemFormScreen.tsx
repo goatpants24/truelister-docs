@@ -26,17 +26,6 @@ import UndoRedoBar from '../components/UndoRedoBar';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 
 type FormMode = 'form' | 'camera' | 'tagScan';
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: "photoUrlCard", label: "Card", icon: "📇" },
-  { field: "photoUrlFront", label: "Front", icon: "👕" },
-  { field: "photoUrlBack", label: "Back", icon: "🔙" },
-  { field: "photoUrlDetail", label: "Detail", icon: "🔍" },
-  { field: "photoUrlTabletopWide", label: "Wide", icon: "↔️" },
-  { field: "photoUrlTabletopDetail", label: "Zoom", icon: "🔎" },
-  { field: "photoUrlTabletopMeasure1", label: "Measure 1", icon: "📏" },
-  { field: "photoUrlTabletopMeasure2", label: "Measure 2", icon: "📐" },
-];
-
 
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configuration
@@ -82,17 +71,6 @@ const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   photoUrlTabletopMeasure2: '',
 });
 
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: 'photoUrlCard', label: 'Card', icon: '🃏' },
-  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
-  { field: 'photoUrlBack', label: 'Back', icon: '🧥' },
-  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📸' },
-  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔬' },
-  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
-];
-
 const MarketplaceSelector = memo(({ selected, available, onToggle }: {
   selected: string;
   available: string[];
@@ -124,17 +102,6 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: {
     </View>
   );
 });
-
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: 'photoUrlCard', label: 'Card', icon: '📇' },
-  { field: 'photoUrlFront', label: 'Front', icon: '👕' },
-  { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
-  { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop Wide', icon: '↔️' },
-  { field: 'photoUrlTabletopDetail', label: 'Tabletop Detail', icon: '🔎' },
-  { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
-];
 
 interface QuickActionsBarProps {
   captureStatus: Record<PhotoField, boolean>;

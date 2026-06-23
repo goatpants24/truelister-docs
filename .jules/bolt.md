@@ -65,3 +65,7 @@
 ## 2025-06-12 - [Surgical Edit Precision & Hoisting]
 **Learning:** Using `replace_with_git_merge_diff` on files with internal code duplication (like `HomeScreen.tsx`) requires extreme hunk range precision to avoid leaving partial syntax or accidentally deleting functional logic. Hoisting static configuration arrays (VIEW_MODES, PHOTO_ACTIONS) provides a "double win": it improves performance via referential stability and prevents runtime ReferenceErrors by centralizing metadata.
 **Action:** Always verify the resulting file structure with `read_file` after complex multi-hunk replacements to ensure component boundaries and exports remain intact.
+
+## 2025-06-15 - [Referential Equality & Image Generation Loss]
+**Learning:** Using `JSON.stringify` for deep equality checks in a data-parsing loop (O(N)) is a performance anti-pattern due to massive string allocation overhead. Additionally, re-compressing already compressed JPEGs (generation loss) degrades quality, so iterative compression should always stem from the original source URI.
+**Action:** Prefer field-by-field equality helpers over `JSON.stringify` for referential caching. Always use the original source URI for lossy format manipulations to preserve output quality.
