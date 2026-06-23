@@ -17,3 +17,11 @@
 ## 2025-05-15 - [Consistent Feedback for Batch Actions]
 **Learning:** Using a data-driven approach (mapping over an array of actions) for a group of similar interactive elements ensures that visual feedback (like checkmarks) and accessibility states (like 'Captured') stay synchronized across all elements, preventing bugs where one action provides better feedback than others.
 **Action:** When creating groups of similar action buttons (e.g., photo capture fields), prefer mapping over a configuration array to guarantee consistent UX and accessibility across the entire set.
+
+## 2026-06-17 - [Marketplace Accessibility]
+**Learning:** Marketplace credential screens often contain complex statuses and external links that need explicit accessibility roles and labels to be navigable by screen reader users. Dynamic labels for "Save" buttons that reflect the current "Saved" state provide immediate confirmation.
+**Action:** Always provide `accessibilityRole="link"` for external documentation links and use dynamic `accessibilityLabel` for action buttons that have success/saved states.
+
+## 2026-06-18 - [Visual Confirmation for Multi-Select Chips]
+**Learning:** In mobile interfaces using chip-based multi-selection, providing a visual indicator like a checkmark (✓) inside the selected chip significantly improves clarity, especially when the selection state is only indicated by subtle background color changes.
+**Action:** Always include a visual prefix (like ✓) for selected states in multi-select chip components to provide immediate, unambiguous feedback.

@@ -1,5 +1,5 @@
 import * as ImageManipulator from 'expo-image-manipulator';
-import { File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 import { IMAGE_CONFIG } from '../config';
 import { ImageResult, WhiteBalanceSettings } from '../types';
 
@@ -39,11 +39,12 @@ export function getWhiteBalanceMultipliers(settings: WhiteBalanceSettings): {
 
 /**
  * Get file size from URI without reading into memory.
+ * Bolt: Using FileSystem.getInfoAsync ensures correct size measurement for iterative compression.
  */
 async function getFileSize(uri: string): Promise<number> {
   try {
-    const file = new File(uri);
-    return file.size || 0;
+    const info = await FileSystem.getInfoAsync(uri);
+    return info.exists ? info.size : 0;
   } catch {
     return 0;
   }
@@ -73,17 +74,19 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   }
 
   // Iterative quality reduction
+  // Bolt: Always compress from the original source URI to avoid "generation loss"
+  // artifacts that occur when re-compressing an already compressed JPEG.
   let quality = COMPRESS_QUALITY;
-  let result: ImageManipulator.ImageResult;
+  let finalResult: ImageManipulator.ImageResult;
   let resultSize: number;
 
   do {
-    result = await ImageManipulator.manipulateAsync(
+    finalResult = await ImageManipulator.manipulateAsync(
       uri,
       [{ resize: { width: MAX_WIDTH, height: MAX_HEIGHT } }],
       { compress: Math.max(quality, MIN_QUALITY), format: ImageManipulator.SaveFormat.JPEG }
     );
-    resultSize = await getFileSize(result.uri);
+    resultSize = await getFileSize(finalResult.uri);
     quality -= 0.1;
   } while (resultSize > MAX_SIZE_BYTES && quality >= MIN_QUALITY);
 
@@ -93,18 +96,18 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     const newWidth = Math.round(MAX_WIDTH * scaleFactor);
     const newHeight = Math.round(MAX_HEIGHT * scaleFactor);
 
-    result = await ImageManipulator.manipulateAsync(
+    finalResult = await ImageManipulator.manipulateAsync(
       uri,
       [{ resize: { width: newWidth, height: newHeight } }],
       { compress: MIN_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
     );
-    resultSize = await getFileSize(result.uri);
+    resultSize = await getFileSize(finalResult.uri);
   }
 
   return {
-    uri: result.uri,
-    width: result.width,
-    height: result.height,
+    uri: finalResult.uri,
+    width: finalResult.width,
+    height: finalResult.height,
     fileSize: resultSize,
   };
 }
