@@ -237,7 +237,11 @@ export default function ItemFormScreen() {
     }, true);
   }, [setItem]);
 
-  const handlePhotoCapture = (compressed: ImageResult, originalUri: string) => {
+  const handleCancelMode = useCallback(() => {
+    setMode('form');
+  }, []);
+
+  const handlePhotoCapture = useCallback((compressed: ImageResult, originalUri: string) => {
     setMode('form');
     if (!photoField) return;
 
@@ -251,9 +255,9 @@ export default function ItemFormScreen() {
         addPendingUpload({ itemNumber: item.itemNumber, localUri: originalUri, fieldName: photoField, fileName, timestamp: Date.now() });
       }
     });
-  };
+  }, [item, photoField, setItem]);
 
-  const handleTagScanned = (fields: Partial<CatalogItem>, rawText: string) => {
+  const handleTagScanned = useCallback((fields: Partial<CatalogItem>, rawText: string) => {
     const updated = { ...item };
     for (const [key, value] of Object.entries(fields)) {
       if (value && !(updated as any)[key]) (updated as any)[key] = value;
@@ -261,9 +265,9 @@ export default function ItemFormScreen() {
     setItem(updated, true);
     setOcrRawText(rawText);
     setMode('form');
-  };
+  }, [item, setItem]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!isTitleValid) { Alert.alert('Required', 'Please enter a title.'); return; }
     setSaving(true);
     try {
@@ -276,30 +280,39 @@ export default function ItemFormScreen() {
       navigation.goBack();
     }
     setSaving(false);
-  };
+  }, [isTitleValid, item, reset, navigation]);
 
-  const handleMarketResearch = () => {
+  const handleMarketResearch = useCallback(() => {
     const query = [item.designerBrand, item.title, item.category].filter(Boolean).join(' ');
     if (!query) { Alert.alert('Research', 'Please enter a title or brand first.'); return; }
     Linking.openURL(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&LH_Sold=1&LH_Complete=1`);
-  };
+  }, [item.designerBrand, item.title, item.category]);
 
-  const handleLabelResearch = () => {
+  const handleLabelResearch = useCallback(() => {
     const query = [item.designerBrand, item.title, 'tag label'].filter(Boolean).join(' ');
     if (!query) { Alert.alert('Research', 'Please enter a title or brand first.'); return; }
     Linking.openURL(`https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`);
-  };
+  }, [item.designerBrand, item.title]);
 
-  const handleAISuggest = () => {
+  const handleAISuggest = useCallback(() => {
     Alert.alert('AI Assistant', 'AI suggestion feature coming soon.');
-  };
+  }, []);
 
-  const handleMarkAsSold = () => {
+  const handleMarkAsSold = useCallback(() => {
     Alert.alert('Mark as Sold?', 'This will update status to Sold.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Confirm Sold', onPress: () => updateField('saleStatus', 'Sold', true) }
     ]);
-  };
+  }, [updateField]);
+
+  const handleCapture = useCallback((f: PhotoField) => {
+    setPhotoField(f);
+    setMode('camera');
+  }, []);
+
+  const handleScanTag = useCallback(() => {
+    setMode('tagScan');
+  }, []);
 
   /**
    * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Callbacks
