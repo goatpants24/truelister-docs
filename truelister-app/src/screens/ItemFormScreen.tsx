@@ -48,6 +48,7 @@ const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
  * Hoisting static metadata arrays prevents redundant allocations on every render.
  * Also fixes a critical runtime crash by providing the missing PHOTO_ACTIONS array.
  */
+type FormMode = 'form' | 'camera' | 'tagScan';
 const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
   { field: 'photoUrlCard', label: 'Card', icon: '📇' },
   { field: 'photoUrlFront', label: 'Front', icon: '👕' },
@@ -392,7 +393,6 @@ export default function ItemFormScreen() {
               <Text style={styles.researchLink}>🔍 Label Research</Text>
             </TouchableOpacity>
           </View>
-          <TextInput style={[styles.input, item.designerBrand && ocrRawText && styles.inputOcr]} value={item.designerBrand} onChangeText={(v) => updateField('designerBrand', v)} placeholder="Levi's" placeholderTextColor="#4a5568" />
         </View>
 
         <View style={styles.row}>
@@ -433,10 +433,24 @@ export default function ItemFormScreen() {
             <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save Item'}</Text>
           </TouchableOpacity>
           {existingItem && item.saleStatus !== 'Sold' && (
-            <TouchableOpacity style={styles.soldButton} onPress={handleMarkAsSold}><Text style={styles.soldButtonText}>Mark Sold</Text></TouchableOpacity>
+            <TouchableOpacity
+              style={styles.soldButton}
+              onPress={handleMarkAsSold}
+              accessibilityRole="button"
+              accessibilityLabel="Mark item as sold"
+            >
+              <Text style={styles.soldButtonText}>Mark Sold</Text>
+            </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity style={styles.publishButton} onPress={() => navigation.navigate('Publish', { item })}><Text style={styles.publishButtonText}>🏪 Publish to Marketplaces</Text></TouchableOpacity>
+        <TouchableOpacity
+          style={styles.publishButton}
+          onPress={() => navigation.navigate('Publish', { item })}
+          accessibilityRole="button"
+          accessibilityLabel="Publish to marketplaces"
+        >
+          <Text style={styles.publishButtonText}>🏪 Publish to Marketplaces</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       <UndoRedoBar canUndo={canUndo} canRedo={canRedo} onUndo={undo} onRedo={redo} historyLength={historyLength} />

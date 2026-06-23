@@ -76,6 +76,12 @@ const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
 const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
 
+const CARE_KEYWORDS = [
+  'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'line dry',
+  'do not bleach', 'iron low', 'iron medium', 'iron high', 'warm water',
+  'cold water', 'separate colors', 'wash inside out',
+];
+
 const CARE_REGEX = new RegExp('\\b(' + [...CARE_KEYWORDS].sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
 // ── OCR Text Extraction ──────────────────────────────────────────────────────

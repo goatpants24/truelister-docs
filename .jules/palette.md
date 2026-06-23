@@ -25,3 +25,7 @@
 ## 2026-06-18 - [Visual Confirmation for Multi-Select Chips]
 **Learning:** In mobile interfaces using chip-based multi-selection, providing a visual indicator like a checkmark (✓) inside the selected chip significantly improves clarity, especially when the selection state is only indicated by subtle background color changes.
 **Action:** Always include a visual prefix (like ✓) for selected states in multi-select chip components to provide immediate, unambiguous feedback.
+
+## 2026-06-19 - [Touch Target Optimization for Inline Research Links]
+**Learning:** Small text-based research links (e.g., "🔍 Label Research") in mobile forms often have insufficient touch targets, leading to user frustration. Combining `accessibilityRole="button"` with a generous `hitSlop` ensures these secondary actions are both discoverable by screen readers and easy to tap.
+**Action:** When using text links as buttons in mobile UIs, always apply `hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}` to expand the interactive area without affecting the layout.
