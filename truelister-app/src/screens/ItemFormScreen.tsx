@@ -26,6 +26,22 @@ import UndoRedoBar from '../components/UndoRedoBar';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 
 type FormMode = 'form' | 'camera' | 'tagScan';
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Static Configuration Hoisting
+ * Moving the action bar configuration outside the component body ensures
+ * it is never re-allocated during renders, preserving referential stability.
+ */
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: "photoUrlCard", label: "Card", icon: "📇" },
+  { field: "photoUrlFront", label: "Front", icon: "👕" },
+  { field: "photoUrlBack", label: "Back", icon: "🔙" },
+  { field: "photoUrlDetail", label: "Detail", icon: "🔍" },
+  { field: "photoUrlTabletopWide", label: "Tabletop", icon: "📐" },
+  { field: "photoUrlTabletopDetail", label: "Detail 2", icon: "🔍" },
+  { field: "photoUrlTabletopMeasure1", label: "Measure 1", icon: "📏" },
+  { field: "photoUrlTabletopMeasure2", label: "Measure 2", icon: "📏" },
+];
+
 
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configuration
@@ -298,8 +314,22 @@ export default function ItemFormScreen() {
     setMode('tagScan');
   }, []);
 
-  if (mode === 'camera') return <CameraScreen itemNumber={item.itemNumber} onCapture={handlePhotoCapture} onCancel={handleCancelMode} />;
-  if (mode === 'tagScan') return <TagScanner onFieldsDetected={handleTagScanned} onCancel={handleCancelMode} />;
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Callbacks
+   * Stabilizing these handlers prevents the memoized QuickActionsBar from
+   * re-rendering on every keystroke during form entry.
+   */
+  const handleCaptureTrigger = useCallback((f: PhotoField) => {
+    setPhotoField(f);
+    setMode('camera');
+  }, []);
+
+  const handleScanTagTrigger = useCallback(() => {
+    setMode('tagScan');
+  }, []);
+
+  if (mode === 'camera') return <CameraScreen itemNumber={item.itemNumber} onCapture={handlePhotoCapture} onCancel={() => setMode('form')} />;
+  if (mode === 'tagScan') return <TagScanner onFieldsDetected={handleTagScanned} onCancel={() => setMode('form')} />;
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={64}>
@@ -325,8 +355,8 @@ export default function ItemFormScreen() {
             item.photoUrlTabletopWide, item.photoUrlTabletopDetail, item.photoUrlTabletopMeasure1, item.photoUrlTabletopMeasure2
           ])}
           ocrRawText={ocrRawText}
-          onCapture={handleCapture}
-          onScanTag={handleScanTag}
+          onCapture={handleCaptureTrigger}
+          onScanTag={handleScanTagTrigger}
         />
 
         {item.photoUrlCard && <View style={styles.photoPreview}><Image source={{ uri: item.photoUrlCard }} style={styles.photoImage} resizeMode="cover" /></View>}

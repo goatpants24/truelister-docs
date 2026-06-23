@@ -127,6 +127,7 @@ function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
     a.marketplace === b.marketplace &&
     a.dateListed === b.dateListed &&
     a.notes === b.notes &&
+    // Bolt: Ensure variant photo fields are also checked for equality
     a.photoUrlCard === b.photoUrlCard &&
     a.photoUrlFront === b.photoUrlFront &&
     a.photoUrlBack === b.photoUrlBack &&
