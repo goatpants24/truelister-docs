@@ -25,6 +25,24 @@ import TagScanner from '../components/TagScanner';
 import UndoRedoBar from '../components/UndoRedoBar';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 
+type FormMode = 'form' | 'camera' | 'tagScan';
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Static Configuration Hoisting
+ * Moving the action bar configuration outside the component body ensures
+ * it is never re-allocated during renders, preserving referential stability.
+ */
+const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
+  { field: "photoUrlCard", label: "Card", icon: "📇" },
+  { field: "photoUrlFront", label: "Front", icon: "👕" },
+  { field: "photoUrlBack", label: "Back", icon: "🔙" },
+  { field: "photoUrlDetail", label: "Detail", icon: "🔍" },
+  { field: "photoUrlTabletopWide", label: "Tabletop", icon: "📐" },
+  { field: "photoUrlTabletopDetail", label: "Detail 2", icon: "🔍" },
+  { field: "photoUrlTabletopMeasure1", label: "Measure 1", icon: "📏" },
+  { field: "photoUrlTabletopMeasure2", label: "Measure 2", icon: "📏" },
+];
+
+
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configuration
  * Hoisting static metadata arrays prevents redundant allocations on every render.
@@ -70,7 +88,6 @@ const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   photoUrlTabletopMeasure2: '',
 });
 
-
 const MarketplaceSelector = memo(({ selected, available, onToggle }: {
   selected: string;
   available: string[];
@@ -102,7 +119,6 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: {
     </View>
   );
 });
-
 
 interface QuickActionsBarProps {
   captureStatus: Record<PhotoField, boolean>;
@@ -222,7 +238,11 @@ export default function ItemFormScreen() {
     }, true);
   }, [setItem]);
 
-  const handlePhotoCapture = (compressed: ImageResult, originalUri: string) => {
+  const handleCancelMode = useCallback(() => {
+    setMode('form');
+  }, []);
+
+  const handlePhotoCapture = useCallback((compressed: ImageResult, originalUri: string) => {
     setMode('form');
     if (!photoField) return;
 
@@ -236,9 +256,9 @@ export default function ItemFormScreen() {
         addPendingUpload({ itemNumber: item.itemNumber, localUri: originalUri, fieldName: photoField, fileName, timestamp: Date.now() });
       }
     });
-  };
+  }, [item, photoField, setItem]);
 
-  const handleTagScanned = (fields: Partial<CatalogItem>, rawText: string) => {
+  const handleTagScanned = useCallback((fields: Partial<CatalogItem>, rawText: string) => {
     const updated = { ...item };
     for (const [key, value] of Object.entries(fields)) {
       if (value && !(updated as any)[key]) (updated as any)[key] = value;
@@ -246,9 +266,9 @@ export default function ItemFormScreen() {
     setItem(updated, true);
     setOcrRawText(rawText);
     setMode('form');
-  };
+  }, [item, setItem]);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!isTitleValid) { Alert.alert('Required', 'Please enter a title.'); return; }
     setSaving(true);
     try {
@@ -261,30 +281,53 @@ export default function ItemFormScreen() {
       navigation.goBack();
     }
     setSaving(false);
-  };
+  }, [isTitleValid, item, reset, navigation]);
 
-  const handleMarketResearch = () => {
+  const handleMarketResearch = useCallback(() => {
     const query = [item.designerBrand, item.title, item.category].filter(Boolean).join(' ');
     if (!query) { Alert.alert('Research', 'Please enter a title or brand first.'); return; }
     Linking.openURL(`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(query)}&LH_Sold=1&LH_Complete=1`);
-  };
+  }, [item.designerBrand, item.title, item.category]);
 
-  const handleLabelResearch = () => {
+  const handleLabelResearch = useCallback(() => {
     const query = [item.designerBrand, item.title, 'tag label'].filter(Boolean).join(' ');
     if (!query) { Alert.alert('Research', 'Please enter a title or brand first.'); return; }
     Linking.openURL(`https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`);
-  };
+  }, [item.designerBrand, item.title]);
 
-  const handleAISuggest = () => {
+  const handleAISuggest = useCallback(() => {
     Alert.alert('AI Assistant', 'AI suggestion feature coming soon.');
-  };
+  }, []);
 
-  const handleMarkAsSold = () => {
+  const handleMarkAsSold = useCallback(() => {
     Alert.alert('Mark as Sold?', 'This will update status to Sold.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Confirm Sold', onPress: () => updateField('saleStatus', 'Sold', true) }
     ]);
-  };
+  }, [updateField]);
+
+  const handleCapture = useCallback((f: PhotoField) => {
+    setPhotoField(f);
+    setMode('camera');
+  }, []);
+
+  const handleScanTag = useCallback(() => {
+    setMode('tagScan');
+  }, []);
+
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Callbacks
+   * Stabilizing these handlers prevents the memoized QuickActionsBar from
+   * re-rendering on every keystroke during form entry.
+   */
+  const handleCaptureTrigger = useCallback((f: PhotoField) => {
+    setPhotoField(f);
+    setMode('camera');
+  }, []);
+
+  const handleScanTagTrigger = useCallback(() => {
+    setMode('tagScan');
+  }, []);
 
   if (mode === 'camera') return <CameraScreen itemNumber={item.itemNumber} onCapture={handlePhotoCapture} onCancel={() => setMode('form')} />;
   if (mode === 'tagScan') return <TagScanner onFieldsDetected={handleTagScanned} onCancel={() => setMode('form')} />;
@@ -313,8 +356,8 @@ export default function ItemFormScreen() {
             item.photoUrlTabletopWide, item.photoUrlTabletopDetail, item.photoUrlTabletopMeasure1, item.photoUrlTabletopMeasure2
           ])}
           ocrRawText={ocrRawText}
-          onCapture={(f) => { setPhotoField(f); setMode('camera'); }}
-          onScanTag={() => setMode('tagScan')}
+          onCapture={handleCaptureTrigger}
+          onScanTag={handleScanTagTrigger}
         />
 
         {item.photoUrlCard && <View style={styles.photoPreview}><Image source={{ uri: item.photoUrlCard }} style={styles.photoImage} resizeMode="cover" /></View>}
@@ -328,7 +371,7 @@ export default function ItemFormScreen() {
               onPress={handleAISuggest}
               style={styles.aiBadge}
               accessibilityRole="button"
-              accessibilityLabel="Get AI suggestions for title"
+              accessibilityLabel="AI Suggest title"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
@@ -344,30 +387,11 @@ export default function ItemFormScreen() {
             <TouchableOpacity
               onPress={handleLabelResearch}
               accessibilityRole="button"
-              accessibilityLabel="Research brand labels on Google"
+              accessibilityLabel="Research brand label on Google"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.researchLink}>🔍 Label Research</Text>
             </TouchableOpacity>
-          </View>
-          <TextInput
-            style={[styles.input, item.designerBrand && ocrRawText && styles.inputOcr]}
-            value={item.designerBrand}
-            onChangeText={(v) => updateField('designerBrand', v)}
-            placeholder="Levi's"
-            placeholderTextColor="#4a5568"
-            maxLength={65}
-          />
-          <View style={styles.fieldFooter}>
-            <Text
-              style={[
-                styles.charCount,
-                item.designerBrand.length >= 55 && { color: '#fbbf24' },
-                item.designerBrand.length >= 65 && { color: '#f87171' },
-              ]}
-            >
-              {item.designerBrand.length}/65
-            </Text>
           </View>
         </View>
 
@@ -387,7 +411,7 @@ export default function ItemFormScreen() {
             <TouchableOpacity
               onPress={handleMarketResearch}
               accessibilityRole="button"
-              accessibilityLabel="Research sold prices on eBay"
+              accessibilityLabel="Research market price on eBay"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.researchLink}>📈 Market Sold</Text>

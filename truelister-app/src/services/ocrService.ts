@@ -15,6 +15,12 @@ const FABRIC_KEYWORDS = [
   'chiffon', 'satin', 'velvet', 'fleece', 'jersey', 'tweed', 'organza',
 ];
 
+const CARE_KEYWORDS = [
+  'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'bleach',
+  'iron', 'cold', 'warm', 'hot', 'hang dry', 'lay flat to dry',
+  'low heat', 'no bleach', 'gentle cycle', 'wash inside out',
+];
+
 const SIZE_PATTERNS = [
   /\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/i,
   /\b(size\s*)?(\d{1,2})\b/i,

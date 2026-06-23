@@ -13,6 +13,12 @@ const SETTINGS_KEYS = {
 // Memory cache for spreadsheet ID and data to avoid redundant reads/fetches
 let cachedSpreadsheetId: string | null = null;
 
+/**
+ * Referential Cache: Store the previous item objects to reuse their references.
+ * This ensures React.memo() on the UI side can skip re-renders if data is identical.
+ */
+let itemRefCache = new Map<string, CatalogItem>();
+
 const INVENTORY_CACHE_TTL = 60 * 1000; // 1 minute
 const DROPDOWNS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -35,6 +41,7 @@ export function clearSpreadsheetIdCache() {
   cachedSpreadsheetId = null;
   inventoryCache = null;
   dropdownsCache = null;
+  itemRefCache.clear();
 }
 
 // Public CSV export URL
@@ -100,12 +107,45 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
 }
 
 /**
+ * Fast field-by-field equality check for CatalogItem.
+ * Bolt: Used instead of JSON.stringify to avoid massive O(N) string allocation overhead.
+ */
+function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
+  return (
+    a.itemNumber === b.itemNumber &&
+    a.title === b.title &&
+    a.designerBrand === b.designerBrand &&
+    a.category === b.category &&
+    a.size === b.size &&
+    a.condition === b.condition &&
+    a.fabricMaterial === b.fabricMaterial &&
+    a.measurements === b.measurements &&
+    a.color === b.color &&
+    a.saleStatus === b.saleStatus &&
+    a.price === b.price &&
+    a.photoUrl === b.photoUrl &&
+    a.marketplace === b.marketplace &&
+    a.dateListed === b.dateListed &&
+    a.notes === b.notes &&
+    // Bolt: Ensure variant photo fields are also checked for equality
+    a.photoUrlCard === b.photoUrlCard &&
+    a.photoUrlFront === b.photoUrlFront &&
+    a.photoUrlBack === b.photoUrlBack &&
+    a.photoUrlDetail === b.photoUrlDetail &&
+    a.photoUrlTabletopWide === b.photoUrlTabletopWide &&
+    a.photoUrlTabletopDetail === b.photoUrlTabletopDetail &&
+    a.photoUrlTabletopMeasure1 === b.photoUrlTabletopMeasure1 &&
+    a.photoUrlTabletopMeasure2 === b.photoUrlTabletopMeasure2
+  );
+}
+
+/**
  * Optimized hydration from CSV row to CatalogItem.
  * Bolt: Uses nullish coalescing (??) instead of logical OR (||) to avoid
  * unnecessary boolean coercion, improving object creation speed by ~58%.
  */
 function rowToItem(row: string[]): CatalogItem {
-  return {
+  const item: CatalogItem = {
     itemNumber: row[0] ?? '',
     title: row[1] ?? '',
     designerBrand: row[2] ?? '',
@@ -122,6 +162,15 @@ function rowToItem(row: string[]): CatalogItem {
     dateListed: row[13] ?? '',
     notes: row[14] ?? '',
   };
+
+  // Bolt Optimization: Referential Caching
+  // If we've seen this item number before and the data is identical, return the OLD reference.
+  const cached = itemRefCache.get(item.itemNumber);
+  if (cached && isItemEqual(cached, item)) {
+    return cached;
+  }
+  itemRefCache.set(item.itemNumber, item);
+  return item;
 }
 
 function itemToRow(item: CatalogItem): string[] {
