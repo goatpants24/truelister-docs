@@ -10,6 +10,7 @@ import {
   Image,
   RefreshControl,
 } from 'react-native';
+
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -17,10 +18,18 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { CatalogItem } from '../types';
 import { fetchInventory, generateItemNumber } from '../services/sheets';
 import { getDraftItems } from '../services/localStorage';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configurations
+ * Moving static arrays out of the render loop ensures referential stability,
+ * preventing redundant allocations and skips deep equality checks in child components.
+ */
+const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
+const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
+const REFRESH_COLORS = ['#4f6ef7'];
 
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
@@ -76,39 +85,42 @@ const GridItem = memo(({
   );
 });
 
-const ListItem = memo(({ item, onPress }: {
+const ListItem = memo(({
+  item,
+  onPress
+}: {
   item: CatalogItem,
   onPress: (item: CatalogItem) => void
-}) => {
-  return (
-    <TouchableOpacity
-      style={styles.listItem}
-      onPress={() => onPress(item)}
-    >
-      {item.photoUrl && (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.listThumbnail, { width: 64, height: 64 }]}
-          resizeMode="cover"
-        />
-      )}
-      <View style={styles.listTextContainer}>
-        <Text style={styles.listTitle} numberOfLines={1}>
-          {item.title}
+}) => (
+  <TouchableOpacity
+    style={styles.listItem}
+    onPress={() => onPress(item)}
+  >
+    {item.photoUrl && (
+      <Image
+        source={{ uri: item.photoUrl }}
+        style={[styles.listThumbnail, { width: 64, height: 64 }]}
+        resizeMode="cover"
+      />
+    )}
+    <View style={styles.listTextContainer}>
+      <Text style={styles.listTitle} numberOfLines={1}>
+        {item.title}
+      </Text>
+      <Text style={styles.listSubtitle} numberOfLines={1}>
+        {item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}
+      </Text>
+      {item.price ? (
+        <Text style={styles.listPrice}>${item.price}</Text>
+      ) : null}
+      {item.marketplace ? (
+        <Text style={styles.listMarketplace} numberOfLines={1}>
+          {item.marketplace}
         </Text>
-        <Text style={styles.listSubtitle} numberOfLines={1}>
-          {item.designerBrand} • {item.size} • {item.condition}
-        </Text>
-        {item.price && (
-          <Text style={styles.listPrice}>${item.price}</Text>
-        )}
-        {item.marketplace && (
-          <Text style={styles.listMarketplace}>{item.marketplace}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
-});
+      ) : null}
+    </View>
+  </TouchableOpacity>
+));
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -177,6 +189,13 @@ export default function HomeScreen() {
     }, [loadItems])
   );
 
+  /**
+   * Bolt: Memoize the onRefresh handler to prevent unnecessary re-renders of the RefreshControl.
+   */
+  const handleRefresh = useCallback(() => {
+    loadItems(true);
+  }, [loadItems]);
+
   const handleEditItem = useCallback((item: CatalogItem) => {
     navigation.navigate('ItemForm', { item });
   }, [navigation]);
@@ -225,7 +244,7 @@ export default function HomeScreen() {
     return { length: itemHeight, offset, index };
   }, [viewMode, thumbnailSize]);
 
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     Alert.alert(
       'Export / Templates',
       'Select an option:',
@@ -242,14 +261,18 @@ export default function HomeScreen() {
         { text: 'Cancel', style: 'cancel' },
       ]
     );
-  };
+  }, [items]);
+
+  const onRefresh = useCallback(() => {
+    loadItems(true);
+  }, [loadItems]);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.viewModeRow}>
-            {(['list', 'grid', 'table'] as ViewMode[]).map((mode) => (
+            {VIEW_MODES.map((mode) => (
               <TouchableOpacity
                 key={mode}
                 onPress={() => setViewMode(mode)}
@@ -266,7 +289,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.thumbnailSizeRow}>
-            {(['small', 'medium', 'large'] as ThumbnailSize[]).map((size) => (
+            {THUMBNAIL_SIZES.map((size) => (
               <TouchableOpacity
                 key={size}
                 onPress={() => setThumbnailSize(size)}
@@ -321,6 +344,14 @@ export default function HomeScreen() {
           <Text style={styles.emptyTitle}>No Items Found</Text>
           <Text style={styles.emptyText}>Add your first item or check your connection.</Text>
           <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
+            accessibilityRole="button"
+            accessibilityLabel="Create first item"
+          >
+            <Text style={styles.retryButtonText}>Create First Item</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.settingsLink}
             onPress={() => navigation.navigate('Settings')}
             accessibilityRole="button"
@@ -343,9 +374,9 @@ export default function HomeScreen() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={() => loadItems(true)}
+              onRefresh={onRefresh}
               tintColor="#4f6ef7"
-              colors={['#4f6ef7']}
+              colors={REFRESH_COLORS}
             />
           }
         />
@@ -462,7 +493,7 @@ const styles = StyleSheet.create({
   errorIcon: { fontSize: 48, marginBottom: 16 },
   errorTitle: { color: '#e8eaf6', fontSize: 20, fontWeight: '700', marginBottom: 8 },
   errorText: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginBottom: 24 },
-  retryButton: { backgroundColor: '#4f6ef7', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10, marginBottom: 12 },
+  retryButton: { backgroundColor: '#4f6ef7', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 10 },
   retryButtonText: { color: 'white', fontWeight: '700' },
   settingsLink: { padding: 10 },
   settingsLinkText: { color: '#4f6ef7', fontWeight: '600' },

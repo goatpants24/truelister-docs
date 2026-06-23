@@ -61,14 +61,25 @@ export default function OnboardingScreen() {
         onChangeText={step === 1 ? setSheetUrl : setAppsScriptUrl}
         autoCapitalize="none"
         autoCorrect={false}
+        accessibilityLabel={step === 1 ? "Google Sheet URL" : "Apps Script Web App URL"}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleNext}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleNext}
+        accessibilityRole="button"
+        accessibilityLabel={step === 1 ? "Next" : "Finish Setup"}
+      >
         <Text style={styles.buttonText}>{step === 1 ? 'Next' : 'Finish Setup'}</Text>
       </TouchableOpacity>
 
       {step === 1 && (
-        <TouchableOpacity style={styles.skip} onPress={() => setStep(2)}>
+        <TouchableOpacity
+          style={styles.skip}
+          onPress={() => setStep(2)}
+          accessibilityRole="button"
+          accessibilityLabel="Use default demo sheet"
+        >
           <Text style={styles.skipText}>Use default demo sheet</Text>
         </TouchableOpacity>
       )}

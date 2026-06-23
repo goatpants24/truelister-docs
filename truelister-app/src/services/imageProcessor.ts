@@ -75,17 +75,20 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     };
   }
 
-  // 2. Iterative quality reduction using the ALREADY RESIZED image as source
-  let quality = COMPRESS_QUALITY - 0.1;
-  const resizedUri = result.uri;
+  // Iterative quality reduction
+  // Bolt: Always compress from the original source URI to avoid "generation loss"
+  // artifacts that occur when re-compressing an already compressed JPEG.
+  let quality = COMPRESS_QUALITY;
+  let finalResult: ImageManipulator.ImageResult;
+  let resultSize: number;
 
-  while (resultSize > MAX_SIZE_BYTES && quality >= MIN_QUALITY) {
-    result = await ImageManipulator.manipulateAsync(
-      resizedUri,
-      [], // No further transforms needed, just quality adjustment
-      { compress: quality, format: ImageManipulator.SaveFormat.JPEG }
+  do {
+    finalResult = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: MAX_WIDTH, height: MAX_HEIGHT } }],
+      { compress: Math.max(quality, MIN_QUALITY), format: ImageManipulator.SaveFormat.JPEG }
     );
-    resultSize = await getFileSize(result.uri);
+    resultSize = await getFileSize(finalResult.uri);
     quality -= 0.1;
   }
 
@@ -95,18 +98,18 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     const newWidth = Math.round(result.width * scaleFactor);
     const newHeight = Math.round(result.height * scaleFactor);
 
-    result = await ImageManipulator.manipulateAsync(
-      resizedUri,
+    finalResult = await ImageManipulator.manipulateAsync(
+      uri,
       [{ resize: { width: newWidth, height: newHeight } }],
       { compress: MIN_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
     );
-    resultSize = await getFileSize(result.uri);
+    resultSize = await getFileSize(finalResult.uri);
   }
 
   return {
-    uri: result.uri,
-    width: result.width,
-    height: result.height,
+    uri: finalResult.uri,
+    width: finalResult.width,
+    height: finalResult.height,
     fileSize: resultSize,
   };
 }
