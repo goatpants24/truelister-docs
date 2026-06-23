@@ -126,7 +126,16 @@ function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
     a.photoUrl === b.photoUrl &&
     a.marketplace === b.marketplace &&
     a.dateListed === b.dateListed &&
-    a.notes === b.notes
+    a.notes === b.notes &&
+    // Bolt: Ensure variant photo fields are also checked for equality
+    a.photoUrlCard === b.photoUrlCard &&
+    a.photoUrlFront === b.photoUrlFront &&
+    a.photoUrlBack === b.photoUrlBack &&
+    a.photoUrlDetail === b.photoUrlDetail &&
+    a.photoUrlTabletopWide === b.photoUrlTabletopWide &&
+    a.photoUrlTabletopDetail === b.photoUrlTabletopDetail &&
+    a.photoUrlTabletopMeasure1 === b.photoUrlTabletopMeasure1 &&
+    a.photoUrlTabletopMeasure2 === b.photoUrlTabletopMeasure2
   );
 }
 

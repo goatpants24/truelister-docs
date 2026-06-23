@@ -301,6 +301,20 @@ export default function ItemFormScreen() {
     ]);
   };
 
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Callbacks
+   * Stabilizing these handlers prevents the memoized QuickActionsBar from
+   * re-rendering on every keystroke during form entry.
+   */
+  const handleCaptureTrigger = useCallback((f: PhotoField) => {
+    setPhotoField(f);
+    setMode('camera');
+  }, []);
+
+  const handleScanTagTrigger = useCallback(() => {
+    setMode('tagScan');
+  }, []);
+
   if (mode === 'camera') return <CameraScreen itemNumber={item.itemNumber} onCapture={handlePhotoCapture} onCancel={() => setMode('form')} />;
   if (mode === 'tagScan') return <TagScanner onFieldsDetected={handleTagScanned} onCancel={() => setMode('form')} />;
 
@@ -328,8 +342,8 @@ export default function ItemFormScreen() {
             item.photoUrlTabletopWide, item.photoUrlTabletopDetail, item.photoUrlTabletopMeasure1, item.photoUrlTabletopMeasure2
           ])}
           ocrRawText={ocrRawText}
-          onCapture={(f) => { setPhotoField(f); setMode('camera'); }}
-          onScanTag={() => setMode('tagScan')}
+          onCapture={handleCaptureTrigger}
+          onScanTag={handleScanTagTrigger}
         />
 
         {item.photoUrlCard && <View style={styles.photoPreview}><Image source={{ uri: item.photoUrlCard }} style={styles.photoImage} resizeMode="cover" /></View>}
