@@ -79,8 +79,8 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   // Bolt: Always compress from the original source URI to avoid "generation loss"
   // artifacts that occur when re-compressing an already compressed JPEG.
   let quality = COMPRESS_QUALITY;
-  let finalResult: ImageManipulator.ImageResult;
-  let resultSize: number;
+  let finalResult: ImageManipulator.ImageResult = result;
+  let currentResultSize = resultSize;
 
   do {
     finalResult = await ImageManipulator.manipulateAsync(
@@ -88,29 +88,29 @@ export async function compressImage(uri: string): Promise<ImageResult> {
       [{ resize: { width: MAX_WIDTH, height: MAX_HEIGHT } }],
       { compress: Math.max(quality, MIN_QUALITY), format: ImageManipulator.SaveFormat.JPEG }
     );
-    resultSize = await getFileSize(finalResult.uri);
+    currentResultSize = await getFileSize(finalResult.uri);
     quality -= 0.1;
-  }
+  } while (currentResultSize > TARGET_SIZE_BYTES && quality >= MIN_QUALITY);
 
   // 3. Fallback: scale dimensions down if quality alone wasn't enough
-  if (resultSize > MAX_SIZE_BYTES) {
-    const scaleFactor = Math.sqrt(TARGET_SIZE_BYTES / resultSize);
-    const newWidth = Math.round(result.width * scaleFactor);
-    const newHeight = Math.round(result.height * scaleFactor);
+  if (currentResultSize > MAX_SIZE_BYTES) {
+    const scaleFactor = Math.sqrt(TARGET_SIZE_BYTES / currentResultSize);
+    const newWidth = Math.round(finalResult.width * scaleFactor);
+    const newHeight = Math.round(finalResult.height * scaleFactor);
 
     finalResult = await ImageManipulator.manipulateAsync(
       uri,
       [{ resize: { width: newWidth, height: newHeight } }],
       { compress: MIN_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
     );
-    resultSize = await getFileSize(finalResult.uri);
+    currentResultSize = await getFileSize(finalResult.uri);
   }
 
   return {
     uri: finalResult.uri,
     width: finalResult.width,
     height: finalResult.height,
-    fileSize: resultSize,
+    fileSize: currentResultSize,
   };
 }
 

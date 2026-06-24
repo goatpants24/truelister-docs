@@ -110,6 +110,31 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
  * Fast field-by-field equality check for CatalogItem.
  * Bolt: Used instead of JSON.stringify to avoid massive O(N) string allocation overhead.
  */
+/**
+ * Bolt Performance Optimization: Allocation Guard
+ * Compares a cached CatalogItem against raw CSV row data to detect changes
+ * BEFORE allocating a new object. Only checks fields persisted in the sheet.
+ */
+function isRowEqual(item: CatalogItem, row: string[]): boolean {
+  return (
+    item.itemNumber === (row[0] ?? '') &&
+    item.title === (row[1] ?? '') &&
+    item.designerBrand === (row[2] ?? '') &&
+    item.category === (row[3] ?? '') &&
+    item.size === (row[4] ?? '') &&
+    item.condition === (row[5] ?? '') &&
+    item.fabricMaterial === (row[6] ?? '') &&
+    item.measurements === (row[7] ?? '') &&
+    item.color === (row[8] ?? '') &&
+    item.saleStatus === (row[9] ?? '') &&
+    item.price === (row[10] ?? '') &&
+    item.photoUrl === (row[11] ?? '') &&
+    item.marketplace === (row[12] ?? '') &&
+    item.dateListed === (row[13] ?? '') &&
+    item.notes === (row[14] ?? '')
+  );
+}
+
 function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
   return (
     a.itemNumber === b.itemNumber &&
@@ -145,8 +170,18 @@ function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
  * unnecessary boolean coercion, improving object creation speed by ~58%.
  */
 function rowToItem(row: string[]): CatalogItem {
-  const item: CatalogItem = {
-    itemNumber: row[0] ?? '',
+  const itemNumber = row[0] ?? '';
+
+  // Bolt Optimization: Allocation Guard & Referential Caching
+  // Check the cache BEFORE creating a new object. If the raw row data matches
+  // the cached item's persisted fields, return the existing reference.
+  const cached = itemRefCache.get(itemNumber);
+  if (cached && isRowEqual(cached, row)) {
+    return cached;
+  }
+
+  const newItem: CatalogItem = {
+    itemNumber,
     title: row[1] ?? '',
     designerBrand: row[2] ?? '',
     category: row[3] ?? '',
@@ -163,14 +198,8 @@ function rowToItem(row: string[]): CatalogItem {
     notes: row[14] ?? '',
   };
 
-  // Bolt Optimization: Referential Caching
-  // If we've seen this item number before and the data is identical, return the OLD reference.
-  const cached = itemRefCache.get(item.itemNumber);
-  if (cached && isItemEqual(cached, item)) {
-    return cached;
-  }
-  itemRefCache.set(item.itemNumber, item);
-  return item;
+  itemRefCache.set(itemNumber, newItem);
+  return newItem;
 }
 
 function itemToRow(item: CatalogItem): string[] {
