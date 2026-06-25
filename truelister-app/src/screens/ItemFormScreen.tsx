@@ -375,6 +375,23 @@ export default function ItemFormScreen() {
               <Text style={styles.researchLink}>🔍 Label Research</Text>
             </TouchableOpacity>
           </View>
+          <TextInput
+            style={styles.input}
+            value={item.designerBrand}
+            onChangeText={(v) => updateField('designerBrand', v)}
+            placeholder="e.g. Patagonia"
+            placeholderTextColor="#4a5568"
+            maxLength={65}
+          />
+          <View style={styles.fieldFooter}>
+            <Text style={[
+              styles.charCount,
+              item.designerBrand.length >= 55 && { color: '#fbbf24' },
+              item.designerBrand.length >= 65 && { color: '#f87171' }
+            ]}>
+              {item.designerBrand.length}/65
+            </Text>
+          </View>
         </View>
 
         <View style={styles.row}>
