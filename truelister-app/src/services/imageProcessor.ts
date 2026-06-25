@@ -66,7 +66,7 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   let resultSize = await getFileSize(finalResult.uri);
 
   // Already under target — we're done
-  if (resultSize <= TARGET_SIZE_BYTES) {
+  if (currentSize <= TARGET_SIZE_BYTES) {
     return {
       uri: finalResult.uri,
       width: finalResult.width,
@@ -80,11 +80,11 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   // artifacts that occur when re-compressing an already compressed JPEG.
   let quality = COMPRESS_QUALITY;
 
-  do {
+  while (currentSize > TARGET_SIZE_BYTES && quality >= MIN_QUALITY) {
     finalResult = await ImageManipulator.manipulateAsync(
-      uri,
-      [{ resize: { width: MAX_WIDTH, height: MAX_HEIGHT } }],
-      { compress: Math.max(quality, MIN_QUALITY), format: ImageManipulator.SaveFormat.JPEG }
+      result.uri,
+      [], // No further resizing needed
+      { compress: quality, format: ImageManipulator.SaveFormat.JPEG }
     );
     currentResultSize = await getFileSize(finalResult.uri);
     quality -= 0.1;
@@ -97,7 +97,7 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     const newHeight = Math.round(finalResult.height * scaleFactor);
 
     finalResult = await ImageManipulator.manipulateAsync(
-      uri,
+      result.uri,
       [{ resize: { width: newWidth, height: newHeight } }],
       { compress: MIN_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
     );
