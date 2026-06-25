@@ -19,6 +19,8 @@ const CARE_KEYWORDS_BASE = [
   'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'bleach',
   'iron', 'cold', 'warm', 'hot', 'hang dry', 'lay flat to dry',
   'low heat', 'no bleach', 'gentle cycle', 'wash inside out',
+  'line dry', 'do not bleach', 'iron low', 'iron medium', 'iron high',
+  'warm water', 'cold water', 'separate colors',
 ];
 
 const SIZE_PATTERNS = [

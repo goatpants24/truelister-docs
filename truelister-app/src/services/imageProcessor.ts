@@ -86,7 +86,7 @@ export async function compressImage(uri: string): Promise<ImageResult> {
       [{ resize: { width: MAX_WIDTH, height: MAX_HEIGHT } }],
       { compress: Math.max(quality, MIN_QUALITY), format: ImageManipulator.SaveFormat.JPEG }
     );
-    resultSize = await getFileSize(finalResult.uri);
+    currentResultSize = await getFileSize(finalResult.uri);
     quality -= 0.1;
   } while (resultSize > TARGET_SIZE_BYTES && quality >= MIN_QUALITY);
 
@@ -101,14 +101,14 @@ export async function compressImage(uri: string): Promise<ImageResult> {
       [{ resize: { width: newWidth, height: newHeight } }],
       { compress: MIN_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
     );
-    resultSize = await getFileSize(finalResult.uri);
+    currentResultSize = await getFileSize(finalResult.uri);
   }
 
   return {
     uri: finalResult.uri,
     width: finalResult.width,
     height: finalResult.height,
-    fileSize: resultSize,
+    fileSize: currentResultSize,
   };
 }
 

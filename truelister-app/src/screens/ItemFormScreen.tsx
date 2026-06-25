@@ -36,10 +36,10 @@ const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
   { field: 'photoUrlFront', label: 'Front', icon: '👕' },
   { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
   { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop Wide', icon: '↔️' },
-  { field: 'photoUrlTabletopDetail', label: 'Tabletop Detail', icon: '🔎' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📐' },
+  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔍' },
   { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📐' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📏' },
 ];
 
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
