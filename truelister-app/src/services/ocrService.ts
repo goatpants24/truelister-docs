@@ -15,6 +15,14 @@ const FABRIC_KEYWORDS = [
   'chiffon', 'satin', 'velvet', 'fleece', 'jersey', 'tweed', 'organza',
 ];
 
+const CARE_KEYWORDS_BASE = [
+  'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'bleach',
+  'iron', 'cold', 'warm', 'hot', 'hang dry', 'lay flat to dry',
+  'low heat', 'no bleach', 'gentle cycle', 'wash inside out',
+  'line dry', 'do not bleach', 'iron low', 'iron medium', 'iron high',
+  'warm water', 'cold water', 'separate colors',
+];
+
 const SIZE_PATTERNS = [
   /\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/i,
   /\b(size\s*)?(\d{1,2})\b/i,
@@ -71,9 +79,9 @@ const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
 
 const CARE_KEYWORDS = [
-  'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'line dry',
-  'do not bleach', 'iron low', 'iron medium', 'iron high', 'warm water',
-  'cold water', 'separate colors', 'wash inside out',
+  ...CARE_KEYWORDS_BASE,
+  'line dry', 'do not bleach', 'iron low', 'iron medium', 'iron high', 'warm water',
+  'cold water', 'separate colors',
 ];
 
 const CARE_REGEX = new RegExp('\\b(' + [...CARE_KEYWORDS].sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');

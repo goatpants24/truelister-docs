@@ -50,6 +50,8 @@ const GridItem = memo(({
     <TouchableOpacity
       style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
       onPress={() => onPress(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${item.title || 'Untitled item'}`}
     >
       {item.photoUrl ? (
         <Image
@@ -95,6 +97,8 @@ const ListItem = memo(({
   <TouchableOpacity
     style={styles.listItem}
     onPress={() => onPress(item)}
+    accessibilityRole="button"
+    accessibilityLabel={`Edit ${item.title || 'Untitled item'}`}
   >
     {item.photoUrl && (
       <Image

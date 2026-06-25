@@ -29,3 +29,7 @@
 ## 2026-06-19 - [Touch Target Optimization for Inline Research Links]
 **Learning:** Small text-based research links (e.g., "🔍 Label Research") in mobile forms often have insufficient touch targets, leading to user frustration. Combining `accessibilityRole="button"` with a generous `hitSlop` ensures these secondary actions are both discoverable by screen readers and easy to tap.
 **Action:** When using text links as buttons in mobile UIs, always apply `hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}` to expand the interactive area without affecting the layout.
+
+## 2026-06-20 - [Brand Field Character Counter]
+**Learning:** Marketplace fields like 'Brand' often have shorter character limits (e.g., 65 characters for eBay/Mercari) than the main title. Providing specific thresholds (Amber at 55, Red at 65) helps users stay within limits for cross-listing success.
+**Action:** Always research and apply field-specific character limits from target platforms to prevent listing failures later in the workflow.
