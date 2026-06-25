@@ -25,24 +25,6 @@ import TagScanner from '../components/TagScanner';
 import UndoRedoBar from '../components/UndoRedoBar';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 
-type FormMode = 'form' | 'camera' | 'tagScan';
-/**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Static Configuration Hoisting
- * Moving the action bar configuration outside the component body ensures
- * it is never re-allocated during renders, preserving referential stability.
- */
-const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
-  { field: "photoUrlCard", label: "Card", icon: "📇" },
-  { field: "photoUrlFront", label: "Front", icon: "👕" },
-  { field: "photoUrlBack", label: "Back", icon: "🔙" },
-  { field: "photoUrlDetail", label: "Detail", icon: "🔍" },
-  { field: "photoUrlTabletopWide", label: "Tabletop", icon: "📐" },
-  { field: "photoUrlTabletopDetail", label: "Detail 2", icon: "🔍" },
-  { field: "photoUrlTabletopMeasure1", label: "Measure 1", icon: "📏" },
-  { field: "photoUrlTabletopMeasure2", label: "Measure 2", icon: "📏" },
-];
-
-
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configuration
  * Hoisting static metadata arrays prevents redundant allocations on every render.
@@ -392,6 +374,23 @@ export default function ItemFormScreen() {
             >
               <Text style={styles.researchLink}>🔍 Label Research</Text>
             </TouchableOpacity>
+          </View>
+          <TextInput
+            style={styles.input}
+            value={item.designerBrand}
+            onChangeText={(v) => updateField('designerBrand', v)}
+            placeholder="e.g. Patagonia"
+            placeholderTextColor="#4a5568"
+            maxLength={65}
+          />
+          <View style={styles.fieldFooter}>
+            <Text style={[
+              styles.charCount,
+              item.designerBrand.length >= 55 && { color: '#fbbf24' },
+              item.designerBrand.length >= 65 && { color: '#f87171' }
+            ]}>
+              {item.designerBrand.length}/65
+            </Text>
           </View>
         </View>
 

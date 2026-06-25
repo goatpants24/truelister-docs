@@ -58,19 +58,19 @@ async function getFileSize(uri: string): Promise<number> {
 export async function compressImage(uri: string): Promise<ImageResult> {
   // 1. Initial resize to cap dimensions - ONLY ONCE
   // Bolt: Moving resize outside the loop saves significant CPU by not re-scaling high-res pixels repeatedly.
-  let result = await ImageManipulator.manipulateAsync(
+  let finalResult = await ImageManipulator.manipulateAsync(
     uri,
     [{ resize: { width: MAX_WIDTH, height: MAX_HEIGHT } }],
     { compress: COMPRESS_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
   );
-  let resultSize = await getFileSize(result.uri);
+  let resultSize = await getFileSize(finalResult.uri);
 
   // Already under target — we're done
   if (resultSize <= TARGET_SIZE_BYTES) {
     return {
-      uri: result.uri,
-      width: result.width,
-      height: result.height,
+      uri: finalResult.uri,
+      width: finalResult.width,
+      height: finalResult.height,
       fileSize: resultSize,
     };
   }
@@ -79,8 +79,6 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   // Bolt: Always compress from the original source URI to avoid "generation loss"
   // artifacts that occur when re-compressing an already compressed JPEG.
   let quality = COMPRESS_QUALITY;
-  let finalResult: ImageManipulator.ImageResult;
-  let resultSize: number;
 
   do {
     finalResult = await ImageManipulator.manipulateAsync(
@@ -90,13 +88,13 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     );
     resultSize = await getFileSize(finalResult.uri);
     quality -= 0.1;
-  }
+  } while (resultSize > TARGET_SIZE_BYTES && quality >= MIN_QUALITY);
 
   // 3. Fallback: scale dimensions down if quality alone wasn't enough
   if (resultSize > MAX_SIZE_BYTES) {
     const scaleFactor = Math.sqrt(TARGET_SIZE_BYTES / resultSize);
-    const newWidth = Math.round(result.width * scaleFactor);
-    const newHeight = Math.round(result.height * scaleFactor);
+    const newWidth = Math.round(finalResult.width * scaleFactor);
+    const newHeight = Math.round(finalResult.height * scaleFactor);
 
     finalResult = await ImageManipulator.manipulateAsync(
       uri,
