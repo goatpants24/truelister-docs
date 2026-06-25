@@ -66,7 +66,7 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   let resultSize = await getFileSize(finalResult.uri);
 
   // Already under target — we're done
-  if (currentSize <= TARGET_SIZE_BYTES) {
+  if (resultSize <= TARGET_SIZE_BYTES) {
     return {
       uri: finalResult.uri,
       width: finalResult.width,
@@ -76,19 +76,17 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   }
 
   // Iterative quality reduction
-  // Bolt: Always compress from the original source URI to avoid "generation loss"
-  // artifacts that occur when re-compressing an already compressed JPEG.
   let quality = COMPRESS_QUALITY;
 
-  while (currentSize > TARGET_SIZE_BYTES && quality >= MIN_QUALITY) {
+  while (resultSize > TARGET_SIZE_BYTES && quality >= MIN_QUALITY) {
+    quality -= 0.1;
     finalResult = await ImageManipulator.manipulateAsync(
-      result.uri,
+      finalResult.uri,
       [], // No further resizing needed
       { compress: quality, format: ImageManipulator.SaveFormat.JPEG }
     );
-    currentResultSize = await getFileSize(finalResult.uri);
-    quality -= 0.1;
-  } while (resultSize > TARGET_SIZE_BYTES && quality >= MIN_QUALITY);
+    resultSize = await getFileSize(finalResult.uri);
+  }
 
   // 3. Fallback: scale dimensions down if quality alone wasn't enough
   if (resultSize > MAX_SIZE_BYTES) {
@@ -97,18 +95,18 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     const newHeight = Math.round(finalResult.height * scaleFactor);
 
     finalResult = await ImageManipulator.manipulateAsync(
-      result.uri,
+      finalResult.uri,
       [{ resize: { width: newWidth, height: newHeight } }],
       { compress: MIN_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
     );
-    currentResultSize = await getFileSize(finalResult.uri);
+    resultSize = await getFileSize(finalResult.uri);
   }
 
   return {
     uri: finalResult.uri,
     width: finalResult.width,
     height: finalResult.height,
-    fileSize: currentResultSize,
+    fileSize: resultSize,
   };
 }
 

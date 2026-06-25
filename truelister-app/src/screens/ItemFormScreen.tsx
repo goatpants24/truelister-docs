@@ -317,9 +317,24 @@ export default function ItemFormScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={64}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel editing and go back"
+        >
+          <Text style={styles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>{existingItem ? 'Edit Item' : 'New Item'}</Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={saving}
+          style={styles.headerSaveButton}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          accessibilityRole="button"
+          accessibilityLabel={saving ? "Saving item" : "Save item"}
+        >
+          {saving && <ActivityIndicator size="small" color="#4f6ef7" style={{ marginRight: 6 }} />}
           <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>{saving ? 'Saving…' : 'Save'}</Text>
         </TouchableOpacity>
       </View>
@@ -462,6 +477,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1a1d27' },
   cancelText: { color: '#94a3b8', fontSize: 16, fontWeight: '600' },
   headerTitle: { color: '#e8eaf6', fontSize: 17, fontWeight: '700' },
+  headerSaveButton: { flexDirection: 'row', alignItems: 'center' },
   saveText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
   itemNumberBadge: { alignSelf: 'center', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#4f6ef7', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6, marginVertical: 14 },
