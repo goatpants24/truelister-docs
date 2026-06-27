@@ -1,0 +1,22 @@
+
+> trucatlog@1.0.0 web /app/truelister-app
+> expo start --web
+
+Starting project at /app/truelister-app
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.9% (119/204)
+Web ./index.ts ▓▓▓▓▓▓▓▓▓▓▓░░░░░ 71.6% (419/496)
+Web Bundled 8609ms index.ts (654 modules)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 39ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 35ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web ./index.ts ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 39ms index.ts (1 module)
+ LOG  [web] Logs will appear in the browser console
