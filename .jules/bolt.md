@@ -62,6 +62,14 @@
 **Learning:** Initializing large configuration objects or arrays inside a React component's render body causes redundant allocations on every render cycle. For complex forms where typing triggers high-frequency re-renders, this can lead to memory pressure and UI stuttering.
 **Action:** Always hoist static configuration arrays and objects outside of the component definition or memoize them to ensure referential stability and zero-allocation renders.
 
+## 2025-06-15 - [Referential Stability for Data Services]
+**Learning:** Even if individual items are cached, returning a new array reference from a fetch service (e.g., `fetchInventory`) triggers a full reconciliation of list components (like `FlatList`). Returning the *exact same* array/object reference when content is identical allows React to bail out of rendering entirely.
+**Action:** Implement content-equality checks in data services to maintain referential stability for collection-level returns.
+
+## 2025-06-15 - [Optimized Iterative Image Compression]
+**Learning:** Iteratively re-compressing a JPEG from the previous iteration's result leads to "generation loss" (compounded artifacts) and poorer quality-to-size ratios. Resizing once at high quality (1.0) and using that as the source for all subsequent quality passes preserves image integrity and is CPU-efficient.
+**Action:** Always use a stable, high-quality intermediate source for iterative lossy compression loops.
+
 ## 2025-06-12 - [Surgical Edit Precision & Hoisting]
 **Learning:** Using `replace_with_git_merge_diff` on files with internal code duplication (like `HomeScreen.tsx`) requires extreme hunk range precision to avoid leaving partial syntax or accidentally deleting functional logic. Hoisting static configuration arrays (VIEW_MODES, PHOTO_ACTIONS) provides a "double win": it improves performance via referential stability and prevents runtime ReferenceErrors by centralizing metadata.
 **Action:** Always verify the resulting file structure with `read_file` after complex multi-hunk replacements to ensure component boundaries and exports remain intact.
