@@ -46,29 +46,37 @@ const GridItem = memo(({
   onPress: (item: CatalogItem) => void
 }) => {
   const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
+  const isSold = item.saleStatus === 'Sold';
   return (
     <TouchableOpacity
-      style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
+      style={[styles.gridItem, { width: size + 32, height: size + 64 }, isSold && { opacity: 0.8 }]}
       onPress={() => onPress(item)}
       accessibilityRole="button"
-      accessibilityLabel={`Edit ${item.title || 'Untitled item'}`}
+      accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
     >
-      {item.photoUrl ? (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.thumbnail, { width: size, height: size }]}
-          resizeMode="cover"
-        />
-      ) : (
-        <View
-          style={[
-            styles.thumbnail,
-            { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-        </View>
-      )}
+      <View>
+        {item.photoUrl ? (
+          <Image
+            source={{ uri: item.photoUrl }}
+            style={[styles.thumbnail, { width: size, height: size }]}
+            resizeMode="cover"
+          />
+        ) : (
+          <View
+            style={[
+              styles.thumbnail,
+              { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
+            ]}
+          >
+            <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
+          </View>
+        )}
+        {isSold && (
+          <View style={[styles.soldOverlay, { width: size, height: size }]}>
+            <Text style={styles.soldText}>SOLD</Text>
+          </View>
+        )}
+      </View>
       <Text style={styles.itemTitle} numberOfLines={1}>
         {item.title}
       </Text>
@@ -93,38 +101,50 @@ const ListItem = memo(({
 }: {
   item: CatalogItem,
   onPress: (item: CatalogItem) => void
-}) => (
-  <TouchableOpacity
-    style={styles.listItem}
-    onPress={() => onPress(item)}
-    accessibilityRole="button"
-    accessibilityLabel={`Edit ${item.title || 'Untitled item'}`}
-  >
-    {item.photoUrl && (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.listThumbnail, { width: 64, height: 64 }]}
-        resizeMode="cover"
-      />
-    )}
-    <View style={styles.listTextContainer}>
-      <Text style={styles.listTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.listSubtitle} numberOfLines={1}>
-        {item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}
-      </Text>
-      {item.price ? (
-        <Text style={styles.listPrice}>${item.price}</Text>
-      ) : null}
-      {item.marketplace ? (
-        <Text style={styles.listMarketplace} numberOfLines={1}>
-          {item.marketplace}
+}) => {
+  const isSold = item.saleStatus === 'Sold';
+  return (
+    <TouchableOpacity
+      style={[styles.listItem, isSold && { opacity: 0.8 }]}
+      onPress={() => onPress(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
+    >
+      {item.photoUrl && (
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={[styles.listThumbnail, { width: 64, height: 64 }]}
+          resizeMode="cover"
+        />
+      )}
+      <View style={styles.listTextContainer}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Text style={styles.listTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
+          {isSold && (
+            <View style={styles.soldBadge}>
+              <Text style={styles.soldBadgeText}>SOLD</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.listSubtitle} numberOfLines={1}>
+          {item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}
         </Text>
-      ) : null}
-    </View>
-  </TouchableOpacity>
-));
+        {item.price ? (
+          <Text style={[styles.listPrice, isSold && { textDecorationLine: 'line-through', color: '#64748b' }]}>
+            ${item.price}
+          </Text>
+        ) : null}
+        {item.marketplace ? (
+          <Text style={styles.listMarketplace} numberOfLines={1}>
+            {item.marketplace}
+          </Text>
+        ) : null}
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -520,4 +540,8 @@ const styles = StyleSheet.create({
   listMarketplace: { color: '#60a5fa', fontSize: 12, marginTop: 2 },
   fab: { position: 'absolute', bottom: 24, right: 20, width: 58, height: 58, borderRadius: 29, backgroundColor: '#4f6ef7', justifyContent: 'center', alignItems: 'center', shadowColor: '#4f6ef7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 8 },
   fabText: { color: '#fff', fontSize: 28, fontWeight: '300', marginTop: -2 },
+  soldOverlay: { position: 'absolute', top: 0, left: 0, backgroundColor: 'rgba(15, 17, 23, 0.65)', borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  soldText: { color: '#f87171', fontWeight: '900', fontSize: 14, letterSpacing: 1 },
+  soldBadge: { backgroundColor: 'rgba(248, 113, 113, 0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 0.5, borderColor: '#f87171' },
+  soldBadgeText: { color: '#f87171', fontSize: 9, fontWeight: '800' },
 });
