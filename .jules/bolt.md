@@ -89,3 +89,7 @@
 ## 2025-06-25 - [Iterative Compression & Generation Loss]
 **Learning:** Re-compressing already compressed JPEGs (generation loss) and redundant high-res resizing operations inside an iterative loop create significant CPU overhead and degrade output quality. Using a single high-quality (1.0) intermediate source for all subsequent compression passes preserves quality and minimizes CPU cycles.
 **Action:** Always derive iterative lossy manipulations from a single high-quality intermediate source. Ensure loop variables and termination conditions are strictly synchronized with the result of each pass to avoid infinite loops or logic errors.
+
+## 2026-06-27 - [Drafts List Performance Tuning]
+**Learning:** For screens with potentially long lists like `DraftsScreen.tsx`, unnecessary re-renders of the entire list during item deletion or navigation are a major performance bottleneck. Extracting the rendering logic into a memoized component (`DraftCard`) and implementing `getItemLayout` with a fixed height (82px) eliminates dynamic measurement overhead and improves scroll responsiveness.
+**Action:** Always prefer memoized sub-components and `getItemLayout` for `FlatList` implementations to ensure O(1) layout calculation and minimal reconciliation time.
