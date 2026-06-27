@@ -259,6 +259,21 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
       }
     });
 
+    /**
+     * Bolt Performance Optimization: Referential Stability Boost
+     * If the new items array is identical to the cache (all item references match),
+     * return the existing array reference. This prevents downstream React.memo
+     * components (like HomeScreen's FlatList) from redundant re-renders.
+     */
+    if (
+      inventoryCache &&
+      inventoryCache.data.length === items.length &&
+      items.every((item, idx) => item === inventoryCache!.data[idx])
+    ) {
+      inventoryCache.timestamp = Date.now();
+      return inventoryCache.data;
+    }
+
     // Update cache
     inventoryCache = { data: items, timestamp: Date.now() };
 
@@ -320,6 +335,27 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
     });
 
     const dropdowns = { categories, conditions, saleStatuses, marketplaces, colors, sizes };
+
+    /**
+     * Bolt Performance Optimization: Referential Stability Boost
+     * Compare new dropdowns with cache. If all lists are identical, return
+     * the existing object reference to avoid triggering re-renders in form pickers.
+     */
+    if (dropdownsCache) {
+      const prev = dropdownsCache.data;
+      const isIdentical =
+        categories.length === prev.categories.length && categories.every((v, i) => v === prev.categories[i]) &&
+        conditions.length === prev.conditions.length && conditions.every((v, i) => v === prev.conditions[i]) &&
+        saleStatuses.length === prev.saleStatuses.length && saleStatuses.every((v, i) => v === prev.saleStatuses[i]) &&
+        marketplaces.length === prev.marketplaces.length && marketplaces.every((v, i) => v === prev.marketplaces[i]) &&
+        colors.length === prev.colors.length && colors.every((v, i) => v === prev.colors[i]) &&
+        sizes.length === prev.sizes.length && sizes.every((v, i) => v === prev.sizes[i]);
+
+      if (isIdentical) {
+        dropdownsCache.timestamp = Date.now();
+        return dropdownsCache.data;
+      }
+    }
 
     // Update cache
     dropdownsCache = { data: dropdowns, timestamp: Date.now() };
