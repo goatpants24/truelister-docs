@@ -81,3 +81,7 @@
 ## 2025-06-20 - [Memoized Form Callbacks & Robust Caching]
 **Learning:** Passing inline arrow functions to memoized child components (like QuickActionsBar) in a high-frequency re-render environment (like a form) completely negates the benefits of React.memo. Additionally, a referential cache that ignores secondary fields (like photo URLs) leads to stale UI state when those fields are updated.
 **Action:** Always wrap handlers passed to memoized children in useCallback. Ensure referential equality helpers (isItemEqual) cover all potentially mutable fields to maintain cache integrity.
+
+## 2025-06-25 - [Iterative Compression & Generation Loss]
+**Learning:** Re-compressing already compressed JPEGs (generation loss) and redundant high-res resizing operations inside an iterative loop create significant CPU overhead and degrade output quality. Using a single high-quality (1.0) intermediate source for all subsequent compression passes preserves quality and minimizes CPU cycles.
+**Action:** Always derive iterative lossy manipulations from a single high-quality intermediate source. Ensure loop variables and termination conditions are strictly synchronized with the result of each pass to avoid infinite loops or logic errors.

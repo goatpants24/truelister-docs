@@ -94,7 +94,7 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   }
 
   // 3. Fallback: scale dimensions down if quality alone wasn't enough
-  if (resultSize > MAX_SIZE_BYTES) {
+  if (resultSize > TARGET_SIZE_BYTES) {
     const scaleFactor = Math.sqrt(TARGET_SIZE_BYTES / resultSize);
     const newWidth = Math.round(finalResult.width * scaleFactor);
     const newHeight = Math.round(finalResult.height * scaleFactor);
