@@ -317,10 +317,23 @@ export default function ItemFormScreen() {
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={64}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel editing"
+        >
+          <Text style={styles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>{existingItem ? 'Edit Item' : 'New Item'}</Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
-          <Text style={[styles.saveText, saving && { opacity: 0.5 }]}>{saving ? 'Saving…' : 'Save'}</Text>
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={!isTitleValid || saving}
+          accessibilityRole="button"
+          accessibilityLabel="Save item"
+        >
+          <Text style={[styles.saveText, (!isTitleValid || saving) && { opacity: 0.5 }]}>
+            {saving ? 'Saving…' : 'Save'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -344,7 +357,10 @@ export default function ItemFormScreen() {
 
         {item.photoUrlCard && <View style={styles.photoPreview}><Image source={{ uri: item.photoUrlCard }} style={styles.photoImage} resizeMode="cover" /></View>}
 
-        <View style={styles.sectionHeader}><Text style={styles.sectionLabel}>Item Details</Text></View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>Item Details</Text>
+          <Text style={{ color: '#64748b', fontSize: 11, fontWeight: '500' }}>( * Required )</Text>
+        </View>
 
         <View style={styles.field}>
           <View style={styles.labelRow}>
@@ -359,7 +375,16 @@ export default function ItemFormScreen() {
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
             </TouchableOpacity>
           </View>
-          <TextInput style={styles.input} value={item.title} onChangeText={(v) => updateField('title', v)} placeholder="Vintage Levi 501" placeholderTextColor="#4a5568" maxLength={80} />
+          <TextInput
+            style={styles.input}
+            value={item.title}
+            onChangeText={(v) => updateField('title', v)}
+            placeholder="Vintage Levi 501"
+            placeholderTextColor="#4a5568"
+            maxLength={80}
+            autoFocus={!existingItem}
+            accessibilityLabel="Item Title"
+          />
           <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
         </View>
 
@@ -427,7 +452,13 @@ export default function ItemFormScreen() {
         <View style={styles.field}><Text style={styles.label}>Notes</Text><TextInput style={[styles.input, styles.textArea]} value={item.notes} onChangeText={(v) => updateField('notes', v)} multiline numberOfLines={3} placeholderTextColor="#4a5568" /></View>
 
         <View style={styles.formActions}>
-          <TouchableOpacity style={[styles.saveButton, saving && { opacity: 0.5 }]} onPress={handleSave} disabled={saving}>
+          <TouchableOpacity
+            style={[styles.saveButton, (!isTitleValid || saving) && { opacity: 0.5 }]}
+            onPress={handleSave}
+            disabled={!isTitleValid || saving}
+            accessibilityRole="button"
+            accessibilityLabel="Save item"
+          >
             {saving && <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />}
             <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save Item'}</Text>
           </TouchableOpacity>
@@ -462,6 +493,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 16, paddingHorizontal: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#1a1d27' },
   cancelText: { color: '#94a3b8', fontSize: 16, fontWeight: '600' },
   headerTitle: { color: '#e8eaf6', fontSize: 17, fontWeight: '700' },
+  headerSaveButton: { flexDirection: 'row', alignItems: 'center' },
   saveText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
   itemNumberBadge: { alignSelf: 'center', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#4f6ef7', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6, marginVertical: 14 },
@@ -474,7 +506,7 @@ const styles = StyleSheet.create({
   actionButtonCaptured: { borderColor: '#4ade80', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
   photoPreview: { marginBottom: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a' },
   photoImage: { width: '100%', height: 200 },
-  sectionHeader: { marginTop: 8, marginBottom: 12 },
+  sectionHeader: { marginTop: 8, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionLabel: { color: '#6b7280', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   field: { marginBottom: 14 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },

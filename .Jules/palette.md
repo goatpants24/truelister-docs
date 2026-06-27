@@ -7,3 +7,7 @@
 ## 2025-05-15 - Chip Accessibility
 **Learning:** Interactive chips used for multi-selection must include `accessibilityRole="button"` and `accessibilityState={{ selected: isSelected }}` to ensure screen readers correctly convey their purpose and state.
 **Action:** Always include accessibility props when using `TouchableOpacity` for selection elements.
+
+## 2026-06-25 - Header Save Feedback and Touch Targets
+**Learning:** Secondary actions in the header (like 'Save' or 'Cancel') benefit significantly from explicit touch target expansion (hitSlop) and real-time state feedback (ActivityIndicator) to ensure they feel as reliable and responsive as primary bottom-of-screen buttons.
+**Action:** Always add hitSlop and dynamic accessibility labels to header actions to maintain mobile usability and assistive technology clarity.
