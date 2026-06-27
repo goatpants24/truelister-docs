@@ -81,7 +81,7 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   // 2. Iterative quality reduction
   // Bolt: Always compress from the resizedResult URI to avoid "generation loss"
   // artifacts that occur when re-compressing an already compressed JPEG.
-  let quality = COMPRESS_QUALITY;
+  let quality = COMPRESS_QUALITY - 0.1;
 
   while (resultSize > TARGET_SIZE_BYTES && quality >= MIN_QUALITY) {
     finalResult = await ImageManipulator.manipulateAsync(
