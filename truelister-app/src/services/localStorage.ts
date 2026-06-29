@@ -13,10 +13,19 @@ let cachedDrafts: CatalogItem[] | null = null;
 /**
  * Save a draft item locally (for offline use or before sync)
  */
+/**
+ * Save or update a draft item locally.
+ * Bolt: Optimized to perform an "upsert" (update if exists) to prevent duplicate
+ * entries for the same item number, reducing storage bloat and sync confusion.
+ */
 export async function saveDraftItem(item: CatalogItem): Promise<void> {
   try {
     const existing = await getDraftItems();
-    const updated = [...existing, item];
+    const index = existing.findIndex(d => d.itemNumber === item.itemNumber);
+    const updated = index >= 0
+      ? [...existing.slice(0, index), item, ...existing.slice(index + 1)]
+      : [...existing, item];
+
     await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
     cachedDrafts = updated;
   } catch (error) {
@@ -36,7 +45,10 @@ export async function getDraftItems(): Promise<CatalogItem[]> {
   }
 }
 
-export async function removeDraftItem(itemNumber: string): Promise<void> {
+/**
+ * Delete a single draft by item number.
+ */
+export async function deleteDraft(itemNumber: string): Promise<void> {
   try {
     const existing = await getDraftItems();
     const updated = existing.filter(item => item.itemNumber !== itemNumber);
@@ -54,9 +66,6 @@ export async function clearDrafts(): Promise<void> {
 
 /** Alias for getDraftItems — used by DraftsScreen */
 export const getDrafts = getDraftItems;
-
-/** Delete a single draft by item number */
-export const deleteDraft = removeDraftItem;
 
 /**
  * Track pending photo uploads (originals waiting to go to Drive)
