@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -7,29 +7,84 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackNavProp } from '../navigation/types';
 import { getDrafts, deleteDraft } from '../services/localStorage';
 import { CatalogItem } from '../types';
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Draft Card
+ * Using React.memo with a fixed height prevents expensive re-renders and
+ * layout shifts during list scrolling.
+ */
+const DraftCard = memo(({
+  item,
+  onEdit,
+  onDelete
+}: {
+  item: CatalogItem;
+  onEdit: (item: CatalogItem) => void;
+  onDelete: (itemNumber: string) => void;
+}) => (
+  <TouchableOpacity
+    style={styles.card}
+    onPress={() => onEdit(item)}
+    activeOpacity={0.75}
+    accessibilityRole="button"
+    accessibilityLabel={`Edit draft ${item.itemNumber}: ${item.title || 'Untitled'}`}
+  >
+    <View style={styles.cardLeft}>
+      <Text style={styles.itemNumber}>{item.itemNumber}</Text>
+      <Text style={styles.itemTitle} numberOfLines={1}>
+        {item.title || 'Untitled'}
+      </Text>
+      <Text style={styles.itemMeta}>
+        {[item.designerBrand, item.size, item.condition]
+          .filter(Boolean)
+          .join(' · ')}
+      </Text>
+    </View>
+    <TouchableOpacity
+      style={styles.deleteBtn}
+      onPress={() => onDelete(item.itemNumber)}
+      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      accessibilityRole="button"
+      accessibilityLabel={`Delete draft ${item.itemNumber}`}
+    >
+      <Text style={styles.deleteIcon}>🗑</Text>
+    </TouchableOpacity>
+  </TouchableOpacity>
+));
 
 export default function DraftsScreen() {
   const navigation = useNavigation<RootStackNavProp<'Main'>>();
   const [drafts, setDrafts] = useState<CatalogItem[]>([]);
 
-  const loadDrafts = async () => {
+  /**
+   * Bolt: Optimized data loading.
+   * Wrapping in useCallback ensures referential stability for the focus effect.
+   */
+  const loadDrafts = useCallback(async () => {
     const saved = await getDrafts();
     setDrafts(saved);
-  };
-
-  useEffect(() => {
-    loadDrafts();
   }, []);
 
-  const handleEdit = (item: CatalogItem) => {
-    navigation.navigate('ItemForm', { item });
-  };
+  /**
+   * Bolt: Performance Lifecycle.
+   * useFocusEffect ensures the draft list is always fresh when the user navigates
+   * back to this screen, without redundant triggers during render.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      loadDrafts();
+    }, [loadDrafts])
+  );
 
-  const handleDelete = (itemNumber: string) => {
+  const handleEdit = useCallback((item: CatalogItem) => {
+    navigation.navigate('ItemForm', { item });
+  }, [navigation]);
+
+  const handleDelete = useCallback((itemNumber: string) => {
     Alert.alert('Delete Draft', 'Remove this draft permanently?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -41,7 +96,17 @@ export default function DraftsScreen() {
         },
       },
     ]);
-  };
+  }, [loadDrafts]);
+
+  /**
+   * Bolt: Optimized layout calculation.
+   * Eliminates dynamic measurement overhead for the list.
+   */
+  const getItemLayout = useCallback((_data: any, index: number) => ({
+    length: 82,
+    offset: (82 + 10) * index,
+    index,
+  }), []);
 
   if (drafts.length === 0) {
     return (
@@ -70,35 +135,16 @@ export default function DraftsScreen() {
         data={drafts}
         keyExtractor={(item) => item.itemNumber}
         contentContainerStyle={{ paddingBottom: 24 }}
+        getItemLayout={getItemLayout}
+        removeClippedSubviews={true}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => handleEdit(item)}
-            activeOpacity={0.75}
-            accessibilityRole="button"
-            accessibilityLabel={`Edit draft ${item.itemNumber}: ${item.title || 'Untitled'}`}
-          >
-            <View style={styles.cardLeft}>
-              <Text style={styles.itemNumber}>{item.itemNumber}</Text>
-              <Text style={styles.itemTitle} numberOfLines={1}>
-                {item.title || 'Untitled'}
-              </Text>
-              <Text style={styles.itemMeta}>
-                {[item.designerBrand, item.size, item.condition]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.deleteBtn}
-              onPress={() => handleDelete(item.itemNumber)}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              accessibilityRole="button"
-              accessibilityLabel={`Delete draft ${item.itemNumber}`}
-            >
-              <Text style={styles.deleteIcon}>🗑</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
+          <DraftCard
+            item={item}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         )}
       />
     </View>
@@ -114,6 +160,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1d27',
     borderRadius: 12,
     padding: 14,
+    height: 82,
+    overflow: 'hidden',
     marginBottom: 10,
     borderWidth: 1,
     borderColor: '#2a2d3a',

@@ -18,7 +18,7 @@ import { Picker } from '@react-native-picker/picker';
 import { CatalogItem, DropdownOptions, ImageResult, PhotoField } from '../types';
 import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
 import { fetchDropdowns, appendItem } from '../services/sheets';
-import { saveDraftItem, addPendingUpload } from '../services/localStorage';
+import { saveDraftItem, addPendingUpload, deleteDraft } from '../services/localStorage';
 import { uploadToDrive } from '../services/driveUpload';
 import CameraScreen from './CameraScreen';
 import TagScanner from '../components/TagScanner';
@@ -250,12 +250,21 @@ export default function ItemFormScreen() {
     setMode('form');
   }, [item, setItem]);
 
+  /**
+   * Bolt: Optimized save flow.
+   * If successfully uploaded to cloud, we immediately purge the local draft
+   * to keep storage clean and avoid duplicate views in the Home catalog.
+   */
   const handleSave = useCallback(async () => {
     if (!isTitleValid) { Alert.alert('Required', 'Please enter a title.'); return; }
     setSaving(true);
     try {
       const success = await appendItem(item);
-      if (!success) await saveDraftItem(item);
+      if (success) {
+        await deleteDraft(item.itemNumber);
+      } else {
+        await saveDraftItem(item);
+      }
       reset(item);
       navigation.goBack();
     } catch (err) {
