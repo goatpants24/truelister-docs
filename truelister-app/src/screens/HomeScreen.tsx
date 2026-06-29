@@ -93,38 +93,34 @@ const ListItem = memo(({
 }: {
   item: CatalogItem,
   onPress: (item: CatalogItem) => void
-}) => (
-  <TouchableOpacity
-    style={styles.listItem}
-    onPress={() => onPress(item)}
-    accessibilityRole="button"
-    accessibilityLabel={`Edit ${item.title || 'Untitled item'}`}
-  >
-    {item.photoUrl && (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.listThumbnail, { width: 64, height: 64 }]}
-        resizeMode="cover"
-      />
-    )}
-    <View style={styles.listTextContainer}>
-      <Text style={styles.listTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.listSubtitle} numberOfLines={1}>
-        {item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}
-      </Text>
-      {item.price ? (
-        <Text style={styles.listPrice}>${item.price}</Text>
-      ) : null}
-      {item.marketplace ? (
-        <Text style={styles.listMarketplace} numberOfLines={1}>
-          {item.marketplace}
+}) => {
+  const isSold = item.saleStatus === 'Sold';
+  return (
+    <TouchableOpacity
+      style={[styles.listItem, isSold && { opacity: 0.8 }]}
+      onPress={() => onPress(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
+    >
+      {item.photoUrl && (
+        <Image source={{ uri: item.photoUrl }} style={styles.listThumbnail} resizeMode="cover" />
+      )}
+      <View style={styles.listTextContainer}>
+        <View style={styles.rowCentered}>
+          <Text style={[styles.listTitle, { flex: 1 }]} numberOfLines={1}>{item.title}</Text>
+          {isSold && <View style={styles.soldBadge}><Text style={styles.soldBadgeText}>SOLD</Text></View>}
+        </View>
+        <Text style={styles.listSubtitle} numberOfLines={1}>
+          {item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}
         </Text>
-      ) : null}
-    </View>
-  </TouchableOpacity>
-));
+        {item.price && (
+          <Text style={[styles.listPrice, isSold && styles.strikethrough]}>${item.price}</Text>
+        )}
+        {item.marketplace && <Text style={styles.listMarketplace} numberOfLines={1}>{item.marketplace}</Text>}
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -520,4 +516,8 @@ const styles = StyleSheet.create({
   listMarketplace: { color: '#60a5fa', fontSize: 12, marginTop: 2 },
   fab: { position: 'absolute', bottom: 24, right: 20, width: 58, height: 58, borderRadius: 29, backgroundColor: '#4f6ef7', justifyContent: 'center', alignItems: 'center', shadowColor: '#4f6ef7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 8 },
   fabText: { color: '#fff', fontSize: 28, fontWeight: '300', marginTop: -2 },
+  rowCentered: { flexDirection: 'row', alignItems: 'center' },
+  soldBadge: { backgroundColor: 'rgba(248,113,113,0.1)', borderWidth: 1, borderColor: '#f87171', borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1, marginLeft: 8 },
+  soldBadgeText: { color: '#f87171', fontSize: 10, fontWeight: '800' },
+  strikethrough: { textDecorationLine: 'line-through', color: '#94a3b8' },
 });
