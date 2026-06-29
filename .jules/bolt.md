@@ -89,3 +89,7 @@
 ## 2025-06-25 - [Iterative Compression & Generation Loss]
 **Learning:** Re-compressing already compressed JPEGs (generation loss) and redundant high-res resizing operations inside an iterative loop create significant CPU overhead and degrade output quality. Using a single high-quality (1.0) intermediate source for all subsequent compression passes preserves quality and minimizes CPU cycles.
 **Action:** Always derive iterative lossy manipulations from a single high-quality intermediate source. Ensure loop variables and termination conditions are strictly synchronized with the result of each pass to avoid infinite loops or logic errors.
+
+## 2025-06-25 - [Raw String Comparison Fast-Path]
+**Learning:** For data-fetching services that parse raw text (like CSV or JSON) into complex object graphs, comparing the raw response string against a cached version is significantly faster than performing a deep comparison of the hydrated result. This "fast-path" bypasses parsing overhead and eliminates O(N) object allocations and garbage collection pressure when the source data is unchanged.
+**Action:** Implement raw response string caching in fetch services to enable instantaneous bailing for identical responses, ensuring referential stability for downstream React components with zero processing cost.

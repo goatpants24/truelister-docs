@@ -22,8 +22,8 @@ let itemRefCache = new Map<string, CatalogItem>();
 const INVENTORY_CACHE_TTL = 60 * 1000; // 1 minute
 const DROPDOWNS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-let inventoryCache: { data: CatalogItem[]; timestamp: number } | null = null;
-let dropdownsCache: { data: DropdownOptions; timestamp: number } | null = null;
+let inventoryCache: { data: CatalogItem[]; timestamp: number; raw?: string } | null = null;
+let dropdownsCache: { data: DropdownOptions; timestamp: number; raw?: string } | null = null;
 
 /**
  * Optimized helper to get spreadsheet ID with memory caching.
@@ -135,35 +135,6 @@ function isRowEqual(item: CatalogItem, row: string[]): boolean {
   );
 }
 
-function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
-  return (
-    a.itemNumber === b.itemNumber &&
-    a.title === b.title &&
-    a.designerBrand === b.designerBrand &&
-    a.category === b.category &&
-    a.size === b.size &&
-    a.condition === b.condition &&
-    a.fabricMaterial === b.fabricMaterial &&
-    a.measurements === b.measurements &&
-    a.color === b.color &&
-    a.saleStatus === b.saleStatus &&
-    a.price === b.price &&
-    a.photoUrl === b.photoUrl &&
-    a.marketplace === b.marketplace &&
-    a.dateListed === b.dateListed &&
-    a.notes === b.notes &&
-    // Bolt: Ensure variant photo fields are also checked for equality
-    a.photoUrlCard === b.photoUrlCard &&
-    a.photoUrlFront === b.photoUrlFront &&
-    a.photoUrlBack === b.photoUrlBack &&
-    a.photoUrlDetail === b.photoUrlDetail &&
-    a.photoUrlTabletopWide === b.photoUrlTabletopWide &&
-    a.photoUrlTabletopDetail === b.photoUrlTabletopDetail &&
-    a.photoUrlTabletopMeasure1 === b.photoUrlTabletopMeasure1 &&
-    a.photoUrlTabletopMeasure2 === b.photoUrlTabletopMeasure2
-  );
-}
-
 /**
  * Optimized hydration from CSV row to CatalogItem.
  * Bolt: Uses nullish coalescing (??) instead of logical OR (||) to avoid
@@ -245,6 +216,16 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
 
     const csv = await response.text();
 
+    /**
+     * Bolt Performance Optimization: Raw String Comparison
+     * If the fetched CSV string is identical to the cache, return the existing
+     * array reference immediately. This bypasses O(N) parsing and hydration.
+     */
+    if (inventoryCache && inventoryCache.raw === csv) {
+      inventoryCache.timestamp = Date.now();
+      return inventoryCache.data;
+    }
+
     // Optimized: single-pass to avoid slice/map/filter intermediate arrays.
     // Bolt: Now hydrates CatalogItem objects directly from the stream.
     const items: CatalogItem[] = [];
@@ -259,23 +240,8 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
       }
     });
 
-    /**
-     * Bolt Performance Optimization: Referential Stability Boost
-     * If the new items array is identical to the cache (all item references match),
-     * return the existing array reference. This prevents downstream React.memo
-     * components (like HomeScreen's FlatList) from redundant re-renders.
-     */
-    if (
-      inventoryCache &&
-      inventoryCache.data.length === items.length &&
-      items.every((item, idx) => item === inventoryCache!.data[idx])
-    ) {
-      inventoryCache.timestamp = Date.now();
-      return inventoryCache.data;
-    }
-
-    // Update cache
-    inventoryCache = { data: items, timestamp: Date.now() };
+    // Update cache with raw string to enable faster subsequent fetches
+    inventoryCache = { data: items, timestamp: Date.now(), raw: csv };
 
     return items;
   } catch (error) {
@@ -311,6 +277,16 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
 
     const csv = await response.text();
 
+    /**
+     * Bolt Performance Optimization: Raw String Comparison
+     * If the fetched CSV string is identical to the cache, return the existing
+     * object reference immediately. This bypasses parsing and deep comparison.
+     */
+    if (dropdownsCache && dropdownsCache.raw === csv) {
+      dropdownsCache.timestamp = Date.now();
+      return dropdownsCache.data;
+    }
+
     // Optimized: single-pass extraction to replace 6 separate dataRows.map() calls.
     // Bolt: Now populates dropdowns directly from the stream.
     const categories: string[] = [];
@@ -336,29 +312,8 @@ export async function fetchDropdowns(): Promise<DropdownOptions> {
 
     const dropdowns = { categories, conditions, saleStatuses, marketplaces, colors, sizes };
 
-    /**
-     * Bolt Performance Optimization: Referential Stability Boost
-     * Compare new dropdowns with cache. If all lists are identical, return
-     * the existing object reference to avoid triggering re-renders in form pickers.
-     */
-    if (dropdownsCache) {
-      const prev = dropdownsCache.data;
-      const isIdentical =
-        categories.length === prev.categories.length && categories.every((v, i) => v === prev.categories[i]) &&
-        conditions.length === prev.conditions.length && conditions.every((v, i) => v === prev.conditions[i]) &&
-        saleStatuses.length === prev.saleStatuses.length && saleStatuses.every((v, i) => v === prev.saleStatuses[i]) &&
-        marketplaces.length === prev.marketplaces.length && marketplaces.every((v, i) => v === prev.marketplaces[i]) &&
-        colors.length === prev.colors.length && colors.every((v, i) => v === prev.colors[i]) &&
-        sizes.length === prev.sizes.length && sizes.every((v, i) => v === prev.sizes[i]);
-
-      if (isIdentical) {
-        dropdownsCache.timestamp = Date.now();
-        return dropdownsCache.data;
-      }
-    }
-
-    // Update cache
-    dropdownsCache = { data: dropdowns, timestamp: Date.now() };
+    // Update cache with raw string to enable faster subsequent fetches
+    dropdownsCache = { data: dropdowns, timestamp: Date.now(), raw: csv };
 
     return dropdowns;
   } catch (error) {
