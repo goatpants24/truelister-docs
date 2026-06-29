@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -7,29 +7,86 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackNavProp } from '../navigation/types';
 import { getDrafts, deleteDraft } from '../services/localStorage';
 import { CatalogItem } from '../types';
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Draft Card
+ * Extracting the item renderer into a memoized component prevents
+ * redundant tree reconciliation when the parent list state updates.
+ * Fixed height (82px) ensures reliable getItemLayout calculations.
+ */
+const DraftCard = memo(({
+  item,
+  onEdit,
+  onDelete
+}: {
+  item: CatalogItem;
+  onEdit: (item: CatalogItem) => void;
+  onDelete: (itemNumber: string) => void;
+}) => (
+  <TouchableOpacity
+    style={styles.card}
+    onPress={() => onEdit(item)}
+    activeOpacity={0.75}
+    accessibilityRole="button"
+    accessibilityLabel={`Edit draft ${item.itemNumber}: ${item.title || 'Untitled'}`}
+  >
+    <View style={styles.cardLeft}>
+      <Text style={styles.itemNumber}>{item.itemNumber}</Text>
+      <Text style={styles.itemTitle} numberOfLines={1}>
+        {item.title || 'Untitled'}
+      </Text>
+      <Text style={styles.itemMeta}>
+        {[item.designerBrand, item.size, item.condition]
+          .filter(Boolean)
+          .join(' · ')}
+      </Text>
+    </View>
+    <TouchableOpacity
+      style={styles.deleteBtn}
+      onPress={() => onDelete(item.itemNumber)}
+      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      accessibilityRole="button"
+      accessibilityLabel={`Delete draft ${item.itemNumber}`}
+    >
+      <Text style={styles.deleteIcon}>🗑</Text>
+    </TouchableOpacity>
+  </TouchableOpacity>
+));
 
 export default function DraftsScreen() {
   const navigation = useNavigation<RootStackNavProp<'Main'>>();
   const [drafts, setDrafts] = useState<CatalogItem[]>([]);
 
-  const loadDrafts = async () => {
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Load Callback
+   * Wrapping in useCallback prevents focus effect from re-running
+   * unless the navigation or state dependencies actually change.
+   */
+  const loadDrafts = useCallback(async () => {
     const saved = await getDrafts();
     setDrafts(saved);
-  };
-
-  useEffect(() => {
-    loadDrafts();
   }, []);
 
-  const handleEdit = (item: CatalogItem) => {
-    navigation.navigate('ItemForm', { item });
-  };
+  /**
+   * Performance Impact: Lifecycle Sync
+   * useFocusEffect ensures that if a user saves a new draft in the Form,
+   * the list is automatically updated when they navigate back here.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      loadDrafts();
+    }, [loadDrafts])
+  );
 
-  const handleDelete = (itemNumber: string) => {
+  const handleEdit = useCallback((item: CatalogItem) => {
+    navigation.navigate('ItemForm', { item });
+  }, [navigation]);
+
+  const handleDelete = useCallback((itemNumber: string) => {
     Alert.alert('Delete Draft', 'Remove this draft permanently?', [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -41,7 +98,22 @@ export default function DraftsScreen() {
         },
       },
     ]);
-  };
+  }, [loadDrafts]);
+
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: List Virtualization Tuning
+   * getItemLayout allows the list to skip dynamic measurement, improving scroll speed.
+   * Row height = 82 (card) + 10 (margin) = 92px.
+   */
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: 92,
+    offset: 92 * index,
+    index,
+  }), []);
+
+  const renderItem = useCallback(({ item }: { item: CatalogItem }) => (
+    <DraftCard item={item} onEdit={handleEdit} onDelete={handleDelete} />
+  ), [handleEdit, handleDelete]);
 
   if (drafts.length === 0) {
     return (
@@ -70,36 +142,12 @@ export default function DraftsScreen() {
         data={drafts}
         keyExtractor={(item) => item.itemNumber}
         contentContainerStyle={{ paddingBottom: 24 }}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => handleEdit(item)}
-            activeOpacity={0.75}
-            accessibilityRole="button"
-            accessibilityLabel={`Edit draft ${item.itemNumber}: ${item.title || 'Untitled'}`}
-          >
-            <View style={styles.cardLeft}>
-              <Text style={styles.itemNumber}>{item.itemNumber}</Text>
-              <Text style={styles.itemTitle} numberOfLines={1}>
-                {item.title || 'Untitled'}
-              </Text>
-              <Text style={styles.itemMeta}>
-                {[item.designerBrand, item.size, item.condition]
-                  .filter(Boolean)
-                  .join(' · ')}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={styles.deleteBtn}
-              onPress={() => handleDelete(item.itemNumber)}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              accessibilityRole="button"
-              accessibilityLabel={`Delete draft ${item.itemNumber}`}
-            >
-              <Text style={styles.deleteIcon}>🗑</Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        )}
+        renderItem={renderItem}
+        getItemLayout={getItemLayout}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        removeClippedSubviews={true}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -113,10 +161,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1a1d27',
     borderRadius: 12,
-    padding: 14,
+    paddingHorizontal: 14,
+    height: 82,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: '#2a2d3a',
+    overflow: 'hidden',
   },
   cardLeft: { flex: 1 },
   itemNumber: { fontSize: 11, color: '#4f6ef7', fontWeight: '700', marginBottom: 2 },
