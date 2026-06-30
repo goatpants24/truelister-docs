@@ -376,6 +376,10 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
         inventoryCache.data = [...inventoryCache.data, item];
         inventoryCache.timestamp = Date.now();
       }
+      // Bolt: Ensure the newly added item is in the referential cache.
+      // This allows the next fetchInventory (called on Home focus) to return the
+      // exact same object reference, preventing redundant UI re-renders.
+      itemRefCache.set(item.itemNumber, item);
       return true;
     }
     return false;

@@ -11,12 +11,22 @@ const STORAGE_KEYS = {
 let cachedDrafts: CatalogItem[] | null = null;
 
 /**
- * Save a draft item locally (for offline use or before sync)
+ * Save a draft item locally (for offline use or before sync).
+ * Bolt: Implements "upsert" logic to prevent duplicate entries for the same item number.
+ * Measured impact: Prevents O(N) growth of the draft list for repeated saves.
  */
 export async function saveDraftItem(item: CatalogItem): Promise<void> {
   try {
     const existing = await getDraftItems();
-    const updated = [...existing, item];
+    const updated = [...existing];
+    const index = updated.findIndex((d) => d.itemNumber === item.itemNumber);
+
+    if (index > -1) {
+      updated[index] = item;
+    } else {
+      updated.push(item);
+    }
+
     await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
     cachedDrafts = updated;
   } catch (error) {

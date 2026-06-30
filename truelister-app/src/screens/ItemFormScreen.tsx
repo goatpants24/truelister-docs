@@ -18,7 +18,7 @@ import { Picker } from '@react-native-picker/picker';
 import { CatalogItem, DropdownOptions, ImageResult, PhotoField } from '../types';
 import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
 import { fetchDropdowns, appendItem } from '../services/sheets';
-import { saveDraftItem, addPendingUpload } from '../services/localStorage';
+import { saveDraftItem, addPendingUpload, deleteDraft } from '../services/localStorage';
 import { uploadToDrive } from '../services/driveUpload';
 import CameraScreen from './CameraScreen';
 import TagScanner from '../components/TagScanner';
@@ -251,14 +251,25 @@ export default function ItemFormScreen() {
   }, [item, setItem]);
 
   const handleSave = useCallback(async () => {
-    if (!isTitleValid) { Alert.alert('Required', 'Please enter a title.'); return; }
+    if (!isTitleValid) {
+      Alert.alert('Required', 'Please enter a title.');
+      return;
+    }
     setSaving(true);
     try {
       const success = await appendItem(item);
-      if (!success) await saveDraftItem(item);
+      if (success) {
+        // Bolt: Storage Hygiene
+        // If the item was successfully uploaded to the cloud, remove the local draft.
+        await deleteDraft(item.itemNumber);
+      } else {
+        // Fallback: Save as local draft if cloud upload failed
+        await saveDraftItem(item);
+      }
       reset(item);
       navigation.goBack();
     } catch (err) {
+      // Fallback: Save as local draft on network/parsing error
       await saveDraftItem(item);
       navigation.goBack();
     }
