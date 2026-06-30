@@ -11,12 +11,25 @@ const STORAGE_KEYS = {
 let cachedDrafts: CatalogItem[] | null = null;
 
 /**
- * Save a draft item locally (for offline use or before sync)
+ * Save a draft item locally (for offline use or before sync).
+ * Bolt: Implements "upsert" logic to update existing entries by itemNumber,
+ * preventing data bloat and reducing O(N) processing overhead in list views.
  */
 export async function saveDraftItem(item: CatalogItem): Promise<void> {
   try {
     const existing = await getDraftItems();
-    const updated = [...existing, item];
+    const index = existing.findIndex((i) => i.itemNumber === item.itemNumber);
+    let updated: CatalogItem[];
+
+    if (index > -1) {
+      // Update existing draft reference
+      updated = [...existing];
+      updated[index] = item;
+    } else {
+      // Append new draft
+      updated = [...existing, item];
+    }
+
     await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
     cachedDrafts = updated;
   } catch (error) {

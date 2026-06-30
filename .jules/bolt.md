@@ -93,3 +93,7 @@
 ## 2025-06-25 - [Raw String Comparison Fast-Path]
 **Learning:** For data-fetching services that parse raw text (like CSV or JSON) into complex object graphs, comparing the raw response string against a cached version is significantly faster than performing a deep comparison of the hydrated result. This "fast-path" bypasses parsing overhead and eliminates O(N) object allocations and garbage collection pressure when the source data is unchanged.
 **Action:** Implement raw response string caching in fetch services to enable instantaneous bailing for identical responses, ensuring referential stability for downstream React components with zero processing cost.
+
+## 2025-06-25 - [Upsert Logic for Local Persistence]
+**Learning:** Naively appending updated items to a local storage array (like `AsyncStorage`) leads to rapid data bloat and duplicate entries for the same unique identifier (e.g., `itemNumber`). This forces downstream list components and data merge logic to perform redundant $O(N)$ operations.
+**Action:** Always use `findIndex` or a Map-based approach to implement "upsert" logic when saving items to a collection, ensuring uniqueness and constant-size storage for each record.
