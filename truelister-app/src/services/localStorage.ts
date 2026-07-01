@@ -11,12 +11,21 @@ const STORAGE_KEYS = {
 let cachedDrafts: CatalogItem[] | null = null;
 
 /**
- * Save a draft item locally (for offline use or before sync)
+ * Save a draft item locally (for offline use or before sync).
+ * Bolt: Implements 'upsert' logic to prevent duplicate entries in AsyncStorage,
+ * reducing storage size and improving parse/stringify speed for large catalogs.
  */
 export async function saveDraftItem(item: CatalogItem): Promise<void> {
   try {
     const existing = await getDraftItems();
-    const updated = [...existing, item];
+    const index = existing.findIndex(e => e.itemNumber === item.itemNumber);
+    let updated;
+    if (index > -1) {
+      updated = [...existing];
+      updated[index] = item;
+    } else {
+      updated = [...existing, item];
+    }
     await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
     cachedDrafts = updated;
   } catch (error) {
@@ -69,10 +78,24 @@ export interface PendingUpload {
   fieldName?: string; // which variant 3 photo field this belongs to
 }
 
+/**
+ * Track pending photo uploads (originals waiting to go to Drive).
+ * Bolt: Implements 'upsert' logic keyed by itemNumber and fieldName.
+ * This prevents redundant upload tasks if a user re-captures a photo for the same field.
+ */
 export async function addPendingUpload(upload: PendingUpload): Promise<void> {
   try {
     const existing = await getPendingUploads();
-    const updated = [...existing, upload];
+    const index = existing.findIndex(
+      u => u.itemNumber === upload.itemNumber && u.fieldName === upload.fieldName
+    );
+    let updated;
+    if (index > -1) {
+      updated = [...existing];
+      updated[index] = upload;
+    } else {
+      updated = [...existing, upload];
+    }
     await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
   } catch (error) {
     console.error('Error saving pending upload:', error);
