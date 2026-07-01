@@ -93,3 +93,7 @@
 ## 2025-06-25 - [Raw String Comparison Fast-Path]
 **Learning:** For data-fetching services that parse raw text (like CSV or JSON) into complex object graphs, comparing the raw response string against a cached version is significantly faster than performing a deep comparison of the hydrated result. This "fast-path" bypasses parsing overhead and eliminates O(N) object allocations and garbage collection pressure when the source data is unchanged.
 **Action:** Implement raw response string caching in fetch services to enable instantaneous bailing for identical responses, ensuring referential stability for downstream React components with zero processing cost.
+
+## 2025-06-25 - [Upsert & Bailout Guard for Local Storage]
+**Learning:** Naive append-only storage strategies for draft items lead to O(N) memory growth and redundant disk I/O when users save frequently. Implementing an "upsert" logic using `findIndex` ensures data uniqueness, while a `JSON.stringify`-based bailout guard prevents expensive `AsyncStorage` writes when the item content is unchanged.
+**Action:** Always prefer upsert logic for local collections that track identifiable entities (like itemNumber). Use deep equality checks to bail out of storage writes in high-frequency save paths.

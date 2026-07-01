@@ -10,15 +10,35 @@ const STORAGE_KEYS = {
 // Memory cache to avoid redundant bridge traffic and parsing
 let cachedDrafts: CatalogItem[] | null = null;
 
+
 /**
- * Save a draft item locally (for offline use or before sync)
+ * Save a draft item locally (for offline use or before sync).
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: True "Upsert" logic.
+ * Prevents O(N) memory growth by updating existing entries by itemNumber
+ * instead of appending duplicates to the storage array.
  */
 export async function saveDraftItem(item: CatalogItem): Promise<void> {
   try {
     const existing = await getDraftItems();
-    const updated = [...existing, item];
-    await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
-    cachedDrafts = updated;
+    const index = existing.findIndex(d => d.itemNumber === item.itemNumber);
+
+    // Using raw string comparison for the bailout check is faster and safer
+    // than a brittle property list, as it handles the full object state.
+    const newItemString = JSON.stringify(item);
+
+    if (index !== -1) {
+      if (JSON.stringify(existing[index]) === newItemString) {
+        return;
+      }
+      const updated = [...existing];
+      updated[index] = item;
+      await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
+      cachedDrafts = updated;
+    } else {
+      const updated = [...existing, item];
+      await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
+      cachedDrafts = updated;
+    }
   } catch (error) {
     console.error('Error saving draft:', error);
   }
