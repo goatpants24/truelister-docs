@@ -93,3 +93,7 @@
 ## 2025-06-25 - [Raw String Comparison Fast-Path]
 **Learning:** For data-fetching services that parse raw text (like CSV or JSON) into complex object graphs, comparing the raw response string against a cached version is significantly faster than performing a deep comparison of the hydrated result. This "fast-path" bypasses parsing overhead and eliminates O(N) object allocations and garbage collection pressure when the source data is unchanged.
 **Action:** Implement raw response string caching in fetch services to enable instantaneous bailing for identical responses, ensuring referential stability for downstream React components with zero processing cost.
+
+## 2025-06-26 - [Shallow Equality AsyncStorage Bailing]
+**Learning:** Writing to `AsyncStorage` on every form change (e.g., auto-saving drafts) is a major performance bottleneck due to the serialization/deserialization overhead across the React Native bridge. Implementing a shallow equality check (`isItemEqual`) to compare the new state with the current cached state allows the app to bail out of the write operation entirely if no fields have changed, significantly reducing UI stutter during high-frequency updates.
+**Action:** Always guard persistent storage writes with a shallow or deep equality check against the current cached state to minimize bridge traffic.

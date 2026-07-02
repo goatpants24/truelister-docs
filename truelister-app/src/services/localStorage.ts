@@ -11,14 +11,41 @@ const STORAGE_KEYS = {
 let cachedDrafts: CatalogItem[] | null = null;
 
 /**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Shallow Equality
+ * Avoids expensive JSON.stringify and AsyncStorage writes if the item hasn't changed.
+ */
+function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
+  const keys = Object.keys(a) as (keyof CatalogItem)[];
+  if (keys.length !== Object.keys(b).length) return false;
+  for (const key of keys) {
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
+
+/**
  * Save a draft item locally (for offline use or before sync)
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Implement true 'upsert' logic.
+ * Prevents duplicate entries and redundant writes to persistent storage.
  */
 export async function saveDraftItem(item: CatalogItem): Promise<void> {
   try {
     const existing = await getDraftItems();
-    const updated = [...existing, item];
-    await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
-    cachedDrafts = updated;
+    const index = existing.findIndex(d => d.itemNumber === item.itemNumber);
+
+    if (index !== -1) {
+      // If item exists and is identical, bail out early to save CPU and I/O.
+      if (isItemEqual(existing[index], item)) return;
+
+      const updated = [...existing];
+      updated[index] = item;
+      await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
+      cachedDrafts = updated;
+    } else {
+      const updated = [...existing, item];
+      await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
+      cachedDrafts = updated;
+    }
   } catch (error) {
     console.error('Error saving draft:', error);
   }
@@ -39,6 +66,10 @@ export async function getDraftItems(): Promise<CatalogItem[]> {
 export async function removeDraftItem(itemNumber: string): Promise<void> {
   try {
     const existing = await getDraftItems();
+    const index = existing.findIndex(item => item.itemNumber === itemNumber);
+
+    if (index === -1) return; // Already gone, skip write.
+
     const updated = existing.filter(item => item.itemNumber !== itemNumber);
     await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
     cachedDrafts = updated;
@@ -69,10 +100,27 @@ export interface PendingUpload {
   fieldName?: string; // which variant 3 photo field this belongs to
 }
 
+/**
+ * Track pending photo uploads (originals waiting to go to Drive)
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Deduplication
+ * Ensures that multiple capture attempts for the same field don't bloat the queue.
+ */
 export async function addPendingUpload(upload: PendingUpload): Promise<void> {
   try {
     const existing = await getPendingUploads();
-    const updated = [...existing, upload];
+    // Unique key is combination of itemNumber and fieldName
+    const index = existing.findIndex(
+      u => u.itemNumber === upload.itemNumber && u.fieldName === upload.fieldName
+    );
+
+    let updated: PendingUpload[];
+    if (index !== -1) {
+      updated = [...existing];
+      updated[index] = upload;
+    } else {
+      updated = [...existing, upload];
+    }
+
     await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
   } catch (error) {
     console.error('Error saving pending upload:', error);
