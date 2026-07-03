@@ -9,14 +9,61 @@ const STORAGE_KEYS = {
 
 // Memory cache to avoid redundant bridge traffic and parsing
 let cachedDrafts: CatalogItem[] | null = null;
+let cachedPendingUploads: PendingUpload[] | null = null;
+
+/**
+ * Optimized shallow equality check for CatalogItem.
+ * Bolt: Faster than JSON.stringify for detecting redundant storage writes.
+ */
+function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
+  return (
+    a.itemNumber === b.itemNumber &&
+    a.title === b.title &&
+    a.designerBrand === b.designerBrand &&
+    a.category === b.category &&
+    a.size === b.size &&
+    a.condition === b.condition &&
+    a.fabricMaterial === b.fabricMaterial &&
+    a.measurements === b.measurements &&
+    a.color === b.color &&
+    a.saleStatus === b.saleStatus &&
+    a.price === b.price &&
+    a.photoUrl === b.photoUrl &&
+    a.marketplace === b.marketplace &&
+    a.dateListed === b.dateListed &&
+    a.notes === b.notes &&
+    a.photoUrlCard === b.photoUrlCard &&
+    a.photoUrlFront === b.photoUrlFront &&
+    a.photoUrlBack === b.photoUrlBack &&
+    a.photoUrlDetail === b.photoUrlDetail &&
+    a.photoUrlTabletopWide === b.photoUrlTabletopWide &&
+    a.photoUrlTabletopDetail === b.photoUrlTabletopDetail &&
+    a.photoUrlTabletopMeasure1 === b.photoUrlTabletopMeasure1 &&
+    a.photoUrlTabletopMeasure2 === b.photoUrlTabletopMeasure2
+  );
+}
 
 /**
  * Save a draft item locally (for offline use or before sync)
+ * Bolt Performance Optimization: Upsert-and-Bail logic.
+ * Detects if the item is identical to an existing draft to avoid O(N) stringification
+ * and expensive AsyncStorage writes.
  */
 export async function saveDraftItem(item: CatalogItem): Promise<void> {
   try {
     const existing = await getDraftItems();
-    const updated = [...existing, item];
+    const index = existing.findIndex(d => d.itemNumber === item.itemNumber);
+
+    let updated: CatalogItem[];
+    if (index >= 0) {
+      // Bail if the item is identical to what's already saved
+      if (isItemEqual(existing[index], item)) return;
+      updated = [...existing];
+      updated[index] = item;
+    } else {
+      updated = [...existing, item];
+    }
+
     await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
     cachedDrafts = updated;
   } catch (error) {
@@ -40,6 +87,10 @@ export async function removeDraftItem(itemNumber: string): Promise<void> {
   try {
     const existing = await getDraftItems();
     const updated = existing.filter(item => item.itemNumber !== itemNumber);
+
+    // Bail if the item wasn't in drafts to avoid redundant storage writes
+    if (updated.length === existing.length) return;
+
     await AsyncStorage.setItem(STORAGE_KEYS.DRAFT_ITEMS, JSON.stringify(updated));
     cachedDrafts = updated;
   } catch (error) {
@@ -72,28 +123,48 @@ export interface PendingUpload {
 export async function addPendingUpload(upload: PendingUpload): Promise<void> {
   try {
     const existing = await getPendingUploads();
-    const updated = [...existing, upload];
+    // Use both itemNumber and fieldName for unique identification
+    const index = existing.findIndex(u => u.itemNumber === upload.itemNumber && u.fieldName === upload.fieldName);
+
+    let updated: PendingUpload[];
+    if (index >= 0) {
+      updated = [...existing];
+      updated[index] = upload;
+    } else {
+      updated = [...existing, upload];
+    }
+
     await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
+    cachedPendingUploads = updated;
   } catch (error) {
     console.error('Error saving pending upload:', error);
   }
 }
 
 export async function getPendingUploads(): Promise<PendingUpload[]> {
+  if (cachedPendingUploads) return cachedPendingUploads;
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_UPLOADS);
-    return data ? JSON.parse(data) : [];
+    cachedPendingUploads = data ? JSON.parse(data) : [];
+    return cachedPendingUploads!;
   } catch (error) {
     console.error('Error reading pending uploads:', error);
     return [];
   }
 }
 
-export async function removePendingUpload(itemNumber: string): Promise<void> {
+export async function removePendingUpload(itemNumber: string, fieldName?: string): Promise<void> {
   try {
     const existing = await getPendingUploads();
-    const updated = existing.filter(u => u.itemNumber !== itemNumber);
+    const updated = existing.filter(u =>
+      fieldName ? (u.itemNumber !== itemNumber || u.fieldName !== fieldName) : u.itemNumber !== itemNumber
+    );
+
+    // Bail if no items were removed to avoid redundant storage writes
+    if (updated.length === existing.length) return;
+
     await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
+    cachedPendingUploads = updated;
   } catch (error) {
     console.error('Error removing pending upload:', error);
   }

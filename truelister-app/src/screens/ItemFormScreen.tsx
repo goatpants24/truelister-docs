@@ -18,7 +18,7 @@ import { Picker } from '@react-native-picker/picker';
 import { CatalogItem, DropdownOptions, ImageResult, PhotoField } from '../types';
 import { RootStackNavProp, ItemFormRouteProp } from '../navigation/types';
 import { fetchDropdowns, appendItem } from '../services/sheets';
-import { saveDraftItem, addPendingUpload } from '../services/localStorage';
+import { saveDraftItem, addPendingUpload, deleteDraft } from '../services/localStorage';
 import { uploadToDrive } from '../services/driveUpload';
 import CameraScreen from './CameraScreen';
 import TagScanner from '../components/TagScanner';
@@ -255,7 +255,12 @@ export default function ItemFormScreen() {
     setSaving(true);
     try {
       const success = await appendItem(item);
-      if (!success) await saveDraftItem(item);
+      if (success) {
+        // Bolt: Clean up local draft after successful cloud sync to keep storage lean.
+        await deleteDraft(item.itemNumber);
+      } else {
+        await saveDraftItem(item);
+      }
       reset(item);
       navigation.goBack();
     } catch (err) {
