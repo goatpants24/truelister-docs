@@ -46,29 +46,44 @@ const GridItem = memo(({
   onPress: (item: CatalogItem) => void
 }) => {
   const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
+  const isSold = item.saleStatus === 'Sold';
+
   return (
     <TouchableOpacity
-      style={[styles.gridItem, { width: size + 32, height: size + 64 }]}
+      style={[
+        styles.gridItem,
+        { width: size + 32, height: size + 64 },
+        isSold && { opacity: 0.8 }
+      ]}
       onPress={() => onPress(item)}
       accessibilityRole="button"
-      accessibilityLabel={`Edit ${item.title || 'Untitled item'}`}
+      accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
     >
-      {item.photoUrl ? (
-        <Image
-          source={{ uri: item.photoUrl }}
-          style={[styles.thumbnail, { width: size, height: size }]}
-          resizeMode="cover"
-        />
-      ) : (
-        <View
-          style={[
-            styles.thumbnail,
-            { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
-          ]}
-        >
-          <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
-        </View>
-      )}
+      <View style={{ width: size, height: size }}>
+        {item.photoUrl ? (
+          <Image
+            source={{ uri: item.photoUrl }}
+            style={[styles.thumbnail, { width: size, height: size }]}
+            resizeMode="cover"
+          />
+        ) : (
+          <View
+            style={[
+              styles.thumbnail,
+              { width: size, height: size, justifyContent: 'center', alignItems: 'center' },
+            ]}
+          >
+            <Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text>
+          </View>
+        )}
+        {isSold && (
+          <View style={[StyleSheet.absoluteFill, styles.soldOverlay]}>
+            <View style={styles.soldStamp}>
+              <Text style={styles.soldStampText}>SOLD</Text>
+            </View>
+          </View>
+        )}
+      </View>
       <Text style={styles.itemTitle} numberOfLines={1}>
         {item.title}
       </Text>
@@ -76,7 +91,7 @@ const GridItem = memo(({
         {item.designerBrand || '–'}
       </Text>
       {item.price ? (
-        <Text style={styles.itemPrice}>${item.price}</Text>
+        <Text style={[styles.itemPrice, isSold && styles.soldPrice]}>${item.price}</Text>
       ) : null}
       {item.marketplace ? (
         <Text style={styles.itemMarketplace} numberOfLines={1}>
@@ -93,38 +108,48 @@ const ListItem = memo(({
 }: {
   item: CatalogItem,
   onPress: (item: CatalogItem) => void
-}) => (
-  <TouchableOpacity
-    style={styles.listItem}
-    onPress={() => onPress(item)}
-    accessibilityRole="button"
-    accessibilityLabel={`Edit ${item.title || 'Untitled item'}`}
-  >
-    {item.photoUrl && (
-      <Image
-        source={{ uri: item.photoUrl }}
-        style={[styles.listThumbnail, { width: 64, height: 64 }]}
-        resizeMode="cover"
-      />
-    )}
-    <View style={styles.listTextContainer}>
-      <Text style={styles.listTitle} numberOfLines={1}>
-        {item.title}
-      </Text>
-      <Text style={styles.listSubtitle} numberOfLines={1}>
-        {item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}
-      </Text>
-      {item.price ? (
-        <Text style={styles.listPrice}>${item.price}</Text>
-      ) : null}
-      {item.marketplace ? (
-        <Text style={styles.listMarketplace} numberOfLines={1}>
-          {item.marketplace}
+}) => {
+  const isSold = item.saleStatus === 'Sold';
+  return (
+    <TouchableOpacity
+      style={[styles.listItem, isSold && { opacity: 0.8 }]}
+      onPress={() => onPress(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
+    >
+      {item.photoUrl && (
+        <Image
+          source={{ uri: item.photoUrl }}
+          style={[styles.listThumbnail, { width: 64, height: 64 }]}
+          resizeMode="cover"
+        />
+      )}
+      <View style={styles.listTextContainer}>
+        <View style={styles.listTitleRow}>
+          <Text style={styles.listTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
+          {isSold && (
+            <View style={styles.soldBadge}>
+              <Text style={styles.soldBadgeText}>SOLD</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.listSubtitle} numberOfLines={1}>
+          {item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}
         </Text>
-      ) : null}
-    </View>
-  </TouchableOpacity>
-));
+        {item.price ? (
+          <Text style={[styles.listPrice, isSold && styles.soldPrice]}>${item.price}</Text>
+        ) : null}
+        {item.marketplace ? (
+          <Text style={styles.listMarketplace} numberOfLines={1}>
+            {item.marketplace}
+          </Text>
+        ) : null}
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
@@ -511,10 +536,17 @@ const styles = StyleSheet.create({
   itemBrand: { color: '#94a3b8', fontSize: 11, marginTop: 2 },
   itemPrice: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 4 },
   itemMarketplace: { color: '#60a5fa', fontSize: 10, marginTop: 2 },
+  soldOverlay: { backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center', borderRadius: 8 },
+  soldStamp: { borderWidth: 2, borderColor: '#f87171', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, transform: [{ rotate: '-12deg' }] },
+  soldStampText: { color: '#f87171', fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+  soldPrice: { textDecorationLine: 'line-through', color: '#94a3b8' },
   listItem: { flexDirection: 'row', backgroundColor: '#1a1d27', padding: 12, height: 88, overflow: 'hidden', borderRadius: 12, marginBottom: 8, gap: 12, borderWidth: 1, borderColor: 'rgba(79, 110, 247, 0.1)' },
   listThumbnail: { borderRadius: 8 },
   listTextContainer: { flex: 1, justifyContent: 'center' },
-  listTitle: { color: '#e8eaf6', fontSize: 15, fontWeight: '600' },
+  listTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  listTitle: { color: '#e8eaf6', fontSize: 15, fontWeight: '600', flexShrink: 1 },
+  soldBadge: { backgroundColor: 'rgba(248, 113, 113, 0.15)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: '#f87171' },
+  soldBadgeText: { color: '#f87171', fontSize: 10, fontWeight: '800' },
   listSubtitle: { color: '#94a3b8', fontSize: 12 },
   listPrice: { color: '#4ade80', fontSize: 13, fontWeight: '600', marginTop: 2 },
   listMarketplace: { color: '#60a5fa', fontSize: 12, marginTop: 2 },
