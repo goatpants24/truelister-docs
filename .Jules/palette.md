@@ -11,3 +11,7 @@
 ## 2026-06-25 - Header Save Feedback and Touch Targets
 **Learning:** Secondary actions in the header (like 'Save' or 'Cancel') benefit significantly from explicit touch target expansion (hitSlop) and real-time state feedback (ActivityIndicator) to ensure they feel as reliable and responsive as primary bottom-of-screen buttons.
 **Action:** Always add hitSlop and dynamic accessibility labels to header actions to maintain mobile usability and assistive technology clarity.
+
+## 2025-05-16 - Visual Indicators for Item Status
+**Learning:** In inventory-heavy applications, item status (like 'Sold') must be immediately obvious through multiple visual channels: stamps/overlays for grid views, badges for list views, and stylistic changes (opacity, strikethrough) for text and pricing.
+**Action:** Combine visual overlays with descriptive accessibility labels (e.g., prefixing "Sold: ") to ensure status is conveyed to all users.
