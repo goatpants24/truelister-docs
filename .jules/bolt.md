@@ -93,3 +93,7 @@
 ## 2025-06-25 - [Raw String Comparison Fast-Path]
 **Learning:** For data-fetching services that parse raw text (like CSV or JSON) into complex object graphs, comparing the raw response string against a cached version is significantly faster than performing a deep comparison of the hydrated result. This "fast-path" bypasses parsing overhead and eliminates O(N) object allocations and garbage collection pressure when the source data is unchanged.
 **Action:** Implement raw response string caching in fetch services to enable instantaneous bailing for identical responses, ensuring referential stability for downstream React components with zero processing cost.
+
+## 2025-06-26 - [Upsert-and-Bail Storage Optimization]
+**Learning:** Frequent `AsyncStorage` writes in React Native can cause bridge congestion and UI stuttering. Implementing an "Upsert-and-Bail" pattern—using a shallow equality check to skip writes if data is unchanged—eliminates redundant I/O. Combined with memory caching for reads, this drastically reduces bridge traffic.
+**Action:** Always use shallow equality guards before persisting data to storage. Pair storage operations with memory caches to minimize bridge round-trips for read-heavy collections.
