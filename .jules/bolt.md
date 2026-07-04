@@ -93,3 +93,7 @@
 ## 2025-06-25 - [Raw String Comparison Fast-Path]
 **Learning:** For data-fetching services that parse raw text (like CSV or JSON) into complex object graphs, comparing the raw response string against a cached version is significantly faster than performing a deep comparison of the hydrated result. This "fast-path" bypasses parsing overhead and eliminates O(N) object allocations and garbage collection pressure when the source data is unchanged.
 **Action:** Implement raw response string caching in fetch services to enable instantaneous bailing for identical responses, ensuring referential stability for downstream React components with zero processing cost.
+
+## 2025-06-25 - [Local Storage Upsert & Redundant Write Bailing]
+**Learning:** For mobile apps using AsyncStorage, bridge traffic is a major bottleneck. Implementing an "upsert" (update or insert) pattern with a memory cache and a shallow equality check allows for "Redundant Write Bailing"—skipping the expensive serialization and disk I/O when the data hasn't changed.
+**Action:** Always implement a memory cache for frequently accessed storage keys and use shallow equality to bail out of write operations if the new state matches the cached state.
