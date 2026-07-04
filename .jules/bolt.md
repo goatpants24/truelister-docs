@@ -93,3 +93,7 @@
 ## 2025-06-25 - [Raw String Comparison Fast-Path]
 **Learning:** For data-fetching services that parse raw text (like CSV or JSON) into complex object graphs, comparing the raw response string against a cached version is significantly faster than performing a deep comparison of the hydrated result. This "fast-path" bypasses parsing overhead and eliminates O(N) object allocations and garbage collection pressure when the source data is unchanged.
 **Action:** Implement raw response string caching in fetch services to enable instantaneous bailing for identical responses, ensuring referential stability for downstream React components with zero processing cost.
+
+## 2025-06-26 - [Storage Upsert & Bail-Early Optimization]
+**Learning:** Naive 'append-only' storage logic for collections like drafts or pending uploads leads to linear growth in both memory usage and AsyncStorage write times. Additionally, writing to disk on every 'save' call—even if data is identical—wastes CPU cycles on serialization and creates unnecessary bridge traffic.
+**Action:** Implement 'upsert' logic using unique identifiers (e.g., itemNumber + fieldName) and use a `shallowEqual` helper to bail early if the new data matches the existing state. Always pair memory caching with disk persistence to minimize bridge overhead for repeated reads.
