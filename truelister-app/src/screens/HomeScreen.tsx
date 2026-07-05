@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -82,6 +83,7 @@ export default function HomeScreen() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [thumbnailSize, setThumbnailSize] = useState<ThumbnailSize>('medium');
   const [items, setItems] = useState<CatalogItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +145,21 @@ export default function HomeScreen() {
       loadItems();
     }, [loadItems])
   );
+
+  /**
+   * Palette: Memoize filtered items to ensure snappy search performance
+   * even as the inventory grows to hundreds of items.
+   */
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter(it =>
+      (it.title?.toLowerCase().includes(q)) ||
+      (it.designerBrand?.toLowerCase().includes(q)) ||
+      (it.category?.toLowerCase().includes(q)) ||
+      (it.itemNumber?.toLowerCase().includes(q))
+    );
+  }, [items, searchQuery]);
 
   /**
    * Bolt: Memoize the onRefresh handler to prevent unnecessary re-renders of the RefreshControl.
@@ -273,6 +290,27 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      <View style={styles.searchContainer}>
+        <Text style={styles.searchIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search items..."
+          placeholderTextColor="#64748b"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          accessibilityLabel="Search inventory"
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setSearchQuery('')}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
+            <Text style={styles.clearSearchText}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4f6ef7" />
@@ -316,9 +354,23 @@ export default function HomeScreen() {
             <Text style={styles.settingsLinkText}>Check Connection Settings</Text>
           </TouchableOpacity>
         </View>
+      ) : filteredItems.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyIcon}>🔍</Text>
+          <Text style={styles.emptyTitle}>No Matches</Text>
+          <Text style={styles.emptyText}>No items found for "{searchQuery}".</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => setSearchQuery('')}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+          >
+            <Text style={styles.retryButtonText}>Clear Search</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <FlatList
-          data={items}
+          data={filteredItems}
           key={viewMode}
           renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
           numColumns={viewMode === 'grid' ? 2 : 1}
@@ -326,6 +378,7 @@ export default function HomeScreen() {
           getItemLayout={getItemLayout}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -475,6 +528,10 @@ const styles = StyleSheet.create({
   listPriceSold: { textDecorationLine: 'line-through', color: '#94a3b8', opacity: 0.7 },
   soldBadge: { backgroundColor: '#f87171', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   soldBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1d27', marginHorizontal: 16, marginTop: 16, borderRadius: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: '#2a2d3a' },
+  searchIcon: { fontSize: 16, marginRight: 8 },
+  searchInput: { flex: 1, height: 44, color: '#e8eaf6', fontSize: 15 },
+  clearSearchText: { color: '#94a3b8', fontSize: 18, paddingHorizontal: 4 },
   fab: { position: 'absolute', bottom: 24, right: 20, width: 58, height: 58, borderRadius: 29, backgroundColor: '#4f6ef7', justifyContent: 'center', alignItems: 'center', shadowColor: '#4f6ef7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.45, shadowRadius: 10, elevation: 8 },
   fabText: { color: '#fff', fontSize: 28, fontWeight: '300', marginTop: -2 },
 });
