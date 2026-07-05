@@ -9,37 +9,36 @@ const STORAGE_KEYS = {
 
 // Memory cache to avoid redundant bridge traffic and parsing
 let cachedDrafts: CatalogItem[] | null = null;
+let cachedPendingUploads: PendingUpload[] | null = null;
+let cachedSettings: AppSettings | null = null;
+
+/**
+ * Bolt Performance Optimization: Shallow equality check.
+ * Faster than JSON.stringify for O(N) comparisons in data loops.
+ */
+function shallowEqual(objA: any, objB: any) {
+  if (Object.is(objA, objB)) return true;
+  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
+    return false;
+  }
+  const keysA = Object.keys(objA);
+  const keysB = Object.keys(objB);
+  if (keysA.length !== keysB.length) return false;
+  for (let i = 0; i < keysA.length; i++) {
+    if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /**
  * Bolt Performance Optimization: Shallow equality check for CatalogItem.
  * Faster than JSON.stringify for O(N) comparisons in data loops.
+ * Refactored to use the generic shallowEqual helper.
  */
 function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
-  return (
-    a.itemNumber === b.itemNumber &&
-    a.title === b.title &&
-    a.designerBrand === b.designerBrand &&
-    a.category === b.category &&
-    a.size === b.size &&
-    a.condition === b.condition &&
-    a.fabricMaterial === b.fabricMaterial &&
-    a.measurements === b.measurements &&
-    a.color === b.color &&
-    a.saleStatus === b.saleStatus &&
-    a.price === b.price &&
-    a.photoUrl === b.photoUrl &&
-    a.marketplace === b.marketplace &&
-    a.dateListed === b.dateListed &&
-    a.notes === b.notes &&
-    a.photoUrlCard === b.photoUrlCard &&
-    a.photoUrlFront === b.photoUrlFront &&
-    a.photoUrlBack === b.photoUrlBack &&
-    a.photoUrlDetail === b.photoUrlDetail &&
-    a.photoUrlTabletopWide === b.photoUrlTabletopWide &&
-    a.photoUrlTabletopDetail === b.photoUrlTabletopDetail &&
-    a.photoUrlTabletopMeasure1 === b.photoUrlTabletopMeasure1 &&
-    a.photoUrlTabletopMeasure2 === b.photoUrlTabletopMeasure2
-  );
+  return shallowEqual(a, b);
 }
 
 /**
@@ -133,13 +132,16 @@ export async function addPendingUpload(upload: PendingUpload): Promise<void> {
     );
 
     if (index !== -1) {
-      if (existing[index].localUri === upload.localUri) return;
+      // Bolt: Skip write if the exact same upload (item + field + uri) is already pending
+      if (shallowEqual(existing[index], upload)) return;
       const updated = [...existing];
       updated[index] = upload;
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
+      cachedPendingUploads = updated;
     } else {
       const updated = [...existing, upload];
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
+      cachedPendingUploads = updated;
     }
   } catch (error) {
     console.error('Error saving pending upload:', error);
@@ -147,9 +149,11 @@ export async function addPendingUpload(upload: PendingUpload): Promise<void> {
 }
 
 export async function getPendingUploads(): Promise<PendingUpload[]> {
+  if (cachedPendingUploads) return cachedPendingUploads;
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_UPLOADS);
-    return data ? JSON.parse(data) : [];
+    cachedPendingUploads = data ? JSON.parse(data) : [];
+    return cachedPendingUploads!;
   } catch (error) {
     console.error('Error reading pending uploads:', error);
     return [];
@@ -167,6 +171,7 @@ export async function removePendingUpload(itemNumber: string): Promise<void> {
     if (filtered.length === existing.length) return;
 
     await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(filtered));
+    cachedPendingUploads = filtered;
   } catch (error) {
     console.error('Error removing pending upload:', error);
   }
@@ -190,9 +195,11 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export async function getSettings(): Promise<AppSettings> {
+  if (cachedSettings) return cachedSettings;
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
+    cachedSettings = data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
+    return cachedSettings!;
   } catch (error) {
     return DEFAULT_SETTINGS;
   }
@@ -202,7 +209,12 @@ export async function saveSettings(settings: Partial<AppSettings>): Promise<void
   try {
     const current = await getSettings();
     const updated = { ...current, ...settings };
+
+    // Bolt: Skip write if the settings are identical
+    if (shallowEqual(current, updated)) return;
+
     await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+    cachedSettings = updated;
   } catch (error) {
     console.error('Error saving settings:', error);
   }
