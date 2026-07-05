@@ -97,3 +97,7 @@
 ## 2025-06-26 - [Storage Upsert & Write Guard]
 **Learning:** Unconditional appends to local storage arrays (e.g., drafts) cause (N)$ memory growth and data duplication. Implementing "upsert" logic with a shallow equality check prevents duplicates and allows for early-exit write guards. Skipping `AsyncStorage.setItem` when data is identical significantly reduces bridge traffic and I/O overhead.
 **Action:** Always use upsert logic for keyed storage (like items by ID). Implement `isEqual` helpers to bail early from write operations when the payload hasn't changed.
+
+## 2026-07-05 - [Storage Memory Caching & Write Guards]
+**Learning:** Redundant AsyncStorage I/O and JSON parsing create significant overhead and bridge traffic. Implementing a simple module-level memory cache combined with a `shallowEqual` write guard ensures that I/O only happens when data actually changes, drastically reducing latency for repeated reads and avoiding wasteful writes.
+**Action:** Always implement memory caching for frequently accessed storage keys. Use `shallowEqual` guards to bail out of write operations if the new state matches the current state.
