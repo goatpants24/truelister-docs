@@ -97,3 +97,7 @@
 ## 2025-06-26 - [Storage Upsert & Write Guard]
 **Learning:** Unconditional appends to local storage arrays (e.g., drafts) cause (N)$ memory growth and data duplication. Implementing "upsert" logic with a shallow equality check prevents duplicates and allows for early-exit write guards. Skipping `AsyncStorage.setItem` when data is identical significantly reduces bridge traffic and I/O overhead.
 **Action:** Always use upsert logic for keyed storage (like items by ID). Implement `isEqual` helpers to bail early from write operations when the payload hasn't changed.
+
+## 2026-07-06 - [FlatList Rendering Optimization]
+**Learning:** For catalogs exceeding 50+ items with complex thumbnails, the default FlatList settings lead to high initial heap allocation and potential UI lag during rapid scrolling. Tuning the rendering window and enabling clipped subview removal significantly stabilizes frame rates.
+**Action:** Always tune initialNumToRender (~1.5 screenfuls) and windowSize (< 10) for primary catalog lists to balance memory usage and scroll performance.
