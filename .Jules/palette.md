@@ -15,3 +15,7 @@
 ## 2026-07-04 - Sold Status Visual Indicators
 **Learning:** In marketplace catalogs, "Sold" items should be clearly distinguished from available inventory using multiple cues: reduced opacity (e.g., 0.8), a bold visual overlay or badge (e.g., a 'SOLD' stamp), and price strikethroughs. This helps users quickly scan their inventory.
 **Action:** Apply a consistent "Sold" style across all view modes (grid and list) and prefix `accessibilityLabel` with 'Sold: ' to provide immediate context for screen readers.
+
+## 2026-07-10 - Keyboard-Driven Form Navigation
+**Learning:** In high-speed data entry forms (like inventory cataloging), manual tapping between fields is a significant friction point. Implementing a seamless focus chain using `returnKeyType="next"` and `onSubmitEditing` combined with `useRef` drastically improves input speed and user satisfaction.
+**Action:** Always map out the most logical sequential flow for text inputs in long forms and implement programmatic focus transitions to reduce physical interactions.
