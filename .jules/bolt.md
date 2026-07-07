@@ -97,3 +97,11 @@
 ## 2025-06-26 - [Storage Upsert & Write Guard]
 **Learning:** Unconditional appends to local storage arrays (e.g., drafts) cause (N)$ memory growth and data duplication. Implementing "upsert" logic with a shallow equality check prevents duplicates and allows for early-exit write guards. Skipping `AsyncStorage.setItem` when data is identical significantly reduces bridge traffic and I/O overhead.
 **Action:** Always use upsert logic for keyed storage (like items by ID). Implement `isEqual` helpers to bail early from write operations when the payload hasn't changed.
+
+## 2025-06-27 - [Storage Caching & Write Guards]
+**Learning:** AsyncStorage bridge traffic and JSON parsing can be a significant bottleneck in React Native apps when accessing settings or collections frequently. Implementing a module-level memory cache combined with a shallow equality "write guard" effectively eliminates redundant I/O and parsing overhead.
+**Action:** Always implement memory caching and equality guards for frequently accessed storage entities to minimize bridge traffic and improve responsiveness.
+
+## 2025-06-27 - [FlatList Virtualization Tuning]
+**Learning:** For large catalogs, the default FlatList settings can lead to excessive memory usage and frame drops during rapid scrolling. Aggressive virtualization tuning (reducing windowSize and enabling removeClippedSubviews) significantly improves scroll performance and reduces the app's memory footprint.
+**Action:** Tune FlatList virtualization props (initialNumToRender, maxToRenderPerBatch, windowSize) for any list expected to grow beyond 50-100 items.
