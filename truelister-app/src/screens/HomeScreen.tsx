@@ -96,10 +96,11 @@ export default function HomeScreen() {
    * Eliminates ~300ms of full-screen spinner flash on every focus event.
    */
   const loadItems = useCallback(async (isRefresh = false) => {
-    // SWR Pattern: skip full-screen loading if we already have data
-    if (isRefresh || hasLoadedOnce.current) {
+    // Bolt: Only show UI loading indicators if explicitly refreshing or on first load.
+    // This enables "silent" background updates on focus, improving perceived speed.
+    if (isRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (!hasLoadedOnce.current) {
       setLoading(true);
     }
     setError(null);
@@ -109,7 +110,8 @@ export default function HomeScreen() {
         getDraftItems(),
       ]);
 
-      // Bolt: Skip O(N) merge and React update if data references from services are unchanged.
+      // Bolt: Early exit if data references from services are unchanged.
+      // This prevents redundant O(N) merge logic and React state updates.
       if (sheetItems === lastSheetRef.current && draftItems === lastDraftsRef.current) {
         return;
       }
@@ -326,6 +328,10 @@ export default function HomeScreen() {
           getItemLayout={getItemLayout}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          removeClippedSubviews={true}
+          initialNumToRender={12}
+          maxToRenderPerBatch={10}
+          windowSize={7}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
