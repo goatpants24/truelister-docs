@@ -5,12 +5,7 @@ import {
 } from 'expo-file-system/legacy';
 import { File } from 'expo-file-system';
 import { GOOGLE_DRIVE_CONFIG } from '../config';
-
-// AsyncStorage keys — must stay in sync with SettingsScreen
-const SETTINGS_KEYS = {
-  APPS_SCRIPT_URL: 'settings_apps_script_url',
-  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
-};
+import { getAppsScriptUrl, getDriveFolderId } from './localStorage';
 
 /**
  * Upload original photo to Google Drive via Apps Script web app.
@@ -18,8 +13,8 @@ const SETTINGS_KEYS = {
  * Uses multipart/form-data with binary file streams — no base64 encoding.
  * This avoids the ~33% size bloat that base64 adds.
  *
- * Both the endpoint URL and Drive folder ID are read from AsyncStorage at
- * call time, so the user can configure them in the Settings tab without
+ * Both the endpoint URL and Drive folder ID are read from centralized cache
+ * at call time, so the user can configure them in the Settings tab without
  * needing to rebuild or restart the app.
  */
 export async function uploadToDrive(
@@ -27,12 +22,13 @@ export async function uploadToDrive(
   fileName: string,
   itemNumber: string
 ): Promise<{ success: boolean; driveUrl?: string; error?: string }> {
-  // Read both values from AsyncStorage at call time — no restart needed after settings change
-  const uploadEndpoint = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL))?.trim() ?? '';
-  const folderId =
-    (await AsyncStorage.getItem(SETTINGS_KEYS.DRIVE_FOLDER_ID))?.trim() ||
-    GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID ||
-    '';
+  // Read both values from centralized cache — no restart needed after settings change
+  const [uploadEndpoint, folderIdStored] = await Promise.all([
+    getAppsScriptUrl(),
+    getDriveFolderId(),
+  ]);
+
+  const folderId = folderIdStored || GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID || '';
 
   if (!uploadEndpoint) {
     return {

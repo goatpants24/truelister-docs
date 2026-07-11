@@ -11,33 +11,39 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { testConnection } from '../services/sheets';
-
-const KEYS = {
-  APPS_SCRIPT_URL: 'settings_apps_script_url',
-  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
-};
+import {
+  getAppsScriptUrl,
+  getDriveFolderId,
+  saveLegacySetting,
+  getSpreadsheetId,
+  clearSettingsCache
+} from '../services/localStorage';
 
 export default function SettingsScreen() {
   const [appsScriptUrl, setAppsScriptUrl] = useState('');
   const [driveFolderId, setDriveFolderId] = useState('');
+  const [spreadsheetId, setSpreadsheetId] = useState('');
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const [url, folder] = await Promise.all([
-        AsyncStorage.getItem(KEYS.APPS_SCRIPT_URL),
-        AsyncStorage.getItem(KEYS.DRIVE_FOLDER_ID),
+      const [url, folder, sheetId] = await Promise.all([
+        getAppsScriptUrl(),
+        getDriveFolderId(),
+        getSpreadsheetId(),
       ]);
-      if (url) setAppsScriptUrl(url);
-      if (folder) setDriveFolderId(folder);
+      setAppsScriptUrl(url);
+      setDriveFolderId(folder);
+      setSpreadsheetId(sheetId);
     })();
   }, []);
 
   const handleSave = async () => {
     await Promise.all([
-      AsyncStorage.setItem(KEYS.APPS_SCRIPT_URL, appsScriptUrl.trim()),
-      AsyncStorage.setItem(KEYS.DRIVE_FOLDER_ID, driveFolderId.trim()),
+      saveLegacySetting('APPS_SCRIPT_URL', appsScriptUrl),
+      saveLegacySetting('DRIVE_FOLDER_ID', driveFolderId),
+      saveLegacySetting('SPREADSHEET_ID', spreadsheetId),
     ]);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -54,8 +60,10 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.clear();
+            clearSettingsCache();
             setAppsScriptUrl('');
             setDriveFolderId('');
+            setSpreadsheetId('');
           },
         },
       ]
@@ -70,8 +78,18 @@ export default function SettingsScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Google Sheet Connection</Text>
         <Text style={styles.sectionDesc}>
-          Your catalog sheet is connected and reading live data from the inventory sheet.
+          Paste your Google Spreadsheet ID here. You can find it in the URL of your sheet between /d/ and /edit.
         </Text>
+        <TextInput
+          style={styles.input}
+          value={spreadsheetId}
+          onChangeText={setSpreadsheetId}
+          accessibilityLabel="Google Spreadsheet ID"
+          placeholder="1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI"
+          placeholderTextColor="#4a4d60"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
         <View style={styles.buttonRow}>
           <TouchableOpacity
             style={styles.linkBtn}
