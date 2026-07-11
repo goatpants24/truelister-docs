@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -167,6 +167,11 @@ export default function ItemFormScreen() {
   const route = useRoute<ItemFormRouteProp>();
   const { item: existingItem, newItemNumber } = route.params;
 
+  const brandRef = useRef<TextInput>(null);
+  const sizeRef = useRef<TextInput>(null);
+  const priceRef = useRef<TextInput>(null);
+  const notesRef = useRef<TextInput>(null);
+
   const [mode, setMode] = useState<FormMode>('form');
   const [dropdowns, setDropdowns] = useState<DropdownOptions>({
     categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [],
@@ -321,6 +326,7 @@ export default function ItemFormScreen() {
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
           accessibilityLabel="Cancel editing"
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
@@ -330,7 +336,10 @@ export default function ItemFormScreen() {
           disabled={!isTitleValid || saving}
           accessibilityRole="button"
           accessibilityLabel="Save item"
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          style={styles.headerSaveButton}
         >
+          {saving && <ActivityIndicator size="small" color="#4f6ef7" style={{ marginRight: 6 }} />}
           <Text style={[styles.saveText, (!isTitleValid || saving) && { opacity: 0.5 }]}>
             {saving ? 'Saving…' : 'Save'}
           </Text>
@@ -384,6 +393,9 @@ export default function ItemFormScreen() {
             maxLength={80}
             autoFocus={!existingItem}
             accessibilityLabel="Item Title"
+            returnKeyType="next"
+            onSubmitEditing={() => brandRef.current?.focus()}
+            blurOnSubmit={false}
           />
           <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
         </View>
@@ -401,12 +413,17 @@ export default function ItemFormScreen() {
             </TouchableOpacity>
           </View>
           <TextInput
+            ref={brandRef}
             style={styles.input}
             value={item.designerBrand}
             onChangeText={(v) => updateField('designerBrand', v)}
             placeholder="e.g. Patagonia"
             placeholderTextColor="#4a5568"
             maxLength={65}
+            accessibilityLabel="Designer Brand"
+            returnKeyType="next"
+            onSubmitEditing={() => sizeRef.current?.focus()}
+            blurOnSubmit={false}
           />
           <View style={styles.fieldFooter}>
             <Text style={[
@@ -421,7 +438,21 @@ export default function ItemFormScreen() {
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}><Text style={styles.label}>Category</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.category} onValueChange={(v) => updateField('category', v as string, true)} style={styles.picker}>{categoryItems}</Picker></View></View>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Size</Text><TextInput style={styles.input} value={item.size} onChangeText={(v) => updateField('size', v)} placeholder="M" placeholderTextColor="#4a5568" /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Size</Text>
+            <TextInput
+              ref={sizeRef}
+              style={styles.input}
+              value={item.size}
+              onChangeText={(v) => updateField('size', v)}
+              placeholder="M"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Size"
+              returnKeyType="next"
+              onSubmitEditing={() => priceRef.current?.focus()}
+              blurOnSubmit={false}
+            />
+          </View>
         </View>
 
         <View style={styles.row}>
@@ -441,7 +472,19 @@ export default function ItemFormScreen() {
               <Text style={styles.researchLink}>📈 Market Sold</Text>
             </TouchableOpacity>
           </View>
-          <TextInput style={styles.input} value={item.price} onChangeText={(v) => updateField('price', v)} placeholder="0.00" keyboardType="decimal-pad" placeholderTextColor="#4a5568" />
+          <TextInput
+            ref={priceRef}
+            style={styles.input}
+            value={item.price}
+            onChangeText={(v) => updateField('price', v)}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+            placeholderTextColor="#4a5568"
+            accessibilityLabel="Item Price"
+            returnKeyType="next"
+            onSubmitEditing={() => notesRef.current?.focus()}
+            blurOnSubmit={false}
+          />
         </View>
 
         <View style={styles.field}>
@@ -449,7 +492,19 @@ export default function ItemFormScreen() {
           <MarketplaceSelector selected={item.marketplace} available={dropdowns.marketplaces} onToggle={toggleMarketplace} />
         </View>
 
-        <View style={styles.field}><Text style={styles.label}>Notes</Text><TextInput style={[styles.input, styles.textArea]} value={item.notes} onChangeText={(v) => updateField('notes', v)} multiline numberOfLines={3} placeholderTextColor="#4a5568" /></View>
+        <View style={styles.field}>
+          <Text style={styles.label}>Notes</Text>
+          <TextInput
+            ref={notesRef}
+            style={[styles.input, styles.textArea]}
+            value={item.notes}
+            onChangeText={(v) => updateField('notes', v)}
+            multiline
+            numberOfLines={3}
+            placeholderTextColor="#4a5568"
+            accessibilityLabel="Item Notes"
+          />
+        </View>
 
         <View style={styles.formActions}>
           <TouchableOpacity
