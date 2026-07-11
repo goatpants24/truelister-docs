@@ -1,16 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   uploadAsync,
   FileSystemUploadType,
 } from 'expo-file-system/legacy';
 import { File } from 'expo-file-system';
 import { GOOGLE_DRIVE_CONFIG } from '../config';
-
-// AsyncStorage keys — must stay in sync with SettingsScreen
-const SETTINGS_KEYS = {
-  APPS_SCRIPT_URL: 'settings_apps_script_url',
-  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
-};
+import { getAppsScriptUrl, getDriveFolderId } from './localStorage';
 
 /**
  * Upload original photo to Google Drive via Apps Script web app.
@@ -27,12 +21,9 @@ export async function uploadToDrive(
   fileName: string,
   itemNumber: string
 ): Promise<{ success: boolean; driveUrl?: string; error?: string }> {
-  // Read both values from AsyncStorage at call time — no restart needed after settings change
-  const uploadEndpoint = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL))?.trim() ?? '';
-  const folderId =
-    (await AsyncStorage.getItem(SETTINGS_KEYS.DRIVE_FOLDER_ID))?.trim() ||
-    GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID ||
-    '';
+  // Read both values from storage service
+  const uploadEndpoint = await getAppsScriptUrl();
+  const folderId = (await getDriveFolderId()) || GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID || '';
 
   if (!uploadEndpoint) {
     return {
