@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CatalogItem } from '../types';
+import { shallowEqual } from './utils';
 
 const STORAGE_KEYS = {
   DRAFT_ITEMS: 'truelister_draft_items',
@@ -9,38 +10,8 @@ const STORAGE_KEYS = {
 
 // Memory cache to avoid redundant bridge traffic and parsing
 let cachedDrafts: CatalogItem[] | null = null;
-
-/**
- * Bolt Performance Optimization: Shallow equality check for CatalogItem.
- * Faster than JSON.stringify for O(N) comparisons in data loops.
- */
-function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
-  return (
-    a.itemNumber === b.itemNumber &&
-    a.title === b.title &&
-    a.designerBrand === b.designerBrand &&
-    a.category === b.category &&
-    a.size === b.size &&
-    a.condition === b.condition &&
-    a.fabricMaterial === b.fabricMaterial &&
-    a.measurements === b.measurements &&
-    a.color === b.color &&
-    a.saleStatus === b.saleStatus &&
-    a.price === b.price &&
-    a.photoUrl === b.photoUrl &&
-    a.marketplace === b.marketplace &&
-    a.dateListed === b.dateListed &&
-    a.notes === b.notes &&
-    a.photoUrlCard === b.photoUrlCard &&
-    a.photoUrlFront === b.photoUrlFront &&
-    a.photoUrlBack === b.photoUrlBack &&
-    a.photoUrlDetail === b.photoUrlDetail &&
-    a.photoUrlTabletopWide === b.photoUrlTabletopWide &&
-    a.photoUrlTabletopDetail === b.photoUrlTabletopDetail &&
-    a.photoUrlTabletopMeasure1 === b.photoUrlTabletopMeasure1 &&
-    a.photoUrlTabletopMeasure2 === b.photoUrlTabletopMeasure2
-  );
-}
+let cachedPendingUploads: PendingUpload[] | null = null;
+let cachedSettings: AppSettings | null = null;
 
 /**
  * Save a draft item locally (for offline use or before sync).
@@ -54,7 +25,7 @@ export async function saveDraftItem(item: CatalogItem): Promise<void> {
 
     if (index !== -1) {
       // If item is identical to existing draft, skip the write
-      if (isItemEqual(existing[index], item)) return;
+      if (shallowEqual(existing[index], item)) return;
 
       const updated = [...existing];
       updated[index] = item;
@@ -125,6 +96,10 @@ export interface PendingUpload {
  * Bolt: Implements deduplication by itemNumber and fieldName.
  * Skips write if the exact same upload (item + field + uri) is already pending.
  */
+/**
+ * Bolt: Implements deduplication by itemNumber and fieldName.
+ * Skips write if the exact same upload (item + field + uri) is already pending.
+ */
 export async function addPendingUpload(upload: PendingUpload): Promise<void> {
   try {
     const existing = await getPendingUploads();
@@ -133,13 +108,17 @@ export async function addPendingUpload(upload: PendingUpload): Promise<void> {
     );
 
     if (index !== -1) {
-      if (existing[index].localUri === upload.localUri) return;
+      // If upload is identical to existing one, skip the write
+      if (shallowEqual(existing[index], upload)) return;
+
       const updated = [...existing];
       updated[index] = upload;
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
+      cachedPendingUploads = updated;
     } else {
       const updated = [...existing, upload];
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
+      cachedPendingUploads = updated;
     }
   } catch (error) {
     console.error('Error saving pending upload:', error);
@@ -147,9 +126,11 @@ export async function addPendingUpload(upload: PendingUpload): Promise<void> {
 }
 
 export async function getPendingUploads(): Promise<PendingUpload[]> {
+  if (cachedPendingUploads) return cachedPendingUploads;
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_UPLOADS);
-    return data ? JSON.parse(data) : [];
+    cachedPendingUploads = data ? JSON.parse(data) : [];
+    return cachedPendingUploads!;
   } catch (error) {
     console.error('Error reading pending uploads:', error);
     return [];
@@ -167,6 +148,7 @@ export async function removePendingUpload(itemNumber: string): Promise<void> {
     if (filtered.length === existing.length) return;
 
     await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(filtered));
+    cachedPendingUploads = filtered;
   } catch (error) {
     console.error('Error removing pending upload:', error);
   }
@@ -190,19 +172,28 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 export async function getSettings(): Promise<AppSettings> {
+  if (cachedSettings) return cachedSettings;
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
+    cachedSettings = data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
+    return cachedSettings!;
   } catch (error) {
     return DEFAULT_SETTINGS;
   }
 }
 
+/**
+ * Bolt: Skips AsyncStorage write if the new settings are identical to current ones.
+ */
 export async function saveSettings(settings: Partial<AppSettings>): Promise<void> {
   try {
     const current = await getSettings();
     const updated = { ...current, ...settings };
+
+    if (shallowEqual(current, updated)) return;
+
     await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+    cachedSettings = updated;
   } catch (error) {
     console.error('Error saving settings:', error);
   }
