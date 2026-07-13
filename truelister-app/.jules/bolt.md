@@ -5,3 +5,7 @@
 ## 2025-05-22 - Correcting File Metadata Retrieval in Expo
 **Learning:** Relying on non-existent web-like classes like `File` for local URI metadata in Expo leads to broken iterative loops (like image compression) that fail silently. `FileSystem.getInfoAsync` is the mandatory API for retrieving file size and existence metadata without loading the entire binary into memory.
 **Action:** Always verify that file system operations use `expo-file-system` APIs rather than assuming web standard availability, especially when implementing resource-intensive loops.
+
+## 2025-05-29 - localStorage Memory Caching
+**Learning:** Implementing module-level memory caching for `AsyncStorage` reads and using `shallowEqual` to skip redundant writes significantly reduces bridge traffic. Centralizing connectivity keys in the storage service also prevents fragmented disk access across the app.
+**Action:** Always implement a caching layer for persistent storage that is frequently read in the UI thread or used in service-layer logic to maintain high frame rates and responsiveness.
