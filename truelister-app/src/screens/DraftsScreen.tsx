@@ -48,7 +48,7 @@ const DraftCard = memo(({
     <TouchableOpacity
       style={styles.deleteBtn}
       onPress={() => onDelete(item.itemNumber)}
-      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
       accessibilityRole="button"
       accessibilityLabel={`Delete draft ${item.itemNumber}`}
     >

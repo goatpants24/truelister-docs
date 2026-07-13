@@ -289,6 +289,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.settingsLink}
             onPress={() => navigation.navigate('Settings')}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
             <Text style={styles.settingsLinkText}>Go to Settings</Text>
           </TouchableOpacity>
