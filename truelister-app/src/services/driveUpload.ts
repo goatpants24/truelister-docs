@@ -1,16 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   uploadAsync,
   FileSystemUploadType,
 } from 'expo-file-system/legacy';
-import { File } from 'expo-file-system';
 import { GOOGLE_DRIVE_CONFIG } from '../config';
-
-// AsyncStorage keys — must stay in sync with SettingsScreen
-const SETTINGS_KEYS = {
-  APPS_SCRIPT_URL: 'settings_apps_script_url',
-  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
-};
+import { getAppsScriptUrl, getDriveFolderId } from './localStorage';
 
 /**
  * Upload original photo to Google Drive via Apps Script web app.
@@ -27,10 +20,10 @@ export async function uploadToDrive(
   fileName: string,
   itemNumber: string
 ): Promise<{ success: boolean; driveUrl?: string; error?: string }> {
-  // Read both values from AsyncStorage at call time — no restart needed after settings change
-  const uploadEndpoint = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL))?.trim() ?? '';
+  // Bolt: Read both values from the centralized localStorage cache.
+  const uploadEndpoint = await getAppsScriptUrl();
   const folderId =
-    (await AsyncStorage.getItem(SETTINGS_KEYS.DRIVE_FOLDER_ID))?.trim() ||
+    (await getDriveFolderId()) ||
     GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID ||
     '';
 
@@ -134,14 +127,3 @@ export async function uploadToDriveAPI(
   }
 }
 
-/**
- * Get file size without reading the entire file into memory
- */
-export async function getFileSize(uri: string): Promise<number> {
-  try {
-    const file = new File(uri);
-    return file.size || 0;
-  } catch {
-    return 0;
-  }
-}

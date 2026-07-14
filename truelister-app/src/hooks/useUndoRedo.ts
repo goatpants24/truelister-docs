@@ -1,4 +1,5 @@
 import { useCallback, useReducer, useRef } from 'react';
+import { shallowEqual } from '../services/utils';
 
 interface UndoRedoState<T> {
   past: T[];
@@ -13,26 +14,6 @@ type UndoRedoAction<T> =
   | { type: 'UNDO' }
   | { type: 'REDO' }
   | { type: 'RESET'; payload: T };
-
-/**
- * Optimized shallow equality check.
- * Faster than JSON.stringify for large state objects.
- */
-function shallowEqual(objA: any, objB: any) {
-  if (Object.is(objA, objB)) return true;
-  if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
-    return false;
-  }
-  const keysA = Object.keys(objA);
-  const keysB = Object.keys(objB);
-  if (keysA.length !== keysB.length) return false;
-  for (let i = 0; i < keysA.length; i++) {
-    if (!Object.prototype.hasOwnProperty.call(objB, keysA[i]) || !Object.is(objA[keysA[i]], objB[keysA[i]])) {
-      return false;
-    }
-  }
-  return true;
-}
 
 function undoRedoReducer<T>(
   state: UndoRedoState<T>,
