@@ -82,6 +82,7 @@ export default function SettingsScreen() {
             }
             accessibilityRole="button"
             accessibilityLabel="Open inventory sheet in browser"
+            accessibilityHint="Opens in your browser"
           >
             <Text style={styles.linkBtnText}>Open Sheet ↗</Text>
           </TouchableOpacity>
@@ -119,7 +120,7 @@ export default function SettingsScreen() {
           style={styles.input}
           value={appsScriptUrl}
           onChangeText={setAppsScriptUrl}
-          accessibilityLabel="Apps Script deployment URL"
+          accessibilityLabel="Apps Script Web App URL"
           placeholder="https://script.google.com/macros/s/..."
           placeholderTextColor="#4a4d60"
           autoCapitalize="none"
