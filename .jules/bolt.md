@@ -97,3 +97,7 @@
 ## 2025-06-26 - [Storage Upsert & Write Guard]
 **Learning:** Unconditional appends to local storage arrays (e.g., drafts) cause (N)$ memory growth and data duplication. Implementing "upsert" logic with a shallow equality check prevents duplicates and allows for early-exit write guards. Skipping `AsyncStorage.setItem` when data is identical significantly reduces bridge traffic and I/O overhead.
 **Action:** Always use upsert logic for keyed storage (like items by ID). Implement `isEqual` helpers to bail early from write operations when the payload hasn't changed.
+
+## 2025-06-27 - [Storage Cache & Write Guard Optimization]
+**Learning:** React Native bridge traffic for `AsyncStorage` is a significant bottleneck for settings and pending upload states. Implementing module-level memory caches (cachedSettings, cachedPendingUploads) and using a centralized `shallowEqual` utility to guard against redundant writes eliminates unnecessary I/O and improves UI responsiveness.
+**Action:** Always implement memory-first caching for small, frequently accessed storage keys and use bail-early write guards to skip `setItem` when the payload is unchanged.
