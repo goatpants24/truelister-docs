@@ -97,3 +97,7 @@
 ## 2025-06-26 - [Storage Upsert & Write Guard]
 **Learning:** Unconditional appends to local storage arrays (e.g., drafts) cause (N)$ memory growth and data duplication. Implementing "upsert" logic with a shallow equality check prevents duplicates and allows for early-exit write guards. Skipping `AsyncStorage.setItem` when data is identical significantly reduces bridge traffic and I/O overhead.
 **Action:** Always use upsert logic for keyed storage (like items by ID). Implement `isEqual` helpers to bail early from write operations when the payload hasn't changed.
+
+## 2025-06-27 - [Centralized Connectivity Cache]
+**Learning:** In a multi-service architecture (Sheets, Drive, Marketplace), redundant AsyncStorage reads for shared connectivity keys (Apps Script URL, Spreadsheet ID) create significant bridge traffic overhead. Centralizing these in a memory-cached storage service ensures that all downstream consumers benefit from zero-latency access after the first load.
+**Action:** Always hoist shared connectivity and configuration state into a cached service layer to minimize bridge serialization costs.
