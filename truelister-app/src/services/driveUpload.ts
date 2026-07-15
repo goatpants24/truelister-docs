@@ -1,16 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   uploadAsync,
   FileSystemUploadType,
 } from 'expo-file-system/legacy';
-import { File } from 'expo-file-system';
-import { GOOGLE_DRIVE_CONFIG } from '../config';
-
-// AsyncStorage keys — must stay in sync with SettingsScreen
-const SETTINGS_KEYS = {
-  APPS_SCRIPT_URL: 'settings_apps_script_url',
-  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
-};
+import { getAppsScriptUrl, getDriveFolderId } from './localStorage';
 
 /**
  * Upload original photo to Google Drive via Apps Script web app.
@@ -18,21 +10,18 @@ const SETTINGS_KEYS = {
  * Uses multipart/form-data with binary file streams — no base64 encoding.
  * This avoids the ~33% size bloat that base64 adds.
  *
- * Both the endpoint URL and Drive folder ID are read from AsyncStorage at
- * call time, so the user can configure them in the Settings tab without
- * needing to rebuild or restart the app.
+ * Bolt Performance Optimization: Connectivity settings are read from the
+ * centralized memory cache in localStorage.ts, eliminating per-upload
+ * bridge traffic for every photo variant (up to 8 per item).
  */
 export async function uploadToDrive(
   fileUri: string,
   fileName: string,
   itemNumber: string
 ): Promise<{ success: boolean; driveUrl?: string; error?: string }> {
-  // Read both values from AsyncStorage at call time — no restart needed after settings change
-  const uploadEndpoint = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL))?.trim() ?? '';
-  const folderId =
-    (await AsyncStorage.getItem(SETTINGS_KEYS.DRIVE_FOLDER_ID))?.trim() ||
-    GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID ||
-    '';
+  // Read both values from centralized memory cache
+  const uploadEndpoint = await getAppsScriptUrl();
+  const folderId = await getDriveFolderId();
 
   if (!uploadEndpoint) {
     return {
@@ -131,17 +120,5 @@ export async function uploadToDriveAPI(
       success: false,
       error: `API upload error: ${error instanceof Error ? error.message : 'Unknown error'}`,
     };
-  }
-}
-
-/**
- * Get file size without reading the entire file into memory
- */
-export async function getFileSize(uri: string): Promise<number> {
-  try {
-    const file = new File(uri);
-    return file.size || 0;
-  } catch {
-    return 0;
   }
 }
