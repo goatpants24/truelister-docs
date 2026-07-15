@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -179,6 +179,11 @@ export default function ItemFormScreen() {
     () => existingItem ?? EMPTY_ITEM(newItemNumber),
     [existingItem, newItemNumber]
   );
+
+  const brandRef = useRef<TextInput>(null);
+  const sizeRef = useRef<TextInput>(null);
+  const priceRef = useRef<TextInput>(null);
+  const notesRef = useRef<TextInput>(null);
 
   const {
     value: item,
@@ -384,6 +389,9 @@ export default function ItemFormScreen() {
             maxLength={80}
             autoFocus={!existingItem}
             accessibilityLabel="Item Title"
+            returnKeyType="next"
+            onSubmitEditing={() => brandRef.current?.focus()}
+            blurOnSubmit={false}
           />
           <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
         </View>
@@ -395,18 +403,24 @@ export default function ItemFormScreen() {
               onPress={handleLabelResearch}
               accessibilityRole="button"
               accessibilityLabel="Research brand label on Google"
+              accessibilityHint="Opens in your browser"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.researchLink}>🔍 Label Research</Text>
             </TouchableOpacity>
           </View>
           <TextInput
+            ref={brandRef}
             style={styles.input}
             value={item.designerBrand}
             onChangeText={(v) => updateField('designerBrand', v)}
             placeholder="e.g. Patagonia"
             placeholderTextColor="#4a5568"
             maxLength={65}
+            accessibilityLabel="Designer Brand"
+            returnKeyType="next"
+            onSubmitEditing={() => sizeRef.current?.focus()}
+            blurOnSubmit={false}
           />
           <View style={styles.fieldFooter}>
             <Text style={[
@@ -421,7 +435,21 @@ export default function ItemFormScreen() {
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}><Text style={styles.label}>Category</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.category} onValueChange={(v) => updateField('category', v as string, true)} style={styles.picker}>{categoryItems}</Picker></View></View>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Size</Text><TextInput style={styles.input} value={item.size} onChangeText={(v) => updateField('size', v)} placeholder="M" placeholderTextColor="#4a5568" /></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Size</Text>
+            <TextInput
+              ref={sizeRef}
+              style={styles.input}
+              value={item.size}
+              onChangeText={(v) => updateField('size', v)}
+              placeholder="M"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Size"
+              returnKeyType="next"
+              onSubmitEditing={() => priceRef.current?.focus()}
+              blurOnSubmit={false}
+            />
+          </View>
         </View>
 
         <View style={styles.row}>
@@ -436,12 +464,25 @@ export default function ItemFormScreen() {
               onPress={handleMarketResearch}
               accessibilityRole="button"
               accessibilityLabel="Research market price on eBay"
+              accessibilityHint="Opens in your browser"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.researchLink}>📈 Market Sold</Text>
             </TouchableOpacity>
           </View>
-          <TextInput style={styles.input} value={item.price} onChangeText={(v) => updateField('price', v)} placeholder="0.00" keyboardType="decimal-pad" placeholderTextColor="#4a5568" />
+          <TextInput
+            ref={priceRef}
+            style={styles.input}
+            value={item.price}
+            onChangeText={(v) => updateField('price', v)}
+            placeholder="0.00"
+            keyboardType="decimal-pad"
+            placeholderTextColor="#4a5568"
+            accessibilityLabel="Item Price"
+            returnKeyType="next"
+            onSubmitEditing={() => notesRef.current?.focus()}
+            blurOnSubmit={false}
+          />
         </View>
 
         <View style={styles.field}>
@@ -449,7 +490,19 @@ export default function ItemFormScreen() {
           <MarketplaceSelector selected={item.marketplace} available={dropdowns.marketplaces} onToggle={toggleMarketplace} />
         </View>
 
-        <View style={styles.field}><Text style={styles.label}>Notes</Text><TextInput style={[styles.input, styles.textArea]} value={item.notes} onChangeText={(v) => updateField('notes', v)} multiline numberOfLines={3} placeholderTextColor="#4a5568" /></View>
+        <View style={styles.field}>
+          <Text style={styles.label}>Notes</Text>
+          <TextInput
+            ref={notesRef}
+            style={[styles.input, styles.textArea]}
+            value={item.notes}
+            onChangeText={(v) => updateField('notes', v)}
+            multiline
+            numberOfLines={3}
+            placeholderTextColor="#4a5568"
+            accessibilityLabel="Item Notes"
+          />
+        </View>
 
         <View style={styles.formActions}>
           <TouchableOpacity
