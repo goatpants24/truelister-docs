@@ -134,14 +134,3 @@ export async function uploadToDriveAPI(
   }
 }
 
-/**
- * Get file size without reading the entire file into memory
- */
-export async function getFileSize(uri: string): Promise<number> {
-  try {
-    const file = new File(uri);
-    return file.size || 0;
-  } catch {
-    return 0;
-  }
-}
