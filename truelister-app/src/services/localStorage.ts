@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CatalogItem } from '../types';
+import { shallowEqual } from './utils';
 
 const STORAGE_KEYS = {
   DRAFT_ITEMS: 'truelister_draft_items',
@@ -9,38 +10,8 @@ const STORAGE_KEYS = {
 
 // Memory cache to avoid redundant bridge traffic and parsing
 let cachedDrafts: CatalogItem[] | null = null;
-
-/**
- * Bolt Performance Optimization: Shallow equality check for CatalogItem.
- * Faster than JSON.stringify for O(N) comparisons in data loops.
- */
-function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
-  return (
-    a.itemNumber === b.itemNumber &&
-    a.title === b.title &&
-    a.designerBrand === b.designerBrand &&
-    a.category === b.category &&
-    a.size === b.size &&
-    a.condition === b.condition &&
-    a.fabricMaterial === b.fabricMaterial &&
-    a.measurements === b.measurements &&
-    a.color === b.color &&
-    a.saleStatus === b.saleStatus &&
-    a.price === b.price &&
-    a.photoUrl === b.photoUrl &&
-    a.marketplace === b.marketplace &&
-    a.dateListed === b.dateListed &&
-    a.notes === b.notes &&
-    a.photoUrlCard === b.photoUrlCard &&
-    a.photoUrlFront === b.photoUrlFront &&
-    a.photoUrlBack === b.photoUrlBack &&
-    a.photoUrlDetail === b.photoUrlDetail &&
-    a.photoUrlTabletopWide === b.photoUrlTabletopWide &&
-    a.photoUrlTabletopDetail === b.photoUrlTabletopDetail &&
-    a.photoUrlTabletopMeasure1 === b.photoUrlTabletopMeasure1 &&
-    a.photoUrlTabletopMeasure2 === b.photoUrlTabletopMeasure2
-  );
-}
+let cachedSettings: AppSettings | null = null;
+let cachedPendingUploads: PendingUpload[] | null = null;
 
 /**
  * Save a draft item locally (for offline use or before sync).
@@ -54,7 +25,7 @@ export async function saveDraftItem(item: CatalogItem): Promise<void> {
 
     if (index !== -1) {
       // If item is identical to existing draft, skip the write
-      if (isItemEqual(existing[index], item)) return;
+      if (shallowEqual(existing[index], item)) return;
 
       const updated = [...existing];
       updated[index] = item;
@@ -133,13 +104,15 @@ export async function addPendingUpload(upload: PendingUpload): Promise<void> {
     );
 
     if (index !== -1) {
-      if (existing[index].localUri === upload.localUri) return;
+      if (shallowEqual(existing[index], upload)) return;
       const updated = [...existing];
       updated[index] = upload;
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
+      cachedPendingUploads = updated;
     } else {
       const updated = [...existing, upload];
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
+      cachedPendingUploads = updated;
     }
   } catch (error) {
     console.error('Error saving pending upload:', error);
@@ -147,9 +120,11 @@ export async function addPendingUpload(upload: PendingUpload): Promise<void> {
 }
 
 export async function getPendingUploads(): Promise<PendingUpload[]> {
+  if (cachedPendingUploads) return cachedPendingUploads;
   try {
     const data = await AsyncStorage.getItem(STORAGE_KEYS.PENDING_UPLOADS);
-    return data ? JSON.parse(data) : [];
+    cachedPendingUploads = data ? JSON.parse(data) : [];
+    return cachedPendingUploads!;
   } catch (error) {
     console.error('Error reading pending uploads:', error);
     return [];
@@ -167,6 +142,7 @@ export async function removePendingUpload(itemNumber: string): Promise<void> {
     if (filtered.length === existing.length) return;
 
     await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(filtered));
+    cachedPendingUploads = filtered;
   } catch (error) {
     console.error('Error removing pending upload:', error);
   }
@@ -180,6 +156,10 @@ export interface AppSettings {
   defaultMarketplace: string;
   autoCompress: boolean;
   uploadOriginals: boolean;
+  // Connectivity settings (synced with legacy keys for compatibility)
+  appsScriptUrl: string;
+  driveFolderId: string;
+  spreadsheetId: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -187,12 +167,36 @@ const DEFAULT_SETTINGS: AppSettings = {
   defaultMarketplace: '',
   autoCompress: true,
   uploadOriginals: true,
+  appsScriptUrl: '',
+  driveFolderId: '',
+  spreadsheetId: '',
+};
+
+const LEGACY_KEYS = {
+  APPS_SCRIPT_URL: 'settings_apps_script_url',
+  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
+  SPREADSHEET_ID: 'settings_spreadsheet_id',
 };
 
 export async function getSettings(): Promise<AppSettings> {
+  if (cachedSettings) return cachedSettings;
   try {
-    const data = await AsyncStorage.getItem(STORAGE_KEYS.SETTINGS);
-    return data ? { ...DEFAULT_SETTINGS, ...JSON.parse(data) } : DEFAULT_SETTINGS;
+    const [settingsData, appsScriptUrl, driveFolderId, spreadsheetId] = await Promise.all([
+      AsyncStorage.getItem(STORAGE_KEYS.SETTINGS),
+      AsyncStorage.getItem(LEGACY_KEYS.APPS_SCRIPT_URL),
+      AsyncStorage.getItem(LEGACY_KEYS.DRIVE_FOLDER_ID),
+      AsyncStorage.getItem(LEGACY_KEYS.SPREADSHEET_ID),
+    ]);
+
+    const parsed = settingsData ? JSON.parse(settingsData) : {};
+    cachedSettings = {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      appsScriptUrl: appsScriptUrl || parsed.appsScriptUrl || '',
+      driveFolderId: driveFolderId || parsed.driveFolderId || '',
+      spreadsheetId: spreadsheetId || parsed.spreadsheetId || '',
+    };
+    return cachedSettings!;
   } catch (error) {
     return DEFAULT_SETTINGS;
   }
@@ -202,8 +206,33 @@ export async function saveSettings(settings: Partial<AppSettings>): Promise<void
   try {
     const current = await getSettings();
     const updated = { ...current, ...settings };
-    await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
+
+    // Bolt: Skip write if settings are identical
+    if (shallowEqual(current, updated)) return;
+
+    const tasks: Promise<void>[] = [
+      AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated))
+    ];
+
+    // Sync legacy keys if they changed to avoid bridge traffic in sheets/drive services
+    if (settings.appsScriptUrl !== undefined) tasks.push(AsyncStorage.setItem(LEGACY_KEYS.APPS_SCRIPT_URL, settings.appsScriptUrl));
+    if (settings.driveFolderId !== undefined) tasks.push(AsyncStorage.setItem(LEGACY_KEYS.DRIVE_FOLDER_ID, settings.driveFolderId));
+    if (settings.spreadsheetId !== undefined) tasks.push(AsyncStorage.setItem(LEGACY_KEYS.SPREADSHEET_ID, settings.spreadsheetId));
+
+    await Promise.all(tasks);
+    cachedSettings = updated;
   } catch (error) {
     console.error('Error saving settings:', error);
   }
+}
+
+/**
+ * Invalidate all memory caches.
+ * Bolt: Used when clearing all local data to ensure the in-memory state
+ * matches the (now empty) persistent storage.
+ */
+export function invalidateAllCaches() {
+  cachedDrafts = null;
+  cachedSettings = null;
+  cachedPendingUploads = null;
 }
