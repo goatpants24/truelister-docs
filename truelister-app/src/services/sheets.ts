@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
+import { getAppsScriptUrl, getSpreadsheetId as getStoredSpreadsheetId } from './localStorage';
 
 const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
 
@@ -31,7 +31,7 @@ let dropdownsCache: { data: DropdownOptions; timestamp: number; raw?: string } |
  */
 export async function getSpreadsheetId(): Promise<string> {
   if (cachedSpreadsheetId) return cachedSpreadsheetId;
-  const storedId = await AsyncStorage.getItem(SETTINGS_KEYS.SPREADSHEET_ID);
+  const storedId = await getStoredSpreadsheetId();
   cachedSpreadsheetId = storedId || DEFAULT_SPREADSHEET_ID;
   return cachedSpreadsheetId;
 }
@@ -335,7 +335,7 @@ export async function testConnection(type: 'sheet' | 'script'): Promise<{ succes
     }
   } else {
     try {
-      const url = await AsyncStorage.getItem('settings_apps_script_url') || '';
+      const url = await getAppsScriptUrl();
       if (!url) return { success: false, error: 'Apps Script URL not configured in Settings.' };
 
       const response = await fetch(url, {
@@ -353,9 +353,8 @@ export async function testConnection(type: 'sheet' | 'script'): Promise<{ succes
 }
 
 export async function appendItem(item: CatalogItem): Promise<boolean> {
-  // Read the Apps Script URL from AsyncStorage — set by the user in the Settings tab.
-  // This means no code change is needed; the user just pastes their URL in-app.
-  const appsScriptUrl = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL))?.trim() ?? '';
+  // Read the Apps Script URL from centralized cache.
+  const appsScriptUrl = await getAppsScriptUrl();
 
   if (!appsScriptUrl) {
     console.warn('Apps Script URL not configured. Open the Settings tab to add it.');
