@@ -395,6 +395,7 @@ export default function ItemFormScreen() {
               onPress={handleLabelResearch}
               accessibilityRole="button"
               accessibilityLabel="Research brand label on Google"
+              accessibilityHint="Opens in your browser"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.researchLink}>🔍 Label Research</Text>
@@ -407,6 +408,7 @@ export default function ItemFormScreen() {
             placeholder="e.g. Patagonia"
             placeholderTextColor="#4a5568"
             maxLength={65}
+            accessibilityLabel="Designer Brand"
           />
           <View style={styles.fieldFooter}>
             <Text style={[
@@ -421,7 +423,7 @@ export default function ItemFormScreen() {
 
         <View style={styles.row}>
           <View style={{ flex: 1 }}><Text style={styles.label}>Category</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.category} onValueChange={(v) => updateField('category', v as string, true)} style={styles.picker}>{categoryItems}</Picker></View></View>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Size</Text><TextInput style={styles.input} value={item.size} onChangeText={(v) => updateField('size', v)} placeholder="M" placeholderTextColor="#4a5568" /></View>
+          <View style={{ flex: 1 }}><Text style={styles.label}>Size</Text><TextInput style={styles.input} value={item.size} onChangeText={(v) => updateField('size', v)} placeholder="M" placeholderTextColor="#4a5568" accessibilityLabel="Item Size" /></View>
         </View>
 
         <View style={styles.row}>
@@ -436,12 +438,24 @@ export default function ItemFormScreen() {
               onPress={handleMarketResearch}
               accessibilityRole="button"
               accessibilityLabel="Research market price on eBay"
+              accessibilityHint="Opens in your browser"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.researchLink}>📈 Market Sold</Text>
             </TouchableOpacity>
           </View>
-          <TextInput style={styles.input} value={item.price} onChangeText={(v) => updateField('price', v)} placeholder="0.00" keyboardType="decimal-pad" placeholderTextColor="#4a5568" />
+          <View style={styles.priceInputWrapper}>
+            <Text style={styles.pricePrefix}>$</Text>
+            <TextInput
+              style={[styles.input, styles.priceInput]}
+              value={item.price}
+              onChangeText={(v) => updateField('price', v)}
+              placeholder="0.00"
+              keyboardType="decimal-pad"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Price"
+            />
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -449,7 +463,7 @@ export default function ItemFormScreen() {
           <MarketplaceSelector selected={item.marketplace} available={dropdowns.marketplaces} onToggle={toggleMarketplace} />
         </View>
 
-        <View style={styles.field}><Text style={styles.label}>Notes</Text><TextInput style={[styles.input, styles.textArea]} value={item.notes} onChangeText={(v) => updateField('notes', v)} multiline numberOfLines={3} placeholderTextColor="#4a5568" /></View>
+        <View style={styles.field}><Text style={styles.label}>Notes</Text><TextInput style={[styles.input, styles.textArea]} value={item.notes} onChangeText={(v) => updateField('notes', v)} multiline numberOfLines={3} placeholderTextColor="#4a5568" accessibilityLabel="Item Notes" /></View>
 
         <View style={styles.formActions}>
           <TouchableOpacity
@@ -516,6 +530,9 @@ const styles = StyleSheet.create({
   researchLink: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
   input: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, color: '#e8eaf6', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
   inputOcr: { borderColor: 'rgba(74, 222, 128, 0.4)', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
+  priceInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10 },
+  pricePrefix: { color: '#cbd5e1', fontSize: 15, fontWeight: '600', paddingLeft: 14 },
+  priceInput: { flex: 1, borderWidth: 0, backgroundColor: 'transparent', paddingLeft: 6 },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   pickerWrapper: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, overflow: 'hidden' },
   picker: { color: '#e8eaf6', height: 48 },
