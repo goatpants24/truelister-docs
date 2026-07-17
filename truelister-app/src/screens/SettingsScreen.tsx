@@ -10,7 +10,8 @@ import {
   Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { testConnection } from '../services/sheets';
+import { testConnection, clearSpreadsheetIdCache } from '../services/sheets';
+import { invalidateAllCaches } from '../services/localStorage';
 
 const KEYS = {
   APPS_SCRIPT_URL: 'settings_apps_script_url',
@@ -39,6 +40,8 @@ export default function SettingsScreen() {
       AsyncStorage.setItem(KEYS.APPS_SCRIPT_URL, appsScriptUrl.trim()),
       AsyncStorage.setItem(KEYS.DRIVE_FOLDER_ID, driveFolderId.trim()),
     ]);
+    clearSpreadsheetIdCache();
+    invalidateAllCaches();
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -54,6 +57,8 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.clear();
+            clearSpreadsheetIdCache();
+            invalidateAllCaches();
             setAppsScriptUrl('');
             setDriveFolderId('');
           },
