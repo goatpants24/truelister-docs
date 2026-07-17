@@ -97,3 +97,7 @@
 ## 2025-06-26 - [Storage Upsert & Write Guard]
 **Learning:** Unconditional appends to local storage arrays (e.g., drafts) cause (N)$ memory growth and data duplication. Implementing "upsert" logic with a shallow equality check prevents duplicates and allows for early-exit write guards. Skipping `AsyncStorage.setItem` when data is identical significantly reduces bridge traffic and I/O overhead.
 **Action:** Always use upsert logic for keyed storage (like items by ID). Implement `isEqual` helpers to bail early from write operations when the payload hasn't changed.
+
+## 2025-06-27 - [Centralized In-Memory Caching and Atomic Operations]
+**Learning:** Direct and uncached AsyncStorage calls across multiple consumer files cause bridge fragmentation and redundant reads/writes. Centralizing configuration/settings inside a single cached provider like `localStorage.ts` eliminates almost all bridge traffic. Additionally, serializing read-modify-write operations via a module-level promise chain (`runAtomic`) prevents concurrent write data corruption in offline-first applications.
+**Action:** Always centralize persistent state with an in-memory cache layer. Use atomic queues to serialize asynchronous file/database updates in React Native apps.
