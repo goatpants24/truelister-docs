@@ -15,3 +15,7 @@
 ## 2026-07-04 - Sold Status Visual Indicators
 **Learning:** In marketplace catalogs, "Sold" items should be clearly distinguished from available inventory using multiple cues: reduced opacity (e.g., 0.8), a bold visual overlay or badge (e.g., a 'SOLD' stamp), and price strikethroughs. This helps users quickly scan their inventory.
 **Action:** Apply a consistent "Sold" style across all view modes (grid and list) and prefix `accessibilityLabel` with 'Sold: ' to provide immediate context for screen readers.
+
+## 2026-07-26 - Price Input Prefix and Standard Accessibility Properties
+**Learning:** For financial or numeric input fields like price, a clear visual prefix (such as a dollar sign '$') within the input's bounding container is immensely useful, instantly providing a mental model of the format expected. Combined with proper screen-reader label properties, form comprehension is vastly enhanced.
+**Action:** Enclose price text inputs within a horizontal row container and prepend a visually aligned currency text element. Ensure all form fields use standard, descriptive `accessibilityLabel` attributes.
