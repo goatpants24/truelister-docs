@@ -15,3 +15,7 @@
 ## 2026-07-04 - Sold Status Visual Indicators
 **Learning:** In marketplace catalogs, "Sold" items should be clearly distinguished from available inventory using multiple cues: reduced opacity (e.g., 0.8), a bold visual overlay or badge (e.g., a 'SOLD' stamp), and price strikethroughs. This helps users quickly scan their inventory.
 **Action:** Apply a consistent "Sold" style across all view modes (grid and list) and prefix `accessibilityLabel` with 'Sold: ' to provide immediate context for screen readers.
+
+## 2026-07-10 - Keyboard Navigation and Focus Management
+**Learning:** Sequential keyboard navigation across forms significantly improves data-entry speed on React Native Web and mobile apps. To prevent the soft keyboard from dismissing during input transitions, intermediate text fields must set `blurOnSubmit={false}` and `returnKeyType="next"`.
+**Action:** Implement `useRef` hooks and utilize `onSubmitEditing={() => nextInputRef.current?.focus()}` to orchestrate clean focus flows.
