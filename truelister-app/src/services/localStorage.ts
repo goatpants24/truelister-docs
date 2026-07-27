@@ -6,6 +6,9 @@ const STORAGE_KEYS = {
   DRAFT_ITEMS: 'truelister_draft_items',
   PENDING_UPLOADS: 'truelister_pending_uploads',
   SETTINGS: 'truelister_settings',
+  APPS_SCRIPT_URL: 'settings_apps_script_url',
+  SPREADSHEET_ID: 'settings_spreadsheet_id',
+  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
 };
 
 // Memory cache to avoid redundant bridge traffic and parsing
