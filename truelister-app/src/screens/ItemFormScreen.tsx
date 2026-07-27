@@ -171,6 +171,11 @@ export default function ItemFormScreen() {
   const priceRef = useRef<TextInput>(null);
   const { item: existingItem, newItemNumber } = route.params;
 
+  const brandRef = useRef<TextInput>(null);
+  const sizeRef = useRef<TextInput>(null);
+  const priceRef = useRef<TextInput>(null);
+  const notesRef = useRef<TextInput>(null);
+
   const [mode, setMode] = useState<FormMode>('form');
   const [dropdowns, setDropdowns] = useState<DropdownOptions>({
     categories: [], conditions: [], saleStatuses: [], marketplaces: [], colors: [], sizes: [],
@@ -337,6 +342,7 @@ export default function ItemFormScreen() {
           accessibilityLabel={saving ? 'Saving item' : 'Save item'}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
+          {saving && <ActivityIndicator size="small" color="#4f6ef7" style={{ marginRight: 6 }} />}
           <Text style={[styles.saveText, (!isTitleValid || saving) && { opacity: 0.5 }]}>
             {saving ? 'Saving…' : 'Save'}
           </Text>
@@ -487,7 +493,19 @@ export default function ItemFormScreen() {
           <MarketplaceSelector selected={item.marketplace} available={dropdowns.marketplaces} onToggle={toggleMarketplace} />
         </View>
 
-        <View style={styles.field}><Text style={styles.label}>Notes</Text><TextInput style={[styles.input, styles.textArea]} value={item.notes} onChangeText={(v) => updateField('notes', v)} multiline numberOfLines={3} placeholderTextColor="#4a5568" /></View>
+        <View style={styles.field}>
+          <Text style={styles.label}>Notes</Text>
+          <TextInput
+            ref={notesRef}
+            style={[styles.input, styles.textArea]}
+            value={item.notes}
+            onChangeText={(v) => updateField('notes', v)}
+            multiline
+            numberOfLines={3}
+            placeholderTextColor="#4a5568"
+            accessibilityLabel="Item Notes"
+          />
+        </View>
 
         <View style={styles.formActions}>
           <TouchableOpacity
