@@ -36,10 +36,10 @@ const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
   { field: 'photoUrlFront', label: 'Front', icon: '👕' },
   { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
   { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📐' },
-  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '↔️' },
+  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔬' },
   { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📖' },
 ];
 
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
@@ -165,12 +165,16 @@ const QuickActionsBar = memo(({
 export default function ItemFormScreen() {
   const navigation = useNavigation<RootStackNavProp<'ItemForm'>>();
   const route = useRoute<ItemFormRouteProp>();
+
+  const brandRef = useRef<TextInput>(null);
+  const sizeRef = useRef<TextInput>(null);
+  const priceRef = useRef<TextInput>(null);
   const { item: existingItem, newItemNumber } = route.params;
 
-  const brandInput = useRef<TextInput>(null);
-  const sizeInput = useRef<TextInput>(null);
-  const priceInput = useRef<TextInput>(null);
-  const notesInput = useRef<TextInput>(null);
+  const brandRef = useRef<TextInput>(null);
+  const sizeRef = useRef<TextInput>(null);
+  const priceRef = useRef<TextInput>(null);
+  const notesRef = useRef<TextInput>(null);
 
   const [mode, setMode] = useState<FormMode>('form');
   const [dropdowns, setDropdowns] = useState<DropdownOptions>({
@@ -326,6 +330,7 @@ export default function ItemFormScreen() {
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
           accessibilityLabel="Cancel editing"
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
@@ -334,8 +339,10 @@ export default function ItemFormScreen() {
           onPress={handleSave}
           disabled={!isTitleValid || saving}
           accessibilityRole="button"
-          accessibilityLabel="Save item"
+          accessibilityLabel={saving ? 'Saving item' : 'Save item'}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
+          {saving && <ActivityIndicator size="small" color="#4f6ef7" style={{ marginRight: 6 }} />}
           <Text style={[styles.saveText, (!isTitleValid || saving) && { opacity: 0.5 }]}>
             {saving ? 'Saving…' : 'Save'}
           </Text>
@@ -390,8 +397,8 @@ export default function ItemFormScreen() {
             autoFocus={!existingItem}
             accessibilityLabel="Item Title"
             returnKeyType="next"
-            onSubmitEditing={() => brandInput.current?.focus()}
             blurOnSubmit={false}
+            onSubmitEditing={() => brandRef.current?.focus()}
           />
           <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
         </View>
@@ -409,7 +416,7 @@ export default function ItemFormScreen() {
             </TouchableOpacity>
           </View>
           <TextInput
-            ref={brandInput}
+            ref={brandRef}
             style={styles.input}
             value={item.designerBrand}
             onChangeText={(v) => updateField('designerBrand', v)}
@@ -418,8 +425,8 @@ export default function ItemFormScreen() {
             maxLength={65}
             accessibilityLabel="Designer Brand"
             returnKeyType="next"
-            onSubmitEditing={() => sizeInput.current?.focus()}
             blurOnSubmit={false}
+            onSubmitEditing={() => sizeRef.current?.focus()}
           />
           <View style={styles.fieldFooter}>
             <Text style={[
@@ -437,7 +444,7 @@ export default function ItemFormScreen() {
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Size</Text>
             <TextInput
-              ref={sizeInput}
+              ref={sizeRef}
               style={styles.input}
               value={item.size}
               onChangeText={(v) => updateField('size', v)}
@@ -445,8 +452,8 @@ export default function ItemFormScreen() {
               placeholderTextColor="#4a5568"
               accessibilityLabel="Item Size"
               returnKeyType="next"
-              onSubmitEditing={() => priceInput.current?.focus()}
               blurOnSubmit={false}
+              onSubmitEditing={() => priceRef.current?.focus()}
             />
           </View>
         </View>
@@ -469,7 +476,7 @@ export default function ItemFormScreen() {
             </TouchableOpacity>
           </View>
           <TextInput
-            ref={priceInput}
+            ref={priceRef}
             style={styles.input}
             value={item.price}
             onChangeText={(v) => updateField('price', v)}
@@ -477,9 +484,7 @@ export default function ItemFormScreen() {
             keyboardType="decimal-pad"
             placeholderTextColor="#4a5568"
             accessibilityLabel="Item Price"
-            returnKeyType="next"
-            onSubmitEditing={() => notesInput.current?.focus()}
-            blurOnSubmit={false}
+            returnKeyType="done"
           />
         </View>
 
@@ -491,7 +496,7 @@ export default function ItemFormScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Notes</Text>
           <TextInput
-            ref={notesInput}
+            ref={notesRef}
             style={[styles.input, styles.textArea]}
             value={item.notes}
             onChangeText={(v) => updateField('notes', v)}

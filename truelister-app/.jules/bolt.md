@@ -5,3 +5,7 @@
 ## 2025-05-22 - Correcting File Metadata Retrieval in Expo
 **Learning:** Relying on non-existent web-like classes like `File` for local URI metadata in Expo leads to broken iterative loops (like image compression) that fail silently. `FileSystem.getInfoAsync` is the mandatory API for retrieving file size and existence metadata without loading the entire binary into memory.
 **Action:** Always verify that file system operations use `expo-file-system` APIs rather than assuming web standard availability, especially when implementing resource-intensive loops.
+
+## 2026-07-12 - Unified Storage Caching and Redundant Write Elimination
+**Learning:** Centralizing `AsyncStorage` access into a cached service layer with `shallowEqual` bail-early guards reduces bridge traffic and ensures UI state stays in sync across screens. It also eliminates the risk of "stale-while-writing" inconsistencies in high-frequency update paths like the item form's undo/redo history.
+**Action:** Use a unified storage service with memory caching and object equality checks to minimize asynchronous overhead and prevent unnecessary React re-renders.
