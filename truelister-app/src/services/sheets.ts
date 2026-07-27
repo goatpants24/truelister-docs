@@ -1,9 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
-import { getAppsScriptUrl, getSpreadsheetId, clearSettingsCache } from './localStorage';
+import { getSpreadsheetId as getStoredSpreadsheetId, getAppsScriptUrl } from './localStorage';
 
-const { SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
+const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
 
 /**
  * Referential Cache: Store the previous item objects to reuse their references.
@@ -17,9 +16,17 @@ const DROPDOWNS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 let inventoryCache: { data: CatalogItem[]; timestamp: number; raw?: string } | null = null;
 let dropdownsCache: { data: DropdownOptions; timestamp: number; raw?: string } | null = null;
 
+/**
+ * Optimized helper to get spreadsheet ID with memory caching.
+ * Reduces asynchronous overhead on every inventory/dropdown fetch.
+ */
+export async function getSpreadsheetId(): Promise<string> {
+  const storedId = await getStoredSpreadsheetId();
+  return storedId || DEFAULT_SPREADSHEET_ID;
+}
+
 /** Clear memory cache - used when settings change */
-export function clearInventoryCache() {
-  clearSettingsCache();
+export function clearSpreadsheetIdCache() {
   inventoryCache = null;
   dropdownsCache = null;
   itemRefCache.clear();
@@ -334,7 +341,7 @@ export async function testConnection(type: 'sheet' | 'script'): Promise<{ succes
 }
 
 export async function appendItem(item: CatalogItem): Promise<boolean> {
-  // Read the Apps Script URL from centralized cache.
+  // Read the Apps Script URL from storage service
   const appsScriptUrl = await getAppsScriptUrl();
 
   if (!appsScriptUrl) {

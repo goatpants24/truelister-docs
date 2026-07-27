@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   uploadAsync,
   FileSystemUploadType,
@@ -22,13 +21,9 @@ export async function uploadToDrive(
   fileName: string,
   itemNumber: string
 ): Promise<{ success: boolean; driveUrl?: string; error?: string }> {
-  // Read both values from centralized cache — no restart needed after settings change
-  const [uploadEndpoint, folderIdStored] = await Promise.all([
-    getAppsScriptUrl(),
-    getDriveFolderId(),
-  ]);
-
-  const folderId = folderIdStored || GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID || '';
+  // Read both values from storage service
+  const uploadEndpoint = await getAppsScriptUrl();
+  const folderId = (await getDriveFolderId()) || GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID || '';
 
   if (!uploadEndpoint) {
     return {

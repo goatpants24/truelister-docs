@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CatalogItem } from '../types';
-import { GOOGLE_SHEETS_CONFIG } from '../config';
+import { shallowEqual } from './utils';
 
 const STORAGE_KEYS = {
   DRAFT_ITEMS: 'truelister_draft_items',
@@ -18,43 +18,8 @@ import { shallowEqual } from './utils';
 
 // Memory cache to avoid redundant bridge traffic and parsing
 let cachedDrafts: CatalogItem[] | null = null;
-let cachedPendingUploads: PendingUpload[] | null = null;
 let cachedSettings: AppSettings | null = null;
-let cachedAppsScriptUrl: string | null = null;
-let cachedSpreadsheetId: string | null = null;
-let cachedDriveFolderId: string | null = null;
-
-/**
- * Bolt Performance Optimization: Shallow equality check for CatalogItem.
- * Faster than JSON.stringify for O(N) comparisons in data loops.
- */
-function isItemEqual(a: CatalogItem, b: CatalogItem): boolean {
-  return (
-    a.itemNumber === b.itemNumber &&
-    a.title === b.title &&
-    a.designerBrand === b.designerBrand &&
-    a.category === b.category &&
-    a.size === b.size &&
-    a.condition === b.condition &&
-    a.fabricMaterial === b.fabricMaterial &&
-    a.measurements === b.measurements &&
-    a.color === b.color &&
-    a.saleStatus === b.saleStatus &&
-    a.price === b.price &&
-    a.photoUrl === b.photoUrl &&
-    a.marketplace === b.marketplace &&
-    a.dateListed === b.dateListed &&
-    a.notes === b.notes &&
-    a.photoUrlCard === b.photoUrlCard &&
-    a.photoUrlFront === b.photoUrlFront &&
-    a.photoUrlBack === b.photoUrlBack &&
-    a.photoUrlDetail === b.photoUrlDetail &&
-    a.photoUrlTabletopWide === b.photoUrlTabletopWide &&
-    a.photoUrlTabletopDetail === b.photoUrlTabletopDetail &&
-    a.photoUrlTabletopMeasure1 === b.photoUrlTabletopMeasure1 &&
-    a.photoUrlTabletopMeasure2 === b.photoUrlTabletopMeasure2
-  );
-}
+let cachedPendingUploads: PendingUpload[] | null = null;
 
 /**
  * Save a draft item locally (for offline use or before sync).
@@ -68,7 +33,7 @@ export async function saveDraftItem(item: CatalogItem): Promise<void> {
 
     if (index !== -1) {
       // If item is identical to existing draft, skip the write
-      if (isItemEqual(existing[index], item)) return;
+      if (shallowEqual(existing[index], item)) return;
 
       const updated = [...existing];
       updated[index] = item;
@@ -147,7 +112,7 @@ export async function addPendingUpload(upload: PendingUpload): Promise<void> {
     );
 
     if (index !== -1) {
-      if (existing[index].localUri === upload.localUri) return;
+      if (shallowEqual(existing[index], upload)) return;
       const updated = [...existing];
       updated[index] = upload;
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
@@ -185,6 +150,7 @@ export async function removePendingUpload(itemNumber: string): Promise<void> {
     if (filtered.length === existing.length) return;
 
     await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(filtered));
+    cachedPendingUploads = filtered;
   } catch (error) {
     console.error('Error removing pending upload:', error);
   }
@@ -233,48 +199,68 @@ export async function saveSettings(settings: Partial<AppSettings>): Promise<void
 }
 
 /**
- * Optimized cached accessors for global settings.
- * Reduces AsyncStorage bridge traffic by ~90% for repeated lookups.
+ * Global Connectivity Settings
+ * Bolt: These are frequently accessed by sheets.ts and driveUpload.ts.
+ * Implementing memory caching here avoids repeated AsyncStorage bridge traffic.
  */
+const GLOBAL_KEYS = {
+  APPS_SCRIPT_URL: 'settings_apps_script_url',
+  SPREADSHEET_ID: 'settings_spreadsheet_id',
+  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
+};
+
+let cachedAppsScriptUrl: string | null = null;
+let cachedSpreadsheetId: string | null = null;
+let cachedDriveFolderId: string | null = null;
+
 export async function getAppsScriptUrl(): Promise<string> {
-  if (cachedAppsScriptUrl) return cachedAppsScriptUrl;
-  const url = await AsyncStorage.getItem(STORAGE_KEYS.APPS_SCRIPT_URL);
-  cachedAppsScriptUrl = url?.trim() || '';
+  if (cachedAppsScriptUrl !== null) return cachedAppsScriptUrl;
+  const val = await AsyncStorage.getItem(GLOBAL_KEYS.APPS_SCRIPT_URL);
+  cachedAppsScriptUrl = (val || '').trim();
   return cachedAppsScriptUrl;
 }
 
+export async function setAppsScriptUrl(url: string): Promise<void> {
+  const trimmed = url.trim();
+  if (cachedAppsScriptUrl === trimmed) return;
+  await AsyncStorage.setItem(GLOBAL_KEYS.APPS_SCRIPT_URL, trimmed);
+  cachedAppsScriptUrl = trimmed;
+}
+
 export async function getSpreadsheetId(): Promise<string> {
-  if (cachedSpreadsheetId) return cachedSpreadsheetId;
-  const id = await AsyncStorage.getItem(STORAGE_KEYS.SPREADSHEET_ID);
-  cachedSpreadsheetId = id?.trim() || GOOGLE_SHEETS_CONFIG.DEFAULT_SPREADSHEET_ID;
-  return cachedSpreadsheetId!;
+  if (cachedSpreadsheetId !== null) return cachedSpreadsheetId;
+  const val = await AsyncStorage.getItem(GLOBAL_KEYS.SPREADSHEET_ID);
+  cachedSpreadsheetId = (val || '').trim();
+  return cachedSpreadsheetId;
+}
+
+export async function setSpreadsheetId(id: string): Promise<void> {
+  const trimmed = id.trim();
+  if (cachedSpreadsheetId === trimmed) return;
+  await AsyncStorage.setItem(GLOBAL_KEYS.SPREADSHEET_ID, trimmed);
+  cachedSpreadsheetId = trimmed;
 }
 
 export async function getDriveFolderId(): Promise<string> {
-  if (cachedDriveFolderId) return cachedDriveFolderId;
-  const id = await AsyncStorage.getItem(STORAGE_KEYS.DRIVE_FOLDER_ID);
-  cachedDriveFolderId = id?.trim() || '';
+  if (cachedDriveFolderId !== null) return cachedDriveFolderId;
+  const val = await AsyncStorage.getItem(GLOBAL_KEYS.DRIVE_FOLDER_ID);
+  cachedDriveFolderId = (val || '').trim();
   return cachedDriveFolderId;
 }
 
-export async function saveLegacySetting(key: 'APPS_SCRIPT_URL' | 'SPREADSHEET_ID' | 'DRIVE_FOLDER_ID', value: string): Promise<void> {
-  const storageKey = STORAGE_KEYS[key];
-  const trimmed = value.trim();
-  const current = await AsyncStorage.getItem(storageKey);
-
-  if (current === trimmed) return;
-
-  await AsyncStorage.setItem(storageKey, trimmed);
-
-  // Update cache
-  if (key === 'APPS_SCRIPT_URL') cachedAppsScriptUrl = trimmed;
-  if (key === 'SPREADSHEET_ID') cachedSpreadsheetId = trimmed;
-  if (key === 'DRIVE_FOLDER_ID') cachedDriveFolderId = trimmed;
+export async function setDriveFolderId(id: string): Promise<void> {
+  const trimmed = id.trim();
+  if (cachedDriveFolderId === trimmed) return;
+  await AsyncStorage.setItem(GLOBAL_KEYS.DRIVE_FOLDER_ID, trimmed);
+  cachedDriveFolderId = trimmed;
 }
 
-export function clearSettingsCache() {
+/** Reset all caches - used during "Clear All Data" */
+export function clearStorageCache() {
+  cachedDrafts = null;
+  cachedSettings = null;
+  cachedPendingUploads = null;
   cachedAppsScriptUrl = null;
   cachedSpreadsheetId = null;
   cachedDriveFolderId = null;
-  cachedSettings = null;
 }

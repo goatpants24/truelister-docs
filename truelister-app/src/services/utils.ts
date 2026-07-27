@@ -1,7 +1,6 @@
 /**
- * High-performance shallow equality check.
- * Performs faster than JSON.stringify for object comparisons in hot paths.
- * Returns true if both arguments are referentially equal or have the same keys and values.
+ * Optimized shallow equality check.
+ * Faster than JSON.stringify for large state objects.
  */
 export function shallowEqual(objA: any, objB: any): boolean {
   if (Object.is(objA, objB)) return true;

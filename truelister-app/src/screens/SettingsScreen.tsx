@@ -13,10 +13,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { testConnection } from '../services/sheets';
 import {
   getAppsScriptUrl,
+  setAppsScriptUrl as setStoredAppsScriptUrl,
   getDriveFolderId,
-  saveLegacySetting,
-  getSpreadsheetId,
-  clearSettingsCache
+  setDriveFolderId as setStoredDriveFolderId,
+  clearStorageCache
 } from '../services/localStorage';
 
 export default function SettingsScreen() {
@@ -28,22 +28,19 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     (async () => {
-      const [url, folder, sheetId] = await Promise.all([
+      const [url, folder] = await Promise.all([
         getAppsScriptUrl(),
         getDriveFolderId(),
-        getSpreadsheetId(),
       ]);
       setAppsScriptUrl(url);
       setDriveFolderId(folder);
-      setSpreadsheetId(sheetId);
     })();
   }, []);
 
   const handleSave = async () => {
     await Promise.all([
-      saveLegacySetting('APPS_SCRIPT_URL', appsScriptUrl),
-      saveLegacySetting('DRIVE_FOLDER_ID', driveFolderId),
-      saveLegacySetting('SPREADSHEET_ID', spreadsheetId),
+      setStoredAppsScriptUrl(appsScriptUrl),
+      setStoredDriveFolderId(driveFolderId),
     ]);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -60,7 +57,7 @@ export default function SettingsScreen() {
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.clear();
-            clearSettingsCache();
+            clearStorageCache();
             setAppsScriptUrl('');
             setDriveFolderId('');
             setSpreadsheetId('');
