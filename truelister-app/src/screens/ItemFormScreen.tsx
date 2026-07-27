@@ -36,10 +36,10 @@ const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
   { field: 'photoUrlFront', label: 'Front', icon: '👕' },
   { field: 'photoUrlBack', label: 'Back', icon: '🔙' },
   { field: 'photoUrlDetail', label: 'Detail', icon: '🔍' },
-  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '📐' },
-  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔍' },
+  { field: 'photoUrlTabletopWide', label: 'Tabletop', icon: '↔️' },
+  { field: 'photoUrlTabletopDetail', label: 'Detail 2', icon: '🔬' },
   { field: 'photoUrlTabletopMeasure1', label: 'Measure 1', icon: '📏' },
-  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📏' },
+  { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📖' },
 ];
 
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
@@ -165,6 +165,10 @@ const QuickActionsBar = memo(({
 export default function ItemFormScreen() {
   const navigation = useNavigation<RootStackNavProp<'ItemForm'>>();
   const route = useRoute<ItemFormRouteProp>();
+
+  const brandRef = useRef<TextInput>(null);
+  const sizeRef = useRef<TextInput>(null);
+  const priceRef = useRef<TextInput>(null);
   const { item: existingItem, newItemNumber } = route.params;
 
   const brandRef = useRef<TextInput>(null);
@@ -335,9 +339,8 @@ export default function ItemFormScreen() {
           onPress={handleSave}
           disabled={!isTitleValid || saving}
           accessibilityRole="button"
-          accessibilityLabel="Save item"
+          accessibilityLabel={saving ? 'Saving item' : 'Save item'}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-          style={styles.headerSaveButton}
         >
           {saving && <ActivityIndicator size="small" color="#4f6ef7" style={{ marginRight: 6 }} />}
           <Text style={[styles.saveText, (!isTitleValid || saving) && { opacity: 0.5 }]}>
@@ -394,8 +397,8 @@ export default function ItemFormScreen() {
             autoFocus={!existingItem}
             accessibilityLabel="Item Title"
             returnKeyType="next"
-            onSubmitEditing={() => brandRef.current?.focus()}
             blurOnSubmit={false}
+            onSubmitEditing={() => brandRef.current?.focus()}
           />
           <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
         </View>
@@ -422,8 +425,8 @@ export default function ItemFormScreen() {
             maxLength={65}
             accessibilityLabel="Designer Brand"
             returnKeyType="next"
-            onSubmitEditing={() => sizeRef.current?.focus()}
             blurOnSubmit={false}
+            onSubmitEditing={() => sizeRef.current?.focus()}
           />
           <View style={styles.fieldFooter}>
             <Text style={[
@@ -449,8 +452,8 @@ export default function ItemFormScreen() {
               placeholderTextColor="#4a5568"
               accessibilityLabel="Item Size"
               returnKeyType="next"
-              onSubmitEditing={() => priceRef.current?.focus()}
               blurOnSubmit={false}
+              onSubmitEditing={() => priceRef.current?.focus()}
             />
           </View>
         </View>
@@ -481,9 +484,7 @@ export default function ItemFormScreen() {
             keyboardType="decimal-pad"
             placeholderTextColor="#4a5568"
             accessibilityLabel="Item Price"
-            returnKeyType="next"
-            onSubmitEditing={() => notesRef.current?.focus()}
-            blurOnSubmit={false}
+            returnKeyType="done"
           />
         </View>
 
