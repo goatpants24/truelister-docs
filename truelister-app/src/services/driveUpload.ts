@@ -20,12 +20,9 @@ export async function uploadToDrive(
   fileName: string,
   itemNumber: string
 ): Promise<{ success: boolean; driveUrl?: string; error?: string }> {
-  // Read both values from our cached storage service.
-  const uploadEndpoint = (await getAppsScriptUrl()).trim();
-  const folderId =
-    (await getDriveFolderId()).trim() ||
-    GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID ||
-    '';
+  // Read both values from storage service
+  const uploadEndpoint = await getAppsScriptUrl();
+  const folderId = (await getDriveFolderId()) || GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID || '';
 
   if (!uploadEndpoint) {
     return {

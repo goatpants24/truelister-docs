@@ -1,11 +1,8 @@
 import { GOOGLE_SHEETS_CONFIG } from '../config';
 import { CatalogItem, DropdownOptions } from '../types';
-import { getSpreadsheetId as getStoredId, getAppsScriptUrl } from './localStorage';
+import { getSpreadsheetId as getStoredSpreadsheetId, getAppsScriptUrl } from './localStorage';
 
 const { DEFAULT_SPREADSHEET_ID, SHEET_NAME, DROPDOWNS_SHEET } = GOOGLE_SHEETS_CONFIG;
-
-// Memory cache for spreadsheet ID and data to avoid redundant reads/fetches
-let cachedSpreadsheetId: string | null = null;
 
 /**
  * Referential Cache: Store the previous item objects to reuse their references.
@@ -24,15 +21,12 @@ let dropdownsCache: { data: DropdownOptions; timestamp: number; raw?: string } |
  * Reduces asynchronous overhead on every inventory/dropdown fetch.
  */
 export async function getSpreadsheetId(): Promise<string> {
-  if (cachedSpreadsheetId) return cachedSpreadsheetId;
-  const storedId = await getStoredId();
-  cachedSpreadsheetId = storedId || DEFAULT_SPREADSHEET_ID;
-  return cachedSpreadsheetId;
+  const storedId = await getStoredSpreadsheetId();
+  return storedId || DEFAULT_SPREADSHEET_ID;
 }
 
 /** Clear memory cache - used when settings change */
 export function clearSpreadsheetIdCache() {
-  cachedSpreadsheetId = null;
   inventoryCache = null;
   dropdownsCache = null;
   itemRefCache.clear();
@@ -347,8 +341,8 @@ export async function testConnection(type: 'sheet' | 'script'): Promise<{ succes
 }
 
 export async function appendItem(item: CatalogItem): Promise<boolean> {
-  // Read the Apps Script URL from our cached storage service.
-  const appsScriptUrl = (await getAppsScriptUrl()).trim();
+  // Read the Apps Script URL from storage service
+  const appsScriptUrl = await getAppsScriptUrl();
 
   if (!appsScriptUrl) {
     console.warn('Apps Script URL not configured. Open the Settings tab to add it.');

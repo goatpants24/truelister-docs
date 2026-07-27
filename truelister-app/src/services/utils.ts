@@ -1,6 +1,6 @@
 /**
  * Optimized shallow equality check.
- * Faster than JSON.stringify for large objects.
+ * Faster than JSON.stringify for large state objects.
  */
 export function shallowEqual(objA: any, objB: any): boolean {
   if (Object.is(objA, objB)) return true;

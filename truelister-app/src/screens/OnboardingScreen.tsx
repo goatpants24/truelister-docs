@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { saveLegacySetting } from '../services/localStorage';
+import { setSpreadsheetId, setAppsScriptUrl } from '../services/localStorage';
 
 export default function OnboardingScreen() {
   const navigation = useNavigation<any>();
@@ -31,11 +31,11 @@ export default function OnboardingScreen() {
         return;
       }
       const id = extractId(sheetUrl);
-      await saveLegacySetting('SPREADSHEET_ID', id);
+      await setSpreadsheetId(id);
       setStep(2);
     } else {
       if (appsScriptUrl) {
-        await saveLegacySetting('APPS_SCRIPT_URL', appsScriptUrl.trim());
+        await setAppsScriptUrl(appsScriptUrl);
       }
       await AsyncStorage.setItem('has_onboarded', 'true');
       navigation.replace('Main');

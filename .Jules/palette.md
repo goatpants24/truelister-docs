@@ -15,3 +15,7 @@
 ## 2026-07-04 - Sold Status Visual Indicators
 **Learning:** In marketplace catalogs, "Sold" items should be clearly distinguished from available inventory using multiple cues: reduced opacity (e.g., 0.8), a bold visual overlay or badge (e.g., a 'SOLD' stamp), and price strikethroughs. This helps users quickly scan their inventory.
 **Action:** Apply a consistent "Sold" style across all view modes (grid and list) and prefix `accessibilityLabel` with 'Sold: ' to provide immediate context for screen readers.
+
+## 2026-07-10 - Item Form Micro-UX and Focus Flow
+**Learning:** Sequential data entry in complex forms (Title -> Brand -> Size -> Price) is significantly improved by implementing keyboard focus navigation. Combined with expanded touch targets (hitSlop) for header actions and dynamic accessibility labels for async states (Saving...), the interface feels more responsive and professional.
+**Action:** Use `useRef` and `onSubmitEditing` to chain `TextInput` focus. Always add `hitSlop` to small header buttons and ensure accessibility labels update to reflect current component state.

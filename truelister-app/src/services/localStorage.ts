@@ -16,11 +16,6 @@ let cachedDrafts: CatalogItem[] | null = null;
 let cachedSettings: AppSettings | null = null;
 let cachedPendingUploads: PendingUpload[] | null = null;
 
-// Individual setting caches
-let cachedAppsScriptUrl: string | null = null;
-let cachedSpreadsheetId: string | null = null;
-let cachedDriveFolderId: string | null = null;
-
 /**
  * Save a draft item locally (for offline use or before sync).
  * Bolt: Implements true "upsert" logic to prevent duplicate entries and
@@ -112,7 +107,7 @@ export async function addPendingUpload(upload: PendingUpload): Promise<void> {
     );
 
     if (index !== -1) {
-      if (existing[index].localUri === upload.localUri) return;
+      if (shallowEqual(existing[index], upload)) return;
       const updated = [...existing];
       updated[index] = upload;
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_UPLOADS, JSON.stringify(updated));
@@ -189,7 +184,6 @@ export async function saveSettings(settings: Partial<AppSettings>): Promise<void
     const current = await getSettings();
     const updated = { ...current, ...settings };
 
-    // Bolt: Skip write if settings haven't changed
     if (shallowEqual(current, updated)) return;
 
     await AsyncStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
@@ -200,42 +194,68 @@ export async function saveSettings(settings: Partial<AppSettings>): Promise<void
 }
 
 /**
- * Centralized, cached accessors for connectivity settings.
- * Reduces bridge traffic and parsing overhead in hot paths like driveUpload and sheets.
+ * Global Connectivity Settings
+ * Bolt: These are frequently accessed by sheets.ts and driveUpload.ts.
+ * Implementing memory caching here avoids repeated AsyncStorage bridge traffic.
  */
+const GLOBAL_KEYS = {
+  APPS_SCRIPT_URL: 'settings_apps_script_url',
+  SPREADSHEET_ID: 'settings_spreadsheet_id',
+  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
+};
+
+let cachedAppsScriptUrl: string | null = null;
+let cachedSpreadsheetId: string | null = null;
+let cachedDriveFolderId: string | null = null;
 
 export async function getAppsScriptUrl(): Promise<string> {
-  if (cachedAppsScriptUrl) return cachedAppsScriptUrl;
-  cachedAppsScriptUrl = (await AsyncStorage.getItem(STORAGE_KEYS.APPS_SCRIPT_URL)) || '';
+  if (cachedAppsScriptUrl !== null) return cachedAppsScriptUrl;
+  const val = await AsyncStorage.getItem(GLOBAL_KEYS.APPS_SCRIPT_URL);
+  cachedAppsScriptUrl = (val || '').trim();
   return cachedAppsScriptUrl;
 }
 
+export async function setAppsScriptUrl(url: string): Promise<void> {
+  const trimmed = url.trim();
+  if (cachedAppsScriptUrl === trimmed) return;
+  await AsyncStorage.setItem(GLOBAL_KEYS.APPS_SCRIPT_URL, trimmed);
+  cachedAppsScriptUrl = trimmed;
+}
+
 export async function getSpreadsheetId(): Promise<string> {
-  if (cachedSpreadsheetId) return cachedSpreadsheetId;
-  cachedSpreadsheetId = (await AsyncStorage.getItem(STORAGE_KEYS.SPREADSHEET_ID)) || '';
+  if (cachedSpreadsheetId !== null) return cachedSpreadsheetId;
+  const val = await AsyncStorage.getItem(GLOBAL_KEYS.SPREADSHEET_ID);
+  cachedSpreadsheetId = (val || '').trim();
   return cachedSpreadsheetId;
 }
 
+export async function setSpreadsheetId(id: string): Promise<void> {
+  const trimmed = id.trim();
+  if (cachedSpreadsheetId === trimmed) return;
+  await AsyncStorage.setItem(GLOBAL_KEYS.SPREADSHEET_ID, trimmed);
+  cachedSpreadsheetId = trimmed;
+}
+
 export async function getDriveFolderId(): Promise<string> {
-  if (cachedDriveFolderId) return cachedDriveFolderId;
-  cachedDriveFolderId = (await AsyncStorage.getItem(STORAGE_KEYS.DRIVE_FOLDER_ID)) || '';
+  if (cachedDriveFolderId !== null) return cachedDriveFolderId;
+  const val = await AsyncStorage.getItem(GLOBAL_KEYS.DRIVE_FOLDER_ID);
+  cachedDriveFolderId = (val || '').trim();
   return cachedDriveFolderId;
 }
 
-/**
- * Support individual key updates from legacy screens.
- * Ensures the memory cache stays in sync.
- */
-export async function saveLegacySetting(key: 'APPS_SCRIPT_URL' | 'SPREADSHEET_ID' | 'DRIVE_FOLDER_ID', value: string): Promise<void> {
-  const storageKey = STORAGE_KEYS[key];
+export async function setDriveFolderId(id: string): Promise<void> {
+  const trimmed = id.trim();
+  if (cachedDriveFolderId === trimmed) return;
+  await AsyncStorage.setItem(GLOBAL_KEYS.DRIVE_FOLDER_ID, trimmed);
+  cachedDriveFolderId = trimmed;
+}
 
-  const current = await AsyncStorage.getItem(storageKey);
-  if (current === value) return;
-
-  await AsyncStorage.setItem(storageKey, value);
-
-  // Update appropriate cache
-  if (key === 'APPS_SCRIPT_URL') cachedAppsScriptUrl = value;
-  if (key === 'SPREADSHEET_ID') cachedSpreadsheetId = value;
-  if (key === 'DRIVE_FOLDER_ID') cachedDriveFolderId = value;
+/** Reset all caches - used during "Clear All Data" */
+export function clearStorageCache() {
+  cachedDrafts = null;
+  cachedSettings = null;
+  cachedPendingUploads = null;
+  cachedAppsScriptUrl = null;
+  cachedSpreadsheetId = null;
+  cachedDriveFolderId = null;
 }
