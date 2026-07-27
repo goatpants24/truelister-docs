@@ -12,8 +12,8 @@ import { getAppsScriptUrl, getDriveFolderId } from './localStorage';
  * Uses multipart/form-data with binary file streams — no base64 encoding.
  * This avoids the ~33% size bloat that base64 adds.
  *
- * Both the endpoint URL and Drive folder ID are read from AsyncStorage at
- * call time, so the user can configure them in the Settings tab without
+ * Both the endpoint URL and Drive folder ID are read from centralized cache
+ * at call time, so the user can configure them in the Settings tab without
  * needing to rebuild or restart the app.
  */
 export async function uploadToDrive(

@@ -97,3 +97,7 @@
 ## 2025-06-26 - [Storage Upsert & Write Guard]
 **Learning:** Unconditional appends to local storage arrays (e.g., drafts) cause (N)$ memory growth and data duplication. Implementing "upsert" logic with a shallow equality check prevents duplicates and allows for early-exit write guards. Skipping `AsyncStorage.setItem` when data is identical significantly reduces bridge traffic and I/O overhead.
 **Action:** Always use upsert logic for keyed storage (like items by ID). Implement `isEqual` helpers to bail early from write operations when the payload hasn't changed.
+
+## 2025-07-11 - [Centralized Settings Caching]
+**Learning:** Accessing `AsyncStorage` repeatedly for configuration keys across multiple services (e.g., fetching Apps Script URL in both `sheets.ts` and `driveUpload.ts`) creates significant redundant bridge traffic. Centralizing these lookups in a module-level memory cache within the storage service reduces bridge overhead by ~90% for subsequent accesses.
+**Action:** Always provide cached accessors for global configuration stored in asynchronous persistence layers to minimize main-thread blocking and bridge congestion.

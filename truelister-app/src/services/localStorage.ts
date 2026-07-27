@@ -6,7 +6,15 @@ const STORAGE_KEYS = {
   DRAFT_ITEMS: 'truelister_draft_items',
   PENDING_UPLOADS: 'truelister_pending_uploads',
   SETTINGS: 'truelister_settings',
+  // Specific keys for legacy/direct AsyncStorage access
+  APPS_SCRIPT_URL: 'settings_apps_script_url',
+  SPREADSHEET_ID: 'settings_spreadsheet_id',
+  DRIVE_FOLDER_ID: 'settings_drive_folder_id',
 };
+
+export { STORAGE_KEYS };
+
+import { shallowEqual } from './utils';
 
 // Memory cache to avoid redundant bridge traffic and parsing
 let cachedDrafts: CatalogItem[] | null = null;
