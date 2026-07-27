@@ -99,6 +99,10 @@ export interface PendingUpload {
  * Bolt: Implements deduplication by itemNumber and fieldName.
  * Skips write if the exact same upload (item + field + uri) is already pending.
  */
+/**
+ * Bolt: Implements deduplication by itemNumber and fieldName.
+ * Skips write if the exact same upload (item + field + uri) is already pending.
+ */
 export async function addPendingUpload(upload: PendingUpload): Promise<void> {
   try {
     const existing = await getPendingUploads();
@@ -179,6 +183,9 @@ export async function getSettings(): Promise<AppSettings> {
   }
 }
 
+/**
+ * Bolt: Skips AsyncStorage write if the new settings are identical to current ones.
+ */
 export async function saveSettings(settings: Partial<AppSettings>): Promise<void> {
   try {
     const current = await getSettings();
