@@ -324,6 +324,10 @@ export default function HomeScreen() {
           numColumns={viewMode === 'grid' ? 2 : 1}
           keyExtractor={(item) => item.itemNumber}
           getItemLayout={getItemLayout}
+          initialNumToRender={12}
+          maxToRenderPerBatch={10}
+          windowSize={7}
+          removeClippedSubviews={true}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           refreshControl={
