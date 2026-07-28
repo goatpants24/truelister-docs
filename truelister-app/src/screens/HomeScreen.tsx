@@ -105,7 +105,7 @@ export default function HomeScreen() {
     setError(null);
     try {
       const [sheetItems, draftItems] = await Promise.all([
-        fetchInventory(),
+        fetchInventory(isRefresh),
         getDraftItems(),
       ]);
 
