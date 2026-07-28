@@ -1,3 +1,7 @@
+## 2026-06-28 - [Manual Refresh Cache Bypass]
+**Learning:** Having a memory cache with a TTL (e.g., 1 minute) is highly effective at reducing redundant network traffic during quick tab switching, but it can lead to a broken UX if manual "pull to refresh" events are forced to respect the same TTL. Allowing an explicit `forceRefresh` parameter lets manual actions bypass TTL, while still utilizing raw response string comparison to prevent redundant UI re-renders if no data actually changed on the server.
+**Action:** When implementing memory-level TTL caching, always expose a `forceRefresh` bypass flag so user-initiated refreshes can fetch fresh network payloads without breaking referential stability.
+
 ## 2025-05-15 - [Debounced History Optimization]
 **Learning:** In the `useUndoRedo` hook, dispatching a history-pushing action on every keystroke leads to O(N) memory growth and poor UX. Separating immediate UI updates (`UPDATE`) from debounced history commits (`COMMIT`) significantly improves efficiency.
 **Action:** Use a "lastCommitted" state to track the reference point for history, and ensure manual undos/redos flush any pending debounced timers to avoid state inconsistency.

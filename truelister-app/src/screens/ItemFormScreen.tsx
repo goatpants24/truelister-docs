@@ -169,12 +169,8 @@ export default function ItemFormScreen() {
   const brandRef = useRef<TextInput>(null);
   const sizeRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
-  const { item: existingItem, newItemNumber } = route.params;
-
-  const brandRef = useRef<TextInput>(null);
-  const sizeRef = useRef<TextInput>(null);
-  const priceRef = useRef<TextInput>(null);
   const notesRef = useRef<TextInput>(null);
+  const { item: existingItem, newItemNumber } = route.params;
 
   const [mode, setMode] = useState<FormMode>('form');
   const [dropdowns, setDropdowns] = useState<DropdownOptions>({
