@@ -9,6 +9,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { testConnection } from '../services/sheets';
 import {
   getAppsScriptUrl,

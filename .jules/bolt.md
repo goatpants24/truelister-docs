@@ -101,3 +101,7 @@
 ## 2025-06-27 - [Universal Storage Caching]
 **Learning:** Even small configuration objects like `AppSettings` can become a performance bottleneck if read frequently (e.g., on every screen focus) without caching. Extending the memory-cache pattern to all storage accessors, combined with a centralized `shallowEqual` utility, ensures minimal bridge traffic and consistent $O(1)$ read performance across the entire service layer.
 **Action:** Implement memory caching for all frequently accessed local storage keys. Centralize equality helpers to ensure referential stability and zero-allocation bail-outs are applied consistently.
+
+## 2026-07-29 - [Sequential Pattern Matching & Hook Hoisting]
+**Learning:** Sequential regular expression evaluation in scanning/parsing services can be short-circuited incorrectly if generic patterns precede more specific ones (e.g. general 1-2 digit rules matching pants "32x30" or "EU 40" sizes prematurely). Ordering matching patterns from most-specific to most-general resolves parsing bugs and reduces redundant backtracking. Additionally, calling React Hooks like `useMemo` inline in JSX props violates React rules and should always be hoisted to the top-level functional body.
+**Action:** Always structure sequentially evaluated regex pattern lists with most-specific rules first. Ensure all hooks are hoisted to the functional component's top-level body for correct execution.

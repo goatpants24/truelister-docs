@@ -25,9 +25,9 @@ const CARE_KEYWORDS_BASE = [
 
 const SIZE_PATTERNS = [
   /\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/i,
-  /\b(size\s*)?(\d{1,2})\b/i,
   /\b(\d{2})\s*[xX×]\s*(\d{2})\b/,
   /\b(EU|EUR)\s*(\d{2})\b/i,
+  /\b(size\s*)?(\d{1,2})\b/i,
 ];
 
 /**
