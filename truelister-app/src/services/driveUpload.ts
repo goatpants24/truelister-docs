@@ -3,7 +3,6 @@ import {
   uploadAsync,
   FileSystemUploadType,
 } from 'expo-file-system/legacy';
-import { File } from 'expo-file-system';
 import { GOOGLE_DRIVE_CONFIG } from '../config';
 
 // AsyncStorage keys — must stay in sync with SettingsScreen
@@ -11,6 +10,29 @@ const SETTINGS_KEYS = {
   APPS_SCRIPT_URL: 'settings_apps_script_url',
   DRIVE_FOLDER_ID: 'settings_drive_folder_id',
 };
+
+// Memory cache to avoid redundant bridge traffic and asynchronous AsyncStorage lookups
+let cachedAppsScriptUrl: string | null = null;
+let cachedDriveFolderId: string | null = null;
+
+export async function getAppsScriptUrl(): Promise<string> {
+  if (cachedAppsScriptUrl !== null) return cachedAppsScriptUrl;
+  const storedUrl = await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL);
+  cachedAppsScriptUrl = (storedUrl || '').trim();
+  return cachedAppsScriptUrl;
+}
+
+export async function getDriveFolderId(): Promise<string> {
+  if (cachedDriveFolderId !== null) return cachedDriveFolderId;
+  const storedId = await AsyncStorage.getItem(SETTINGS_KEYS.DRIVE_FOLDER_ID);
+  cachedDriveFolderId = (storedId || '').trim();
+  return cachedDriveFolderId;
+}
+
+export function clearDriveCache() {
+  cachedAppsScriptUrl = null;
+  cachedDriveFolderId = null;
+}
 
 /**
  * Upload original photo to Google Drive via Apps Script web app.
@@ -28,11 +50,8 @@ export async function uploadToDrive(
   itemNumber: string
 ): Promise<{ success: boolean; driveUrl?: string; error?: string }> {
   // Read both values from AsyncStorage at call time — no restart needed after settings change
-  const uploadEndpoint = (await AsyncStorage.getItem(SETTINGS_KEYS.APPS_SCRIPT_URL))?.trim() ?? '';
-  const folderId =
-    (await AsyncStorage.getItem(SETTINGS_KEYS.DRIVE_FOLDER_ID))?.trim() ||
-    GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID ||
-    '';
+  const uploadEndpoint = await getAppsScriptUrl();
+  const folderId = await getDriveFolderId() || GOOGLE_DRIVE_CONFIG.PHOTOS_FOLDER_ID || '';
 
   if (!uploadEndpoint) {
     return {
@@ -134,14 +153,3 @@ export async function uploadToDriveAPI(
   }
 }
 
-/**
- * Get file size without reading the entire file into memory
- */
-export async function getFileSize(uri: string): Promise<number> {
-  try {
-    const file = new File(uri);
-    return file.size || 0;
-  } catch {
-    return 0;
-  }
-}

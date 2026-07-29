@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
+import { clearSpreadsheetIdCache } from '../services/sheets';
+import { clearDriveCache } from '../services/driveUpload';
 
 export default function OnboardingScreen() {
   const navigation = useNavigation<any>();
@@ -37,6 +39,8 @@ export default function OnboardingScreen() {
         await AsyncStorage.setItem('settings_apps_script_url', appsScriptUrl.trim());
       }
       await AsyncStorage.setItem('has_onboarded', 'true');
+      clearSpreadsheetIdCache();
+      clearDriveCache();
       navigation.replace('Main');
     }
   };
