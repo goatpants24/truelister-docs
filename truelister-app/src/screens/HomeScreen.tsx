@@ -97,9 +97,11 @@ export default function HomeScreen() {
    */
   const loadItems = useCallback(async (isRefresh = false) => {
     // SWR Pattern: skip full-screen loading if we already have data
-    if (isRefresh || hasLoadedOnce.current) {
+    // Bolt Optimization: Silent background updates on refocus (no full-screen loading OR pull-to-refresh spinner).
+    // We only show the pull-to-refresh spinner (setRefreshing(true)) for explicit, user-initiated refreshes.
+    if (isRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (!hasLoadedOnce.current) {
       setLoading(true);
     }
     setError(null);
