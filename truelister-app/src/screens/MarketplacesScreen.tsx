@@ -102,6 +102,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
         onPress={() => Linking.openURL(marketplace.docsUrl)}
         accessibilityRole="link"
         accessibilityLabel={`View API documentation for ${marketplace.name}`}
+        accessibilityHint="Opens in your browser"
       >
         <Text style={styles.docsLink}>View API Docs ↗</Text>
       </TouchableOpacity>
@@ -116,6 +117,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
               style={styles.link}
               onPress={() => Linking.openURL('https://vendoo.co')}
               accessibilityRole="link"
+              accessibilityHint="Opens in your browser"
             >
               Vendoo
             </Text>{' '}
@@ -124,6 +126,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
               style={styles.link}
               onPress={() => Linking.openURL('https://listperfectly.com')}
               accessibilityRole="link"
+              accessibilityHint="Opens in your browser"
             >
               List Perfectly
             </Text>

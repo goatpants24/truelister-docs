@@ -166,9 +166,6 @@ export default function ItemFormScreen() {
   const navigation = useNavigation<RootStackNavProp<'ItemForm'>>();
   const route = useRoute<ItemFormRouteProp>();
 
-  const brandRef = useRef<TextInput>(null);
-  const sizeRef = useRef<TextInput>(null);
-  const priceRef = useRef<TextInput>(null);
   const { item: existingItem, newItemNumber } = route.params;
 
   const brandRef = useRef<TextInput>(null);
@@ -410,6 +407,7 @@ export default function ItemFormScreen() {
               onPress={handleLabelResearch}
               accessibilityRole="button"
               accessibilityLabel="Research brand label on Google"
+              accessibilityHint="Opens in your browser"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.researchLink}>🔍 Label Research</Text>
@@ -470,6 +468,7 @@ export default function ItemFormScreen() {
               onPress={handleMarketResearch}
               accessibilityRole="button"
               accessibilityLabel="Research market price on eBay"
+              accessibilityHint="Opens in your browser"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.researchLink}>📈 Market Sold</Text>
