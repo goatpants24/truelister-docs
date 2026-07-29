@@ -137,6 +137,7 @@ export default function PublishScreen({ route, navigation }: Props) {
                         onPress={() => Linking.openURL(r.listingUrl!)}
                         accessibilityRole="link"
                         accessibilityLabel={`View listing on ${meta.name}`}
+                        accessibilityHint="Opens in your browser"
                       >
                         <Text style={styles.resultLink}>View listing ↗</Text>
                       </TouchableOpacity>

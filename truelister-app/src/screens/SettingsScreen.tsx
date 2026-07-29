@@ -9,6 +9,7 @@ import {
   Alert,
   Linking,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { testConnection } from '../services/sheets';
 import {
   getAppsScriptUrl,
@@ -84,6 +85,7 @@ export default function SettingsScreen() {
             }
             accessibilityRole="button"
             accessibilityLabel="Open inventory sheet in browser"
+            accessibilityHint="Opens in your browser"
           >
             <Text style={styles.linkBtnText}>Open Sheet ↗</Text>
           </TouchableOpacity>

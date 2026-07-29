@@ -19,3 +19,7 @@
 ## 2026-07-10 - Item Form Micro-UX and Focus Flow
 **Learning:** Sequential data entry in complex forms (Title -> Brand -> Size -> Price) is significantly improved by implementing keyboard focus navigation. Combined with expanded touch targets (hitSlop) for header actions and dynamic accessibility labels for async states (Saving...), the interface feels more responsive and professional.
 **Action:** Use `useRef` and `onSubmitEditing` to chain `TextInput` focus. Always add `hitSlop` to small header buttons and ensure accessibility labels update to reflect current component state.
+
+## 2026-07-15 - Standardizing External Links Accessibility Hint
+**Learning:** External research links and redirection targets can cause disorientation for screen reader users if they open outside the app without warning. Providing an explicit `accessibilityHint="Opens in your browser"` on all elements invoking external links ensures a highly accessible and predictable browsing experience.
+**Action:** Always accompany `Linking.openURL` buttons or link items with an explicit `accessibilityHint="Opens in your browser"` attribute.
