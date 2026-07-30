@@ -23,11 +23,18 @@ const CARE_KEYWORDS_BASE = [
   'warm water', 'cold water', 'separate colors',
 ];
 
+/**
+ * ⚡ BOLT PERFORMANCE & DATA ACCURACY OPTIMIZATION: Sequential Regex Ordering
+ * Regex patterns in SIZE_PATTERNS are matched sequentially and exit on first success.
+ * Specific multi-dimensional (e.g., "32x30") and regional (e.g., "EU 40") patterns
+ * must be checked BEFORE the generic 1-2 digit rule to avoid premature match exits
+ * and incorrect extraction (e.g. extracting "32" instead of "32x30").
+ */
 const SIZE_PATTERNS = [
   /\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/i,
-  /\b(size\s*)?(\d{1,2})\b/i,
   /\b(\d{2})\s*[xX×]\s*(\d{2})\b/,
   /\b(EU|EUR)\s*(\d{2})\b/i,
+  /\b(size\s*)?(\d{1,2})\b/i,
 ];
 
 /**
