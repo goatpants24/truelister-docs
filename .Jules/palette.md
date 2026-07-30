@@ -23,3 +23,7 @@
 ## 2026-07-15 - Standardizing External Links Accessibility Hint
 **Learning:** External research links and redirection targets can cause disorientation for screen reader users if they open outside the app without warning. Providing an explicit `accessibilityHint="Opens in your browser"` on all elements invoking external links ensures a highly accessible and predictable browsing experience.
 **Action:** Always accompany `Linking.openURL` buttons or link items with an explicit `accessibilityHint="Opens in your browser"` attribute.
+
+## 2026-07-20 - Context-Aware Form Fields and Visual Formatting Prompts
+**Learning:** For mobile-centric data entry, aligning native mobile behaviors like `autoCapitalize` with field-specific context (Words for Title/Brand, Characters for Size, and Sentences for Notes) reduces input friction. Furthermore, wrapping critical numerical fields (like Price) in a dedicated visual container with prepended indicator glyphs (like `$`) strongly establishes formatting expectations prior to typing, reducing submission validation errors.
+**Action:** Configure tailored `autoCapitalize` options for every user-facing input based on its semantic function, and wrap formatted text inputs in a cohesive style block with explicit helper indicators.
