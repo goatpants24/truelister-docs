@@ -1,3 +1,7 @@
+## 2026-06-28 - [Specific Regex Precedence & Hook Hoisting]
+**Learning:** Re-rendering performance is greatly affected by inline `useMemo` declarations inside JSX properties, which violate React's Hook rules and force unnecessary allocations during text entry. Additionally, sequential regex matching arrays (like `SIZE_PATTERNS`) must place highly specific multi-dimensional patterns (e.g., `32x30`) and regional rules (e.g., `EU 40`) before generic 1-2 digit rules to prevent premature match exits and incorrect data extraction.
+**Action:** Always hoist inline hook expressions out of JSX props to the top level of components to preserve referential stability, and sort sequential matching patterns from most-specific/longest to most-generic.
+
 ## 2025-05-15 - [Debounced History Optimization]
 **Learning:** In the `useUndoRedo` hook, dispatching a history-pushing action on every keystroke leads to O(N) memory growth and poor UX. Separating immediate UI updates (`UPDATE`) from debounced history commits (`COMMIT`) significantly improves efficiency.
 **Action:** Use a "lastCommitted" state to track the reference point for history, and ensure manual undos/redos flush any pending debounced timers to avoid state inconsistency.
