@@ -393,6 +393,7 @@ export default function ItemFormScreen() {
             maxLength={80}
             autoFocus={!existingItem}
             accessibilityLabel="Item Title"
+            autoCapitalize="words"
             returnKeyType="next"
             blurOnSubmit={false}
             onSubmitEditing={() => brandRef.current?.focus()}
@@ -422,6 +423,7 @@ export default function ItemFormScreen() {
             placeholderTextColor="#4a5568"
             maxLength={65}
             accessibilityLabel="Designer Brand"
+            autoCapitalize="words"
             returnKeyType="next"
             blurOnSubmit={false}
             onSubmitEditing={() => sizeRef.current?.focus()}
@@ -449,6 +451,7 @@ export default function ItemFormScreen() {
               placeholder="M"
               placeholderTextColor="#4a5568"
               accessibilityLabel="Item Size"
+              autoCapitalize="characters"
               returnKeyType="next"
               blurOnSubmit={false}
               onSubmitEditing={() => priceRef.current?.focus()}
@@ -474,17 +477,20 @@ export default function ItemFormScreen() {
               <Text style={styles.researchLink}>📈 Market Sold</Text>
             </TouchableOpacity>
           </View>
-          <TextInput
-            ref={priceRef}
-            style={styles.input}
-            value={item.price}
-            onChangeText={(v) => updateField('price', v)}
-            placeholder="0.00"
-            keyboardType="decimal-pad"
-            placeholderTextColor="#4a5568"
-            accessibilityLabel="Item Price"
-            returnKeyType="done"
-          />
+          <View style={styles.priceInputWrapper}>
+            <Text style={styles.currencySymbol}>$</Text>
+            <TextInput
+              ref={priceRef}
+              style={styles.priceInput}
+              value={item.price}
+              onChangeText={(v) => updateField('price', v)}
+              placeholder="0.00"
+              keyboardType="decimal-pad"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Price"
+              returnKeyType="done"
+            />
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -503,6 +509,7 @@ export default function ItemFormScreen() {
             numberOfLines={3}
             placeholderTextColor="#4a5568"
             accessibilityLabel="Item Notes"
+            autoCapitalize="sentences"
           />
         </View>
 
@@ -570,6 +577,9 @@ const styles = StyleSheet.create({
   aiBadgeText: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
   researchLink: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
   input: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, color: '#e8eaf6', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
+  priceInputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, paddingHorizontal: 14 },
+  currencySymbol: { color: '#cbd5e1', fontSize: 16, fontWeight: '600', marginRight: 6 },
+  priceInput: { flex: 1, color: '#e8eaf6', fontSize: 15, paddingVertical: 12 },
   inputOcr: { borderColor: 'rgba(74, 222, 128, 0.4)', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   pickerWrapper: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, overflow: 'hidden' },

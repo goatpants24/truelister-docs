@@ -33,3 +33,7 @@
 ## 2026-06-20 - [Brand Field Character Counter]
 **Learning:** Marketplace fields like 'Brand' often have shorter character limits (e.g., 65 characters for eBay/Mercari) than the main title. Providing specific thresholds (Amber at 55, Red at 65) helps users stay within limits for cross-listing success.
 **Action:** Always research and apply field-specific character limits from target platforms to prevent listing failures later in the workflow.
+
+## 2026-07-20 - [Context-Aware Form Fields and Visual Formatting Prompts]
+**Learning:** For mobile-centric data entry, aligning native mobile behaviors like `autoCapitalize` with field-specific context (Words for Title/Brand, Characters for Size, and Sentences for Notes) reduces input friction. Furthermore, wrapping critical numerical fields (like Price) in a dedicated visual container with prepended indicator glyphs (like `$`) strongly establishes formatting expectations prior to typing, reducing submission validation errors.
+**Action:** Configure tailored `autoCapitalize` options for every user-facing input based on its semantic function, and wrap formatted text inputs in a cohesive style block with explicit helper indicators.
