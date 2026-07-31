@@ -37,19 +37,33 @@ const SHEETS_CSV_URL = (spreadsheetId: string, sheet: string) =>
   `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
 
 /**
- * Optimized CSV parser that operates in a single pass over the raw string.
- * Bolt: Now uses a callback to avoid the memory overhead of intermediate row collections.
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Zero-Allocation String Parser
+ * Instead of constructing strings character-by-character (which creates millions of
+ * intermediate string allocations for large catalogs), this parser tracks the start
+ * index of each cell and slices directly from the CSV using index-based slicing.
+ * It only falls back to an accumulator if the cell actually contains quotes.
+ * This retains 100% behavioral equivalence with the original parser while avoiding
+ * the massive O(N) allocation bottleneck and reducing garbage collection pressure.
  */
 function parseCSV(csv: string, onRow: (row: string[]) => void): void {
-  let currentCell = '';
+  const len = csv.length;
   let currentRow: string[] = [];
   let inQuotes = false;
   let hasDataInRow = false;
+  let cellStart = 0;
 
-  for (let i = 0; i < csv.length; i++) {
+  let hasQuotes = false;
+  let currentCell = '';
+
+  for (let i = 0; i < len; i++) {
     const char = csv[i];
 
     if (char === '"') {
+      if (!hasQuotes) {
+        hasQuotes = true;
+        // Slice pre-quote part of the cell as our initial accumulator content
+        currentCell = csv.slice(cellStart, i);
+      }
       // Handle escaped quotes
       if (inQuotes && csv[i + 1] === '"') {
         currentCell += '"';
@@ -58,16 +72,27 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
         inQuotes = !inQuotes;
       }
     } else if (char === ',' && !inQuotes) {
-      const trimmed = currentCell.trim();
+      let trimmed: string;
+      if (hasQuotes) {
+        trimmed = currentCell.trim();
+        currentCell = '';
+        hasQuotes = false;
+      } else {
+        trimmed = csv.slice(cellStart, i).trim();
+      }
       if (trimmed) hasDataInRow = true;
       currentRow.push(trimmed);
-      currentCell = '';
+      cellStart = i + 1;
     } else if ((char === '\n' || char === '\r') && !inQuotes) {
-      // Handle CRLF or LF
-      if (char === '\r' && csv[i + 1] === '\n') {
-        i++;
+      const nextIsLF = char === '\r' && csv[i + 1] === '\n';
+      let trimmed: string;
+      if (hasQuotes) {
+        trimmed = currentCell.trim();
+        currentCell = '';
+        hasQuotes = false;
+      } else {
+        trimmed = csv.slice(cellStart, i).trim();
       }
-      const trimmed = currentCell.trim();
       if (trimmed) hasDataInRow = true;
       currentRow.push(trimmed);
 
@@ -76,16 +101,26 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
         onRow(currentRow);
       }
       currentRow = [];
-      currentCell = '';
       hasDataInRow = false;
+      if (nextIsLF) {
+        i++;
+      }
+      cellStart = i + 1;
     } else {
-      currentCell += char;
+      if (hasQuotes) {
+        currentCell += char;
+      }
     }
   }
 
-  // Handle last row if CSV doesn't end with newline
-  if (currentRow.length > 0 || currentCell !== '') {
-    const trimmed = currentCell.trim();
+  // Handle last cell if CSV doesn't end with newline
+  if (cellStart < len || hasQuotes || currentRow.length > 0) {
+    let trimmed: string;
+    if (hasQuotes) {
+      trimmed = currentCell.trim();
+    } else {
+      trimmed = csv.slice(cellStart, len).trim();
+    }
     if (trimmed) hasDataInRow = true;
     currentRow.push(trimmed);
     if (hasDataInRow || currentRow.length > 1) {
