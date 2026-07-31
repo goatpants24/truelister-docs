@@ -1,3 +1,7 @@
+## 2026-06-28 - [In-Memory Credentials Cache & Write Guard]
+**Learning:** Repeatedly fetching marketplace API credentials via `AsyncStorage.multiGet` during component mounts or listing validation introduces asynchronous bridge serialization bottlenecks. An in-memory cache layer (`Map`) completely eliminates this bridge overhead. Furthermore, implementing a "write-guard" that compares incoming credentials against the cache before writing prevents redundant `multiSet` disk-write operations.
+**Action:** Use a local `Map` to cache key-value store lookups, implement early-exit write guards on unchanged values, and ensure proper cache invalidation pathways are integrated into any global data-reset flows.
+
 ## 2025-05-15 - [Debounced History Optimization]
 **Learning:** In the `useUndoRedo` hook, dispatching a history-pushing action on every keystroke leads to O(N) memory growth and poor UX. Separating immediate UI updates (`UPDATE`) from debounced history commits (`COMMIT`) significantly improves efficiency.
 **Action:** Use a "lastCommitted" state to track the reference point for history, and ensure manual undos/redos flush any pending debounced timers to avoid state inconsistency.
