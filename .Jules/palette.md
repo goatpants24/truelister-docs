@@ -23,3 +23,7 @@
 ## 2026-07-15 - Standardizing External Links Accessibility Hint
 **Learning:** External research links and redirection targets can cause disorientation for screen reader users if they open outside the app without warning. Providing an explicit `accessibilityHint="Opens in your browser"` on all elements invoking external links ensures a highly accessible and predictable browsing experience.
 **Action:** Always accompany `Linking.openURL` buttons or link items with an explicit `accessibilityHint="Opens in your browser"` attribute.
+
+## 2026-07-20 - Sequential Focus and Auto-Submission in Setup Screens
+**Learning:** For setup, onboarding, and settings screens with sequential inputs, integrating step-aware `returnKeyType` (`next` and `done`) along with `onSubmitEditing` focus triggers provides a highly satisfying keyboard-only workflow. This eliminates cognitive friction and prevents users from needing to manually tap off elements to save or proceed.
+**Action:** Always map inputs in setup or configuration screens with appropriate keyboard triggers to facilitate fluid keyboard navigation.
