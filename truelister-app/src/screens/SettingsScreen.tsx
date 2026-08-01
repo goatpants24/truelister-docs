@@ -18,6 +18,7 @@ import {
   setDriveFolderId as setStoredDriveFolderId,
   clearStorageCache
 } from '../services/localStorage';
+import { invalidateCredentialsCache } from '../services/marketplaces/credentialsStore';
 
 export default function SettingsScreen() {
   const [appsScriptUrl, setAppsScriptUrl] = useState('');
@@ -57,6 +58,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             await AsyncStorage.clear();
             clearStorageCache();
+            invalidateCredentialsCache();
             setAppsScriptUrl('');
             setDriveFolderId('');
           },
