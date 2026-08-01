@@ -101,3 +101,7 @@
 ## 2025-06-27 - [Universal Storage Caching]
 **Learning:** Even small configuration objects like `AppSettings` can become a performance bottleneck if read frequently (e.g., on every screen focus) without caching. Extending the memory-cache pattern to all storage accessors, combined with a centralized `shallowEqual` utility, ensures minimal bridge traffic and consistent $O(1)$ read performance across the entire service layer.
 **Action:** Implement memory caching for all frequently accessed local storage keys. Centralize equality helpers to ensure referential stability and zero-allocation bail-outs are applied consistently.
+
+## 2025-06-28 - [Marketplace Credentials Cache & Write-Guard]
+**Learning:** Querying or saving multi-field credentials on hot UI rendering paths via `AsyncStorage.multiGet` or `multiSet` causes notable lag due to React Native bridge serialization overhead. Implementing a synchronous `Map` cache with direct write-guards completely eliminates redundant bridge traffic.
+**Action:** Always wrap key-value storage layers with module-level caches and check for structural equality before committing write commands to AsyncStorage.
