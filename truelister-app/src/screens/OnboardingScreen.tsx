@@ -63,6 +63,9 @@ export default function OnboardingScreen() {
         autoCapitalize="none"
         autoCorrect={false}
         accessibilityLabel={step === 1 ? "Google Sheet URL" : "Apps Script Web App URL"}
+        returnKeyType={step === 1 ? "next" : "done"}
+        blurOnSubmit={step === 1 ? false : true}
+        onSubmitEditing={handleNext}
       />
 
       <TouchableOpacity

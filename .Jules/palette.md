@@ -23,3 +23,7 @@
 ## 2026-07-15 - Standardizing External Links Accessibility Hint
 **Learning:** External research links and redirection targets can cause disorientation for screen reader users if they open outside the app without warning. Providing an explicit `accessibilityHint="Opens in your browser"` on all elements invoking external links ensures a highly accessible and predictable browsing experience.
 **Action:** Always accompany `Linking.openURL` buttons or link items with an explicit `accessibilityHint="Opens in your browser"` attribute.
+
+## 2026-07-20 - Setup and Settings Soft Keyboard Flow
+**Learning:** Completing configuration and connectivity screens can feel tedious if the user has to manually dismiss the soft keyboard and tap buttons. Wiring inputs with step-appropriate `returnKeyType` ('next' or 'done') and `onSubmitEditing` callbacks allows a continuous and natural typing flow that automatically advances steps or saves settings.
+**Action:** Map `returnKeyType` to transition focus or submit the form, and use `useRef` to target the next input without losing focus.

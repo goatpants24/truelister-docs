@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,6 +24,8 @@ export default function SettingsScreen() {
   const [driveFolderId, setDriveFolderId] = useState('');
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
+
+  const driveFolderIdRef = useRef<TextInput>(null);
 
   useEffect(() => {
     (async () => {
@@ -129,6 +131,9 @@ export default function SettingsScreen() {
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="url"
+          returnKeyType="next"
+          blurOnSubmit={false}
+          onSubmitEditing={() => driveFolderIdRef.current?.focus()}
         />
         <View style={styles.buttonRow}>
           <TouchableOpacity
@@ -166,6 +171,7 @@ export default function SettingsScreen() {
           <Text style={styles.code}>/folders/</Text>.
         </Text>
         <TextInput
+          ref={driveFolderIdRef}
           style={styles.input}
           value={driveFolderId}
           onChangeText={setDriveFolderId}
@@ -174,6 +180,8 @@ export default function SettingsScreen() {
           placeholderTextColor="#4a4d60"
           autoCapitalize="none"
           autoCorrect={false}
+          returnKeyType="done"
+          onSubmitEditing={handleSave}
         />
       </View>
 
