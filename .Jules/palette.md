@@ -23,3 +23,7 @@
 ## 2026-07-15 - Standardizing External Links Accessibility Hint
 **Learning:** External research links and redirection targets can cause disorientation for screen reader users if they open outside the app without warning. Providing an explicit `accessibilityHint="Opens in your browser"` on all elements invoking external links ensures a highly accessible and predictable browsing experience.
 **Action:** Always accompany `Linking.openURL` buttons or link items with an explicit `accessibilityHint="Opens in your browser"` attribute.
+
+## 2026-08-03 - Native Keyboard Flows and Form Submission
+**Learning:** Multistep forms and connectivity settings in mobile interfaces are significantly more fluid and accessible when native soft keyboard actions (Next and Done) are used to handle field focusing and automatic saving. This prevents cognitive friction and unnecessary touch target searching.
+**Action:** Always map step-appropriate returnKeyType ('next' and 'done') to onSubmitEditing to advance form focus sequentially or automatically submit data.
