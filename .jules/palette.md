@@ -33,3 +33,7 @@
 ## 2026-06-20 - [Brand Field Character Counter]
 **Learning:** Marketplace fields like 'Brand' often have shorter character limits (e.g., 65 characters for eBay/Mercari) than the main title. Providing specific thresholds (Amber at 55, Red at 65) helps users stay within limits for cross-listing success.
 **Action:** Always research and apply field-specific character limits from target platforms to prevent listing failures later in the workflow.
+
+## 2026-08-03 - [Native Keyboard Flows and Form Submission]
+**Learning:** Multistep forms and connectivity settings in mobile interfaces are significantly more fluid and accessible when native soft keyboard actions (Next and Done) are used to handle field focusing and automatic saving. This prevents cognitive friction and unnecessary touch target searching.
+**Action:** Always map step-appropriate returnKeyType ('next' and 'done') to onSubmitEditing to advance form focus sequentially or automatically submit data.
