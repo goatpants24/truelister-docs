@@ -1,3 +1,7 @@
+## 2025-06-28 - [In-Memory Credentials Caching]
+**Learning:** Accessing marketplace credentials frequently from `AsyncStorage` on hot UI paths (such as checking integration states or publishing) introduces significant React Native bridge latency. Implementing an in-memory `credentialsCache` Map combined with write-guards on save operations eliminates asynchronous storage overhead and redundant serialized writes.
+**Action:** Wrap frequent key-value AsyncStorage operations in an in-memory Map cache, and use a write-guard to skip writes when the incoming values match the cached values. Remember to synchronize full cache-clearing events with settings or data resets.
+
 ## 2025-05-15 - [Debounced History Optimization]
 **Learning:** In the `useUndoRedo` hook, dispatching a history-pushing action on every keystroke leads to O(N) memory growth and poor UX. Separating immediate UI updates (`UPDATE`) from debounced history commits (`COMMIT`) significantly improves efficiency.
 **Action:** Use a "lastCommitted" state to track the reference point for history, and ensure manual undos/redos flush any pending debounced timers to avoid state inconsistency.
