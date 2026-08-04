@@ -474,17 +474,20 @@ export default function ItemFormScreen() {
               <Text style={styles.researchLink}>📈 Market Sold</Text>
             </TouchableOpacity>
           </View>
-          <TextInput
-            ref={priceRef}
-            style={styles.input}
-            value={item.price}
-            onChangeText={(v) => updateField('price', v)}
-            placeholder="0.00"
-            keyboardType="decimal-pad"
-            placeholderTextColor="#4a5568"
-            accessibilityLabel="Item Price"
-            returnKeyType="done"
-          />
+          <View style={styles.priceInputWrapper}>
+            <Text style={styles.currencySymbol}>$</Text>
+            <TextInput
+              ref={priceRef}
+              style={styles.priceInput}
+              value={item.price}
+              onChangeText={(v) => updateField('price', v)}
+              placeholder="0.00"
+              keyboardType="decimal-pad"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Price"
+              returnKeyType="done"
+            />
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -572,6 +575,28 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, color: '#e8eaf6', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
   inputOcr: { borderColor: 'rgba(74, 222, 128, 0.4)', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
+  priceInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1a1d27',
+    borderWidth: 1,
+    borderColor: '#2a2d3a',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+  },
+  currencySymbol: {
+    color: '#cbd5e1',
+    fontSize: 15,
+    fontWeight: '600',
+    marginRight: 6,
+  },
+  priceInput: {
+    flex: 1,
+    color: '#e8eaf6',
+    fontSize: 15,
+    paddingVertical: 12,
+    paddingHorizontal: 0,
+  },
   pickerWrapper: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, overflow: 'hidden' },
   picker: { color: '#e8eaf6', height: 48 },
   fieldFooter: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 },
