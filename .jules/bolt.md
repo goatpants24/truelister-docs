@@ -105,3 +105,7 @@
 ## 2025-06-27 - [Universal Storage Caching]
 **Learning:** Even small configuration objects like `AppSettings` can become a performance bottleneck if read frequently (e.g., on every screen focus) without caching. Extending the memory-cache pattern to all storage accessors, combined with a centralized `shallowEqual` utility, ensures minimal bridge traffic and consistent $O(1)$ read performance across the entire service layer.
 **Action:** Implement memory caching for all frequently accessed local storage keys. Centralize equality helpers to ensure referential stability and zero-allocation bail-outs are applied consistently.
+
+## 2026-08-04 - [Cache-Bypassing Manual Refresh with Content-Matching Optimization]
+**Learning:** Time-based TTL caching can prevent manual "pull-to-refresh" requests from actually fetching fresh data. Introducing a force-refresh capability ensures network requests are made, but retaining raw string comparison on the response prevents redundant JSON/CSV parsing, object allocation, and React tree reconciliation if the remote data hasn't changed.
+**Action:** Always decouple time-based TTL cache checks from manual refresh actions, but continue to employ raw content comparison to exit early before parsing.

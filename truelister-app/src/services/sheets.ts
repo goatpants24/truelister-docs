@@ -197,10 +197,10 @@ function itemToRow(item: CatalogItem): string[] {
   ];
 }
 
-export async function fetchInventory(): Promise<CatalogItem[]> {
+export async function fetchInventory(forceRefresh = false): Promise<CatalogItem[]> {
   // Return cached data if still valid
   const now = Date.now();
-  if (inventoryCache && (now - inventoryCache.timestamp < INVENTORY_CACHE_TTL)) {
+  if (!forceRefresh && inventoryCache && (now - inventoryCache.timestamp < INVENTORY_CACHE_TTL)) {
     return inventoryCache.data;
   }
 
@@ -254,10 +254,10 @@ export async function fetchInventory(): Promise<CatalogItem[]> {
   }
 }
 
-export async function fetchDropdowns(): Promise<DropdownOptions> {
+export async function fetchDropdowns(forceRefresh = false): Promise<DropdownOptions> {
   // Return cached data if still valid
   const now = Date.now();
-  if (dropdownsCache && (now - dropdownsCache.timestamp < DROPDOWNS_CACHE_TTL)) {
+  if (!forceRefresh && dropdownsCache && (now - dropdownsCache.timestamp < DROPDOWNS_CACHE_TTL)) {
     return dropdownsCache.data;
   }
 
