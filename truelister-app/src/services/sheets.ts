@@ -38,54 +38,70 @@ const SHEETS_CSV_URL = (spreadsheetId: string, sheet: string) =>
 
 /**
  * Optimized CSV parser that operates in a single pass over the raw string.
- * Bolt: Now uses a callback to avoid the memory overhead of intermediate row collections.
+ * Bolt: Uses index-based slicing to extract cell values directly from the raw string without
+ * character-by-character concatenation, falling back to string accumulation only when the cell contains quotes.
+ * This prevents creating a huge number of intermediate strings, reducing memory allocations and garbage collection pressure.
  */
 function parseCSV(csv: string, onRow: (row: string[]) => void): void {
-  let currentCell = '';
   let currentRow: string[] = [];
   let inQuotes = false;
+  let hasQuotes = false;
+  let cellStart = 0;
+  let currentCell = '';
   let hasDataInRow = false;
 
-  for (let i = 0; i < csv.length; i++) {
+  const len = csv.length;
+  for (let i = 0; i < len; i++) {
     const char = csv[i];
 
     if (char === '"') {
-      // Handle escaped quotes
-      if (inQuotes && csv[i + 1] === '"') {
+      if (!hasQuotes) {
+        hasQuotes = true;
+        currentCell = csv.slice(cellStart, i);
+      }
+      if (inQuotes && i + 1 < len && csv[i + 1] === '"') {
         currentCell += '"';
         i++;
       } else {
         inQuotes = !inQuotes;
       }
     } else if (char === ',' && !inQuotes) {
-      const trimmed = currentCell.trim();
-      if (trimmed) hasDataInRow = true;
-      currentRow.push(trimmed);
-      currentCell = '';
-    } else if ((char === '\n' || char === '\r') && !inQuotes) {
-      // Handle CRLF or LF
-      if (char === '\r' && csv[i + 1] === '\n') {
-        i++;
-      }
-      const trimmed = currentCell.trim();
+      const val = hasQuotes ? currentCell : csv.slice(cellStart, i);
+      const trimmed = val.trim();
       if (trimmed) hasDataInRow = true;
       currentRow.push(trimmed);
 
-      // Only call callback if it contains data or multiple cells
+      cellStart = i + 1;
+      hasQuotes = false;
+      currentCell = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      const cellEnd = i;
+      if (char === '\r' && i + 1 < len && csv[i + 1] === '\n') {
+        i++;
+      }
+      const val = hasQuotes ? currentCell : csv.slice(cellStart, cellEnd);
+      const trimmed = val.trim();
+      if (trimmed) hasDataInRow = true;
+      currentRow.push(trimmed);
+
       if (hasDataInRow || currentRow.length > 1) {
         onRow(currentRow);
       }
       currentRow = [];
+      cellStart = i + 1;
+      hasQuotes = false;
       currentCell = '';
       hasDataInRow = false;
     } else {
-      currentCell += char;
+      if (hasQuotes) {
+        currentCell += char;
+      }
     }
   }
 
-  // Handle last row if CSV doesn't end with newline
-  if (currentRow.length > 0 || currentCell !== '') {
-    const trimmed = currentCell.trim();
+  if (cellStart < len || currentRow.length > 0) {
+    const val = hasQuotes ? currentCell : csv.slice(cellStart, len);
+    const trimmed = val.trim();
     if (trimmed) hasDataInRow = true;
     currentRow.push(trimmed);
     if (hasDataInRow || currentRow.length > 1) {
