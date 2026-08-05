@@ -10,6 +10,7 @@ import {
   Linking,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, usePreventRemove } from '@react-navigation/native';
 import { testConnection } from '../services/sheets';
 import {
   getAppsScriptUrl,
@@ -21,8 +22,12 @@ import {
 import { invalidateCredentialsCache } from '../services/marketplaces/credentialsStore';
 
 export default function SettingsScreen() {
+  const navigation = useNavigation<any>();
+
   const [appsScriptUrl, setAppsScriptUrl] = useState('');
   const [driveFolderId, setDriveFolderId] = useState('');
+  const [originalAppsScriptUrl, setOriginalAppsScriptUrl] = useState('');
+  const [originalDriveFolderId, setOriginalDriveFolderId] = useState('');
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
 
@@ -36,14 +41,35 @@ export default function SettingsScreen() {
       ]);
       setAppsScriptUrl(url);
       setDriveFolderId(folder);
+      setOriginalAppsScriptUrl(url);
+      setOriginalDriveFolderId(folder);
     })();
   }, []);
+
+  const hasUnsavedChanges = appsScriptUrl !== originalAppsScriptUrl || driveFolderId !== originalDriveFolderId;
+
+  usePreventRemove(hasUnsavedChanges, ({ data }) => {
+    Alert.alert(
+      'Unsaved Settings',
+      'You have unsaved settings. Discard changes and go back?',
+      [
+        { text: 'Keep Editing', style: 'cancel' },
+        {
+          text: 'Go Back',
+          style: 'destructive',
+          onPress: () => navigation.dispatch(data.action),
+        },
+      ]
+    );
+  });
 
   const handleSave = async () => {
     await Promise.all([
       setStoredAppsScriptUrl(appsScriptUrl),
       setStoredDriveFolderId(driveFolderId),
     ]);
+    setOriginalAppsScriptUrl(appsScriptUrl);
+    setOriginalDriveFolderId(driveFolderId);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -63,6 +89,8 @@ export default function SettingsScreen() {
             invalidateCredentialsCache();
             setAppsScriptUrl('');
             setDriveFolderId('');
+            setOriginalAppsScriptUrl('');
+            setOriginalDriveFolderId('');
           },
         },
       ]
@@ -145,6 +173,14 @@ export default function SettingsScreen() {
                 Alert.alert('Required', 'Please paste your Apps Script URL first.');
                 return;
               }
+              // Save the current values first to ensure the test uses the latest inputs
+              await Promise.all([
+                setStoredAppsScriptUrl(appsScriptUrl),
+                setStoredDriveFolderId(driveFolderId),
+              ]);
+              setOriginalAppsScriptUrl(appsScriptUrl);
+              setOriginalDriveFolderId(driveFolderId);
+
               setTesting(true);
               const result = await testConnection('script');
               setTesting(false);
@@ -202,12 +238,19 @@ export default function SettingsScreen() {
 
       {/* Save */}
       <TouchableOpacity
-        style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
+        style={[
+          styles.saveBtn,
+          saved && styles.saveBtnSuccess,
+          (!hasUnsavedChanges && !saved) && styles.saveBtnUnchanged
+        ]}
         onPress={handleSave}
+        disabled={!hasUnsavedChanges && !saved}
         accessibilityRole="button"
-        accessibilityLabel="Save settings"
+        accessibilityLabel={saved ? "Settings saved" : hasUnsavedChanges ? "Save settings" : "Settings up to date"}
       >
-        <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save Settings'}</Text>
+        <Text style={styles.saveBtnText}>
+          {saved ? '✓ Saved' : hasUnsavedChanges ? 'Save Settings' : 'Settings Up to Date'}
+        </Text>
       </TouchableOpacity>
 
       {/* Danger zone */}
@@ -297,6 +340,11 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   saveBtnSuccess: { backgroundColor: '#22c55e' },
+  saveBtnUnchanged: {
+    backgroundColor: '#1a1d27',
+    borderColor: '#2a2d3a',
+    borderWidth: 1,
+  },
   saveBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   dangerSection: {
     backgroundColor: '#1a1117',
