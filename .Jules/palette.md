@@ -27,3 +27,7 @@
 ## 2026-07-20 - Setup and Settings Soft Keyboard Flow
 **Learning:** Completing configuration and connectivity screens can feel tedious if the user has to manually dismiss the soft keyboard and tap buttons. Wiring inputs with step-appropriate `returnKeyType` ('next' or 'done') and `onSubmitEditing` callbacks allows a continuous and natural typing flow that automatically advances steps or saves settings.
 **Action:** Map `returnKeyType` to transition focus or submit the form, and use `useRef` to target the next input without losing focus.
+
+## 2026-07-25 - Unsaved Settings Interception and Dynamic Feedback
+**Learning:** Users on configuration screens frequently navigate away without saving or run connection tests on obsolete configuration values. By detecting unsaved states dynamically, intercepting exits using `usePreventRemove` to prompt before discarding data, styling save buttons with adaptive neutral/active states, and auto-saving inputs before testing, we eliminate configuration loss and testing confusion.
+**Action:** Always track original configuration values to compute clean unsaved state. Use this to dynamically disable unchanged actions and intercept accidental navigation.
