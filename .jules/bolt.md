@@ -1,3 +1,7 @@
+## 2026-07-02 - [Fast-Path Bypass and Aspect Ratio-Preserving Image Manipulation]
+**Learning:** Unconditionally resizing and re-compressing already-optimized images (e.g. small library photos) is an expensive CPU, disk I/O, and quality-degrading bottleneck. Implementing a fast-path size/dimension pre-check bypasses these operations entirely. Additionally, hardcoded dimension stretching is a major UX defect; aspect-ratio preservation must be computed dynamically during resizing.
+**Action:** Always check resource constraints and dimensions first to enable early return / fast-path bypasses before executing heavy binary manipulation pipelines.
+
 ## 2026-06-28 - [Marketplace Credentials Caching and Write-Guards]
 **Learning:** Checking or updating marketplace API credentials on frequent screen focuses can cause noticeable UI stutter due to redundant React Native bridge traffic to `AsyncStorage`. Caching credentials in a simple in-memory Map and adding a `shallowEqual` write-guard prevents unnecessary bridge serialization and storage I/O.
 **Action:** Use in-memory cache layers for frequently-read native storage keys, and implement bail-out write guards to skip writes when values are unchanged. Always integrate cache invalidation with global data reset actions.
