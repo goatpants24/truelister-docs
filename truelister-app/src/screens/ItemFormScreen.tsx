@@ -397,7 +397,18 @@ export default function ItemFormScreen() {
             blurOnSubmit={false}
             onSubmitEditing={() => brandRef.current?.focus()}
           />
-          <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
+          <View style={[styles.fieldFooter, { justifyContent: 'space-between', alignItems: 'center' }]}>
+            {!isTitleValid ? (
+              <Text style={{ fontSize: 11, color: '#f87171', fontWeight: '500' }}>
+                ⚠️ Title is required to save
+              </Text>
+            ) : (
+              <View />
+            )}
+            <Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>
+              {item.title.length}/80
+            </Text>
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -614,25 +625,4 @@ const styles = StyleSheet.create({
   soldButtonText: { color: '#f87171', fontSize: 16, fontWeight: '700' },
   publishButton: { backgroundColor: '#1a1d27', borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 10, borderWidth: 1.5, borderColor: '#4f6ef7' },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
-  priceInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-  },
-  currencySymbol: {
-    color: '#cbd5e1',
-    fontSize: 15,
-    marginRight: 6,
-    fontWeight: '600',
-  },
-  priceInput: {
-    flex: 1,
-    color: '#e8eaf6',
-    fontSize: 15,
-    paddingVertical: 12,
-  },
 });
