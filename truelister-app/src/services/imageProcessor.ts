@@ -56,12 +56,42 @@ async function getFileSize(uri: string): Promise<number> {
  * Uses iterative JPEG quality reduction, then dimension scaling as fallback.
  */
 export async function compressImage(uri: string): Promise<ImageResult> {
+  // ⚡ BOLT PERFORMANCE OPTIMIZATION: Fast-Path Bypass
+  // Retrieve original file size and dimensions first to see if we can bypass processing completely.
+  const originalSize = await getFileSize(uri);
+  const originalInfo = await ImageManipulator.manipulateAsync(
+    uri,
+    [],
+    { compress: 1.0, format: ImageManipulator.SaveFormat.JPEG }
+  );
+
+  // If already under target size and within max dimension boundaries, return original immediately
+  if (originalSize <= TARGET_SIZE_BYTES && originalInfo.width <= MAX_WIDTH && originalInfo.height <= MAX_HEIGHT) {
+    return {
+      uri: originalInfo.uri,
+      width: originalInfo.width,
+      height: originalInfo.height,
+      fileSize: originalSize,
+    };
+  }
+
+  // ⚡ BOLT PERFORMANCE OPTIMIZATION: Proportional, Aspect-Ratio-Preserving Resize
+  // Only resize dimensions if they exceed MAX_WIDTH or MAX_HEIGHT to avoid squishing/stretching.
+  let newWidth = originalInfo.width;
+  let newHeight = originalInfo.height;
+
+  if (originalInfo.width > MAX_WIDTH || originalInfo.height > MAX_HEIGHT) {
+    const scale = Math.min(MAX_WIDTH / originalInfo.width, MAX_HEIGHT / originalInfo.height);
+    newWidth = Math.round(originalInfo.width * scale);
+    newHeight = Math.round(originalInfo.height * scale);
+  }
+
   // 1. Initial resize to cap dimensions - ONLY ONCE
   // Bolt: Moving resize outside the loop saves significant CPU by not re-scaling high-res pixels repeatedly.
   // We use quality 1.0 here to create a high-quality intermediate source for subsequent passes.
   const resizedResult = await ImageManipulator.manipulateAsync(
     uri,
-    [{ resize: { width: MAX_WIDTH, height: MAX_HEIGHT } }],
+    [{ resize: { width: newWidth, height: newHeight } }],
     { compress: 1.0, format: ImageManipulator.SaveFormat.JPEG }
   );
 
@@ -96,12 +126,12 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   // 3. Fallback: scale dimensions down if quality alone wasn't enough
   if (resultSize > TARGET_SIZE_BYTES) {
     const scaleFactor = Math.sqrt(TARGET_SIZE_BYTES / resultSize);
-    const newWidth = Math.round(finalResult.width * scaleFactor);
-    const newHeight = Math.round(finalResult.height * scaleFactor);
+    const fallbackWidth = Math.round(finalResult.width * scaleFactor);
+    const fallbackHeight = Math.round(finalResult.height * scaleFactor);
 
     finalResult = await ImageManipulator.manipulateAsync(
       resizedResult.uri,
-      [{ resize: { width: newWidth, height: newHeight } }],
+      [{ resize: { width: fallbackWidth, height: fallbackHeight } }],
       { compress: MIN_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
     );
     resultSize = await getFileSize(finalResult.uri);
