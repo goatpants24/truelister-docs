@@ -200,6 +200,33 @@ export default function ItemFormScreen() {
   const isDirty = canUndo;
   const isTitleValid = item.title.trim().length > 0;
 
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted and properly placed Hook
+   * Memoizes captureStatus at the top level of the component body rather than inline in JSX props,
+   * strictly adhering to React's Rules of Hooks.
+   * In conjunction with React.memo on the QuickActionsBar, this prevents expensive re-renders
+   * of the capture UI when unrelated form fields (e.g., Title, Brand) are edited.
+   */
+  const captureStatus = useMemo(() => ({
+    photoUrlCard: !!item.photoUrlCard,
+    photoUrlFront: !!item.photoUrlFront,
+    photoUrlBack: !!item.photoUrlBack,
+    photoUrlDetail: !!item.photoUrlDetail,
+    photoUrlTabletopWide: !!item.photoUrlTabletopWide,
+    photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
+    photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
+    photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
+  }), [
+    item.photoUrlCard,
+    item.photoUrlFront,
+    item.photoUrlBack,
+    item.photoUrlDetail,
+    item.photoUrlTabletopWide,
+    item.photoUrlTabletopDetail,
+    item.photoUrlTabletopMeasure1,
+    item.photoUrlTabletopMeasure2,
+  ]);
+
   const categoryItems = useMemo(() => dropdowns.categories.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.categories]);
   const conditionItems = useMemo(() => dropdowns.conditions.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.conditions]);
   const colorItems = useMemo(() => dropdowns.colors.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.colors]);
@@ -350,15 +377,7 @@ export default function ItemFormScreen() {
         <View style={styles.itemNumberBadge}><Text style={styles.itemNumberText}>{item.itemNumber}</Text></View>
 
         <QuickActionsBar
-          captureStatus={useMemo(() => ({
-            photoUrlCard: !!item.photoUrlCard, photoUrlFront: !!item.photoUrlFront,
-            photoUrlBack: !!item.photoUrlBack, photoUrlDetail: !!item.photoUrlDetail,
-            photoUrlTabletopWide: !!item.photoUrlTabletopWide, photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
-            photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1, photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
-          }), [
-            item.photoUrlCard, item.photoUrlFront, item.photoUrlBack, item.photoUrlDetail,
-            item.photoUrlTabletopWide, item.photoUrlTabletopDetail, item.photoUrlTabletopMeasure1, item.photoUrlTabletopMeasure2
-          ])}
+          captureStatus={captureStatus}
           ocrRawText={ocrRawText}
           onCapture={handleCaptureTrigger}
           onScanTag={handleScanTagTrigger}
@@ -614,25 +633,4 @@ const styles = StyleSheet.create({
   soldButtonText: { color: '#f87171', fontSize: 16, fontWeight: '700' },
   publishButton: { backgroundColor: '#1a1d27', borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 10, borderWidth: 1.5, borderColor: '#4f6ef7' },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
-  priceInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-  },
-  currencySymbol: {
-    color: '#cbd5e1',
-    fontSize: 15,
-    marginRight: 6,
-    fontWeight: '600',
-  },
-  priceInput: {
-    flex: 1,
-    color: '#e8eaf6',
-    fontSize: 15,
-    paddingVertical: 12,
-  },
 });
