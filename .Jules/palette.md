@@ -27,3 +27,7 @@
 ## 2026-07-20 - Setup and Settings Soft Keyboard Flow
 **Learning:** Completing configuration and connectivity screens can feel tedious if the user has to manually dismiss the soft keyboard and tap buttons. Wiring inputs with step-appropriate `returnKeyType` ('next' or 'done') and `onSubmitEditing` callbacks allows a continuous and natural typing flow that automatically advances steps or saves settings.
 **Action:** Map `returnKeyType` to transition focus or submit the form, and use `useRef` to target the next input without losing focus.
+
+## 2026-08-07 - Required Field Inline Validation
+**Learning:** For required text fields in a dark-themed data entry form with character counters, providing a clear inline warning "⚠️ [Field] is required to save" on the left of the footer using flexbox space-between layout prevents user confusion on why form submission/save buttons are disabled.
+**Action:** Use a split/space-between container for field footer to house validation warnings alongside character counters.

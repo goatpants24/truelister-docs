@@ -346,7 +346,7 @@ export default function ItemFormScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.itemNumberBadge}><Text style={styles.itemNumberText}>{item.itemNumber}</Text></View>
 
         <QuickActionsBar
@@ -397,7 +397,14 @@ export default function ItemFormScreen() {
             blurOnSubmit={false}
             onSubmitEditing={() => brandRef.current?.focus()}
           />
-          <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
+          <View style={[styles.fieldFooter, { justifyContent: 'space-between', alignItems: 'center' }]}>
+            {!isTitleValid && (
+              <Text style={styles.validationError} accessibilityRole="alert">
+                ⚠️ Title is required to save
+              </Text>
+            )}
+            <Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text>
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -600,6 +607,7 @@ const styles = StyleSheet.create({
   pickerWrapper: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, overflow: 'hidden' },
   picker: { color: '#e8eaf6', height: 48 },
   fieldFooter: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 },
+  validationError: { color: '#f87171', fontSize: 11, fontWeight: '500' },
   charCount: { fontSize: 11, color: '#94a3b8' },
   row: { flexDirection: 'row', gap: 12, marginBottom: 14 },
   marketplacesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -614,25 +622,4 @@ const styles = StyleSheet.create({
   soldButtonText: { color: '#f87171', fontSize: 16, fontWeight: '700' },
   publishButton: { backgroundColor: '#1a1d27', borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 10, borderWidth: 1.5, borderColor: '#4f6ef7' },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
-  priceInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-  },
-  currencySymbol: {
-    color: '#cbd5e1',
-    fontSize: 15,
-    marginRight: 6,
-    fontWeight: '600',
-  },
-  priceInput: {
-    flex: 1,
-    color: '#e8eaf6',
-    fontSize: 15,
-    paddingVertical: 12,
-  },
 });
