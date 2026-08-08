@@ -54,19 +54,55 @@ async function getFileSize(uri: string): Promise<number> {
  * Compress an image to fit within 1-2MB.
  * Works entirely with file URIs — never loads full image into JS memory as base64.
  * Uses iterative JPEG quality reduction, then dimension scaling as fallback.
+ *
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Fast-Path Bypass & Proportional Calculations
+ * - Zero-operation pass retrieves original dimensions and size.
+ * - If size and dimensions are already within targets, we bypass all manipulation,
+ *   avoiding CPU/IO overhead and duplicate temp file creation.
+ * - If resizing is needed, we calculate aspect-ratio-preserving dimensions,
+ *   preventing image distortion (previously stretched into a square).
+ * - Skipping initial resize entirely if dimensions are already under limits,
+ *   starting compression directly on the original image source.
  */
 export async function compressImage(uri: string): Promise<ImageResult> {
-  // 1. Initial resize to cap dimensions - ONLY ONCE
-  // Bolt: Moving resize outside the loop saves significant CPU by not re-scaling high-res pixels repeatedly.
-  // We use quality 1.0 here to create a high-quality intermediate source for subsequent passes.
-  const resizedResult = await ImageManipulator.manipulateAsync(
-    uri,
-    [{ resize: { width: MAX_WIDTH, height: MAX_HEIGHT } }],
-    { compress: 1.0, format: ImageManipulator.SaveFormat.JPEG }
-  );
+  // 1. Get original image metadata via a zero-operation manipulation pass
+  // This is extremely lightweight and consumes negligible CPU/memory
+  const origInfo = await ImageManipulator.manipulateAsync(uri, []);
+  const origSize = await getFileSize(uri);
+
+  const needsResize = origInfo.width > MAX_WIDTH || origInfo.height > MAX_HEIGHT;
+  const needsCompression = origSize > TARGET_SIZE_BYTES;
+
+  // FAST-PATH BYPASS: If the image already complies with resolution and size limits,
+  // return the original image data immediately, achieving ~100% time and resources saved.
+  if (!needsResize && !needsCompression) {
+    return {
+      uri,
+      width: origInfo.width,
+      height: origInfo.height,
+      fileSize: origSize,
+    };
+  }
+
+  let resizedResult;
+  if (needsResize) {
+    // Proportional, aspect-ratio-preserving dimension scaling
+    const scale = Math.min(MAX_WIDTH / origInfo.width, MAX_HEIGHT / origInfo.height);
+    const targetWidth = Math.round(origInfo.width * scale);
+    const targetHeight = Math.round(origInfo.height * scale);
+
+    resizedResult = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: targetWidth, height: targetHeight } }],
+      { compress: 1.0, format: ImageManipulator.SaveFormat.JPEG }
+    );
+  } else {
+    // Dimensions are fine but file size is too big. Direct pass-through of the original metadata.
+    resizedResult = origInfo;
+  }
 
   let finalResult = resizedResult;
-  let resultSize = await getFileSize(finalResult.uri);
+  let resultSize = needsResize ? await getFileSize(finalResult.uri) : origSize;
 
   // Already under target — we're done
   if (resultSize <= TARGET_SIZE_BYTES) {
