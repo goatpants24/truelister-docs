@@ -317,6 +317,33 @@ export default function ItemFormScreen() {
     setMode('tagScan');
   }, []);
 
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Top-level Hook Memoization
+   * Defining the captureStatus object at the top level of the component body (rather than
+   * inline in JSX props) strictly adheres to React's Rules of Hooks. This prevents conditional
+   * hook execution during early returns (like CameraScreen or TagScanner modes), resolving React state glitches
+   * while keeping the memoized QuickActionsBar re-render efficient.
+   */
+  const captureStatus = useMemo(() => ({
+    photoUrlCard: !!item.photoUrlCard,
+    photoUrlFront: !!item.photoUrlFront,
+    photoUrlBack: !!item.photoUrlBack,
+    photoUrlDetail: !!item.photoUrlDetail,
+    photoUrlTabletopWide: !!item.photoUrlTabletopWide,
+    photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
+    photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
+    photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
+  }), [
+    item.photoUrlCard,
+    item.photoUrlFront,
+    item.photoUrlBack,
+    item.photoUrlDetail,
+    item.photoUrlTabletopWide,
+    item.photoUrlTabletopDetail,
+    item.photoUrlTabletopMeasure1,
+    item.photoUrlTabletopMeasure2,
+  ]);
+
   if (mode === 'camera') return <CameraScreen itemNumber={item.itemNumber} onCapture={handlePhotoCapture} onCancel={() => setMode('form')} />;
   if (mode === 'tagScan') return <TagScanner onFieldsDetected={handleTagScanned} onCancel={() => setMode('form')} />;
 
@@ -350,15 +377,7 @@ export default function ItemFormScreen() {
         <View style={styles.itemNumberBadge}><Text style={styles.itemNumberText}>{item.itemNumber}</Text></View>
 
         <QuickActionsBar
-          captureStatus={useMemo(() => ({
-            photoUrlCard: !!item.photoUrlCard, photoUrlFront: !!item.photoUrlFront,
-            photoUrlBack: !!item.photoUrlBack, photoUrlDetail: !!item.photoUrlDetail,
-            photoUrlTabletopWide: !!item.photoUrlTabletopWide, photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
-            photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1, photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
-          }), [
-            item.photoUrlCard, item.photoUrlFront, item.photoUrlBack, item.photoUrlDetail,
-            item.photoUrlTabletopWide, item.photoUrlTabletopDetail, item.photoUrlTabletopMeasure1, item.photoUrlTabletopMeasure2
-          ])}
+          captureStatus={captureStatus}
           ocrRawText={ocrRawText}
           onCapture={handleCaptureTrigger}
           onScanTag={handleScanTagTrigger}
@@ -614,25 +633,4 @@ const styles = StyleSheet.create({
   soldButtonText: { color: '#f87171', fontSize: 16, fontWeight: '700' },
   publishButton: { backgroundColor: '#1a1d27', borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 10, borderWidth: 1.5, borderColor: '#4f6ef7' },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
-  priceInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1a1d27',
-    borderWidth: 1,
-    borderColor: '#2a2d3a',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-  },
-  currencySymbol: {
-    color: '#cbd5e1',
-    fontSize: 15,
-    marginRight: 6,
-    fontWeight: '600',
-  },
-  priceInput: {
-    flex: 1,
-    color: '#e8eaf6',
-    fontSize: 15,
-    paddingVertical: 12,
-  },
 });
