@@ -1,3 +1,7 @@
+## 2026-08-09 - [FlatList Grid Mode getItemLayout Optimization]
+**Learning:** In React Native, `FlatList` with `numColumns > 1` groups list elements into rows before passing them to the underlying `VirtualizedList`. Consequently, the `index` passed to `getItemLayout` is the row index, not the item index. Performing item-index-based divisions (like dividing by `numColumns`) in `getItemLayout` severely under-calculates scroll offsets, completely breaking list virtualization and forcing the renderer to mount and update large numbers of off-screen rows.
+**Action:** Always compute simple row-based offsets (e.g., `offset = headerHeight + rowHeight * index`) inside `getItemLayout` even when `numColumns > 1` is configured on the `FlatList`.
+
 ## 2026-06-28 - [Marketplace Credentials Caching and Write-Guards]
 **Learning:** Checking or updating marketplace API credentials on frequent screen focuses can cause noticeable UI stutter due to redundant React Native bridge traffic to `AsyncStorage`. Caching credentials in a simple in-memory Map and adding a `shallowEqual` write-guard prevents unnecessary bridge serialization and storage I/O.
 **Action:** Use in-memory cache layers for frequently-read native storage keys, and implement bail-out write guards to skip writes when values are unchanged. Always integrate cache invalidation with global data reset actions.

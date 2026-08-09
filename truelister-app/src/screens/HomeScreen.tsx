@@ -180,21 +180,22 @@ export default function HomeScreen() {
   const nextItemNumber = useMemo(() => generateItemNumber(items), [items]);
 
   /**
-   * Bolt: Optimized layout calculation for FlatList.
-   * Allows the list to skip dynamic measurement of items during scrolling.
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: FlatList Virtualization Correction
+   * Allows FlatList to accurately determine which items are in the viewport,
+   * skipping dynamic layout measurements and preserving list virtualization.
+   *
+   * Note on numColumns=2 (Grid Mode):
+   * FlatList chunks item data into rows of 2 before passing them to the underlying
+   * VirtualizedList. Thus, the index passed here is the ROW index, not the ITEM index.
+   * Dividing the row index by 2 (Math.floor(index / 2)) causes massive underestimation
+   * of scroll offsets, breaking virtualization and rendering redundant off-screen items.
+   * Correcting offset to simply be row-based (16 + itemHeight * index) ensures correct
+   * windowing and high-frequency scroll performance.
    */
   const getItemLayout = useCallback((_data: ArrayLike<CatalogItem> | null | undefined, index: number) => {
-    let itemHeight = 0;
-    let offset = 0;
     const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-
-    if (viewMode === 'grid') {
-      itemHeight = size + 76;
-      offset = 16 + itemHeight * Math.floor(index / 2);
-    } else {
-      itemHeight = 96;
-      offset = 16 + itemHeight * index;
-    }
+    const itemHeight = viewMode === 'grid' ? size + 76 : 96;
+    const offset = 16 + itemHeight * index;
 
     return { length: itemHeight, offset, index };
   }, [viewMode, thumbnailSize]);
