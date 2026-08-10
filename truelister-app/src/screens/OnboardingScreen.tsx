@@ -13,6 +13,25 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { setSpreadsheetId, setAppsScriptUrl } from '../services/localStorage';
 
+const validateGoogleSheetUrl = (url: string): boolean | null => {
+  if (!url.trim()) return null;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed.includes('docs.google.com/spreadsheets');
+  }
+  // Check if it's a valid direct spreadsheet ID
+  return /^[a-zA-Z0-9-_]{20,}$/.test(trimmed);
+};
+
+const validateAppsScriptUrl = (url: string): boolean | null => {
+  if (!url.trim()) return null;
+  const trimmed = url.trim();
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed.includes('script.google.com/macros/s/');
+  }
+  return false;
+};
+
 export default function OnboardingScreen() {
   const navigation = useNavigation<any>();
   const [sheetUrl, setSheetUrl] = useState('');
@@ -42,6 +61,9 @@ export default function OnboardingScreen() {
     }
   };
 
+  const isSheetValid = validateGoogleSheetUrl(sheetUrl);
+  const isScriptValid = validateAppsScriptUrl(appsScriptUrl);
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.emoji}>{step === 1 ? '📊' : '🚀'}</Text>
@@ -55,7 +77,12 @@ export default function OnboardingScreen() {
       </Text>
 
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          step === 1
+            ? (isSheetValid === true ? styles.inputValid : isSheetValid === false ? styles.inputInvalid : null)
+            : (isScriptValid === true ? styles.inputValid : isScriptValid === false ? styles.inputInvalid : null)
+        ]}
         placeholder={step === 1 ? "https://docs.google.com/spreadsheets/d/..." : "https://script.google.com/macros/s/..."}
         placeholderTextColor="#4a5568"
         value={step === 1 ? sheetUrl : appsScriptUrl}
@@ -68,9 +95,31 @@ export default function OnboardingScreen() {
         onSubmitEditing={handleNext}
       />
 
+      {step === 1 && isSheetValid !== null && (
+        <View style={styles.feedbackContainer} accessibilityLiveRegion="polite">
+          <Text style={isSheetValid ? styles.feedbackValidText : styles.feedbackInvalidText}>
+            {isSheetValid ? '✓ Valid Google Sheet link detected' : '⚠️ Must be a valid docs.google.com spreadsheets link or sheet ID'}
+          </Text>
+        </View>
+      )}
+
+      {step === 2 && isScriptValid !== null && (
+        <View style={styles.feedbackContainer} accessibilityLiveRegion="polite">
+          <Text style={isScriptValid ? styles.feedbackValidText : styles.feedbackInvalidText}>
+            {isScriptValid ? '✓ Valid Apps Script Web App URL detected' : '⚠️ Must be a valid script.google.com Web App macro link'}
+          </Text>
+        </View>
+      )}
+
       <TouchableOpacity
-        style={styles.button}
+        style={[
+          styles.button,
+          (step === 1 && isSheetValid === false) || (step === 2 && isScriptValid === false)
+            ? styles.buttonDisabled
+            : null
+        ]}
         onPress={handleNext}
+        disabled={(step === 1 && isSheetValid === false) || (step === 2 && isScriptValid === false)}
         accessibilityRole="button"
         accessibilityLabel={step === 1 ? "Next" : "Finish Setup"}
       >
@@ -108,6 +157,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 24,
   },
+  inputValid: {
+    borderColor: '#22c55e',
+  },
+  inputInvalid: {
+    borderColor: '#ef4444',
+  },
+  feedbackContainer: {
+    width: '100%',
+    marginTop: -16,
+    marginBottom: 24,
+    paddingHorizontal: 4,
+    alignSelf: 'flex-start',
+  },
+  feedbackValidText: {
+    fontSize: 13,
+    color: '#22c55e',
+    fontWeight: '600',
+  },
+  feedbackInvalidText: {
+    fontSize: 13,
+    color: '#ef4444',
+    fontWeight: '600',
+  },
   button: {
     backgroundColor: '#4f6ef7',
     width: '100%',
@@ -119,6 +191,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+  },
+  buttonDisabled: {
+    backgroundColor: '#1e2235',
+    opacity: 0.5,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   buttonText: { color: 'white', fontSize: 16, fontWeight: '700' },
   skip: { marginTop: 20 },
