@@ -56,12 +56,34 @@ async function getFileSize(uri: string): Promise<number> {
  * Uses iterative JPEG quality reduction, then dimension scaling as fallback.
  */
 export async function compressImage(uri: string): Promise<ImageResult> {
+  // Fast-path bypass: check original size and dimensions using a zero-operation manipulation pass
+  const originalSize = await getFileSize(uri);
+  const info = await ImageManipulator.manipulateAsync(uri, []); // no operations, fast metadata read
+
+  if (originalSize <= TARGET_SIZE_BYTES && info.width <= MAX_WIDTH && info.height <= MAX_HEIGHT) {
+    return {
+      uri,
+      width: info.width,
+      height: info.height,
+      fileSize: originalSize,
+    };
+  }
+
   // 1. Initial resize to cap dimensions - ONLY ONCE
+  // Calculate aspect-ratio-preserving proportional dimensions using robust scale factors
+  let targetWidth = info.width;
+  let targetHeight = info.height;
+  if (info.width > MAX_WIDTH || info.height > MAX_HEIGHT) {
+    const scale = Math.min(MAX_WIDTH / info.width, MAX_HEIGHT / info.height);
+    targetWidth = Math.round(info.width * scale);
+    targetHeight = Math.round(info.height * scale);
+  }
+
   // Bolt: Moving resize outside the loop saves significant CPU by not re-scaling high-res pixels repeatedly.
   // We use quality 1.0 here to create a high-quality intermediate source for subsequent passes.
   const resizedResult = await ImageManipulator.manipulateAsync(
     uri,
-    [{ resize: { width: MAX_WIDTH, height: MAX_HEIGHT } }],
+    [{ resize: { width: targetWidth, height: targetHeight } }],
     { compress: 1.0, format: ImageManipulator.SaveFormat.JPEG }
   );
 
