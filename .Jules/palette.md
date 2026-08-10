@@ -27,3 +27,7 @@
 ## 2026-07-20 - Setup and Settings Soft Keyboard Flow
 **Learning:** Completing configuration and connectivity screens can feel tedious if the user has to manually dismiss the soft keyboard and tap buttons. Wiring inputs with step-appropriate `returnKeyType` ('next' or 'done') and `onSubmitEditing` callbacks allows a continuous and natural typing flow that automatically advances steps or saves settings.
 **Action:** Map `returnKeyType` to transition focus or submit the form, and use `useRef` to target the next input without losing focus.
+
+## 2026-08-10 - Real-Time Validation Feedback in Onboarding
+**Learning:** Connectivity forms (like onboarding setup screens) are highly prone to user errors when entering long, complex API macros or spreadsheet URLs. Real-time visual feedback (color-coded borders and helpers) combined with non-intrusive screen reader live-regions (`accessibilityLiveRegion="polite"`) and conditional button disabling dramatically improves the user's setup confidence and reduces configuration errors before submission.
+**Action:** Implement real-time helper validations with visual border states and screen reader polite announcements directly under text inputs containing URL links or external identifiers.
