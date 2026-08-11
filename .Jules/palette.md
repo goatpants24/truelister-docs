@@ -27,3 +27,7 @@
 ## 2026-07-20 - Setup and Settings Soft Keyboard Flow
 **Learning:** Completing configuration and connectivity screens can feel tedious if the user has to manually dismiss the soft keyboard and tap buttons. Wiring inputs with step-appropriate `returnKeyType` ('next' or 'done') and `onSubmitEditing` callbacks allows a continuous and natural typing flow that automatically advances steps or saves settings.
 **Action:** Map `returnKeyType` to transition focus or submit the form, and use `useRef` to target the next input without losing focus.
+
+## 2026-07-22 - Conveying Button States to Screen Readers
+**Learning:** In React Native/Expo, simply disabling a button using the `disabled` prop does not automatically inform screen readers (VoiceOver or TalkBack) that the button is interactive/inactive. Providing an explicit `accessibilityState={{ disabled: isBtnDisabled }}` ensures that assistive technologies correctly announce the button's current state to users.
+**Action:** Always accompany `disabled` props on touchable elements with matching `accessibilityState={{ disabled }}` attributes to maintain high accessibility.

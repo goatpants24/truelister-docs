@@ -109,6 +109,7 @@ export default function SettingsScreen() {
             disabled={testing}
             accessibilityRole="button"
             accessibilityLabel="Test connection to Google Sheet"
+            accessibilityState={{ disabled: testing }}
           >
             <Text style={styles.testBtnText}>Test Connection</Text>
           </TouchableOpacity>
@@ -158,6 +159,7 @@ export default function SettingsScreen() {
             disabled={testing}
             accessibilityRole="button"
             accessibilityLabel="Test Apps Script connection"
+            accessibilityState={{ disabled: testing }}
           >
             <Text style={styles.testBtnText}>Test Script Connection</Text>
           </TouchableOpacity>
