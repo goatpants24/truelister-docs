@@ -337,6 +337,7 @@ export default function ItemFormScreen() {
           disabled={!isTitleValid || saving}
           accessibilityRole="button"
           accessibilityLabel={saving ? 'Saving item' : 'Save item'}
+          accessibilityState={{ disabled: !isTitleValid || saving }}
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           {saving && <ActivityIndicator size="small" color="#4f6ef7" style={{ marginRight: 6 }} />}
@@ -346,7 +347,7 @@ export default function ItemFormScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.itemNumberBadge}><Text style={styles.itemNumberText}>{item.itemNumber}</Text></View>
 
         <QuickActionsBar
@@ -516,6 +517,7 @@ export default function ItemFormScreen() {
             disabled={!isTitleValid || saving}
             accessibilityRole="button"
             accessibilityLabel="Save item"
+            accessibilityState={{ disabled: !isTitleValid || saving }}
           >
             {saving && <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />}
             <Text style={styles.saveButtonText}>{saving ? 'Saving…' : 'Save Item'}</Text>

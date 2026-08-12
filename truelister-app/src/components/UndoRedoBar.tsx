@@ -28,6 +28,7 @@ export default memo(function UndoRedoBar({
         disabled={!canUndo}
         accessibilityLabel="Undo"
         accessibilityRole="button"
+        accessibilityState={{ disabled: !canUndo }}
       >
         <Text style={[styles.icon, !canUndo && styles.iconDisabled]}>↩</Text>
         <Text style={[styles.label, !canUndo && styles.labelDisabled]}>Undo</Text>
@@ -45,6 +46,7 @@ export default memo(function UndoRedoBar({
         disabled={!canRedo}
         accessibilityLabel="Redo"
         accessibilityRole="button"
+        accessibilityState={{ disabled: !canRedo }}
       >
         <Text style={[styles.icon, !canRedo && styles.iconDisabled]}>↪</Text>
         <Text style={[styles.label, !canRedo && styles.labelDisabled]}>Redo</Text>

@@ -97,6 +97,7 @@ export default function PublishScreen({ route, navigation }: Props) {
           disabled={publishing}
           accessibilityRole="button"
           accessibilityLabel={publishing ? 'Publishing' : `Publish to ${selected.size} platform${selected.size !== 1 ? 's' : ''}`}
+          accessibilityState={{ disabled: publishing }}
         >
           {publishing ? (
             <ActivityIndicator color="#fff" />
