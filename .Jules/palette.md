@@ -31,3 +31,7 @@
 ## 2026-07-22 - Conveying Button States to Screen Readers
 **Learning:** In React Native/Expo, simply disabling a button using the `disabled` prop does not automatically inform screen readers (VoiceOver or TalkBack) that the button is interactive/inactive. Providing an explicit `accessibilityState={{ disabled: isBtnDisabled }}` ensures that assistive technologies correctly announce the button's current state to users.
 **Action:** Always accompany `disabled` props on touchable elements with matching `accessibilityState={{ disabled }}` attributes to maintain high accessibility.
+
+## 2026-08-12 - Dynamic Form Inline Validation
+**Learning:** For critical mandatory inputs (like item Title) in mobile forms where the primary Save action is disabled or dimmed, presenting a contextual warning message (such as "⚠️ Title is required to save") right below the text input dynamically reduces user confusion and clearly sets expectation before saving. Using an assistive announcement `accessibilityLiveRegion="assertive"` ensures screen readers immediately announce the requirement change.
+**Action:** Lay out form inputs with a flexible `fieldFooter` that can transition dynamically from a validation state to character count tracking.
