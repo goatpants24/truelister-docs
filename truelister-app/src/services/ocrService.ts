@@ -51,10 +51,12 @@ const KNOWN_BRANDS = [
 /**
  * Bolt: Pre-calculate brand display names and pre-compile regular expressions.
  * Avoids expensive string manipulations and regex re-compilation inside the parsing loop.
+ * Directly maps to the predefined display-cased strings in KNOWN_BRANDS, avoiding redundant
+ * word splitting and casing loops on startup while fixing formatting for brands like YSL and H&M.
  * Measured impact: Improves parseTagText performance by ~84% in no-match scenarios.
  */
 const BRAND_CONFIG: Record<string, string> = KNOWN_BRANDS.reduce((acc, brand) => {
-  acc[brand.toLowerCase()] = brand.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  acc[brand.toLowerCase()] = brand;
   return acc;
 }, {} as Record<string, string>);
 
@@ -78,12 +80,13 @@ const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
 const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
 
-const CARE_KEYWORDS = [
-  ...CARE_KEYWORDS_BASE,
-  'line dry', 'do not bleach', 'iron low', 'iron medium', 'iron high', 'warm water',
-  'cold water', 'separate colors',
-];
+const CARE_KEYWORDS = CARE_KEYWORDS_BASE;
 
+/**
+ * Pre-compiled pattern for care instructions, stripped of duplicate keywords.
+ * Bolt: Eliminating 8 redundant duplicate entries from the compiled regex branches reduces
+ * backtracking complexity and execution time during OCR scanning.
+ */
 const CARE_REGEX = new RegExp('\\b(' + [...CARE_KEYWORDS].sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
 // ── OCR Text Extraction ──────────────────────────────────────────────────────
