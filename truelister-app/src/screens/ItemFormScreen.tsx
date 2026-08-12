@@ -398,7 +398,20 @@ export default function ItemFormScreen() {
             blurOnSubmit={false}
             onSubmitEditing={() => brandRef.current?.focus()}
           />
-          <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
+          <View style={styles.fieldFooter}>
+            {!item.title.trim() ? (
+              <Text
+                style={styles.validationError}
+                accessibilityLiveRegion="assertive"
+                accessibilityLabel="Title is required to save"
+              >
+                ⚠️ Title is required to save
+              </Text>
+            ) : <View />}
+            <Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>
+              {item.title.length}/80
+            </Text>
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -601,7 +614,8 @@ const styles = StyleSheet.create({
   },
   pickerWrapper: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, overflow: 'hidden' },
   picker: { color: '#e8eaf6', height: 48 },
-  fieldFooter: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 },
+  fieldFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
+  validationError: { fontSize: 11, color: '#f87171', fontWeight: '600' },
   charCount: { fontSize: 11, color: '#94a3b8' },
   row: { flexDirection: 'row', gap: 12, marginBottom: 14 },
   marketplacesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
