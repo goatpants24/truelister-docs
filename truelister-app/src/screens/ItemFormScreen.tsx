@@ -398,7 +398,18 @@ export default function ItemFormScreen() {
             blurOnSubmit={false}
             onSubmitEditing={() => brandRef.current?.focus()}
           />
-          <View style={styles.fieldFooter}><Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>{item.title.length}/80</Text></View>
+          <View style={[styles.fieldFooter, { justifyContent: 'space-between', alignItems: 'center' }]}>
+            {!isTitleValid ? (
+              <Text style={{ fontSize: 11, color: '#f87171', fontWeight: '500' }}>
+                ⚠️ Title is required to save
+              </Text>
+            ) : (
+              <View />
+            )}
+            <Text style={[styles.charCount, item.title.length >= 70 && { color: '#fbbf24' }, item.title.length >= 80 && { color: '#f87171' }]}>
+              {item.title.length}/80
+            </Text>
+          </View>
         </View>
 
         <View style={styles.field}>

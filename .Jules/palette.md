@@ -1,5 +1,9 @@
 # 🎨 Palette Journal: UX & Accessibility
 
+## 2026-07-25 - Inline Validation Feedback
+**Learning:** Showing dynamic inline validation in the input's footer (such as "⚠️ Title is required to save") when a required field is left empty provides immediate visual/assistive clarity, explaining why save buttons are disabled and guiding the user to a correct state without jarring modal alerts.
+**Action:** Utilize a split-footer flex layout (`justifyContent: 'space-between'`) to position inline error warnings alongside character counters.
+
 ## 2025-05-15 - Title Character Counter
 **Learning:** Marketplace item titles should adhere to an 80-character limit, with visual character counters providing thresholds: amber at 70 characters and red at 80+ to guide users toward optimal title lengths.
 **Action:** Use a `fieldFooter` container to align error messages and character counters for a consistent look.
