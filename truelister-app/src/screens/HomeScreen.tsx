@@ -182,6 +182,11 @@ export default function HomeScreen() {
   /**
    * Bolt: Optimized layout calculation for FlatList.
    * Allows the list to skip dynamic measurement of items during scrolling.
+   *
+   * For the grid view with numColumns=2, FlatList chunks elements into row groups
+   * under the hood. Consequently, VirtualizedList passes the row index (not item index)
+   * to this callback. Using 'offset = 16 + itemHeight * index' correctly computes the
+   * scroll position per row block, preventing virtualization stutter and blank screens.
    */
   const getItemLayout = useCallback((_data: ArrayLike<CatalogItem> | null | undefined, index: number) => {
     let itemHeight = 0;
@@ -190,7 +195,7 @@ export default function HomeScreen() {
 
     if (viewMode === 'grid') {
       itemHeight = size + 76;
-      offset = 16 + itemHeight * Math.floor(index / 2);
+      offset = 16 + itemHeight * index;
     } else {
       itemHeight = 96;
       offset = 16 + itemHeight * index;
