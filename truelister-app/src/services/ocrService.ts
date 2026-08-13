@@ -51,10 +51,12 @@ const KNOWN_BRANDS = [
 /**
  * Bolt: Pre-calculate brand display names and pre-compile regular expressions.
  * Avoids expensive string manipulations and regex re-compilation inside the parsing loop.
+ * Maps keys directly to display-cased strings in KNOWN_BRANDS, avoiding word-splitting
+ * and capitalization loops on startup, and preserving correct uppercase/mixed-case formatting (e.g., YSL, H&M).
  * Measured impact: Improves parseTagText performance by ~84% in no-match scenarios.
  */
 const BRAND_CONFIG: Record<string, string> = KNOWN_BRANDS.reduce((acc, brand) => {
-  acc[brand.toLowerCase()] = brand.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  acc[brand.toLowerCase()] = brand;
   return acc;
 }, {} as Record<string, string>);
 
@@ -78,11 +80,9 @@ const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
 const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
 
-const CARE_KEYWORDS = [
-  ...CARE_KEYWORDS_BASE,
-  'line dry', 'do not bleach', 'iron low', 'iron medium', 'iron high', 'warm water',
-  'cold water', 'separate colors',
-];
+// Reuse CARE_KEYWORDS_BASE directly to eliminate duplicate care instruction keywords,
+// reducing compiled regex size and match time.
+const CARE_KEYWORDS = CARE_KEYWORDS_BASE;
 
 const CARE_REGEX = new RegExp('\\b(' + [...CARE_KEYWORDS].sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
