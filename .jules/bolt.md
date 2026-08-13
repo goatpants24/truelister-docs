@@ -1,3 +1,7 @@
+## 2026-08-06 - [Module-Scope "Optimizations" vs Runtime Hot-Paths and Regex Quality Regression]
+**Learning:** Attempting to optimize static declarations that reside in module/top-level scope (such as regex compilation or static array mapping) does not actually improve runtime performance of functions like `parseTagText`, as they are evaluated exactly once on import. Furthermore, refactoring such static tables carelessly can lead to regression of functional features (e.g. removing critical care keywords from regex-matching configuration).
+**Action:** Always ensure that optimization efforts target hot execution paths rather than static module-level initialization blocks, and meticulously verify that regex alterations do not compromise functional coverage.
+
 ## 2026-08-05 - [Fast-Path Image Bypass and Aspect-Ratio-Preserving Proportional Scaling]
 **Learning:** Performing unconditional image resizing operations on already small/compliant images wastes CPU cycles, memory, and disk I/O, while passing fixed bounding box dimensions directly to resize operations distorts and stretches non-square portrait/landscape images. Querying the original size and dimensions using a zero-operation pass enables a fast-path bypass for compliant images, and allows calculating proportional scale factors for correct aspect-ratio-preserving resizing.
 **Action:** Always check input image size and dimensions first to enable bypass opportunities, and calculate proportional width and height scaling factors dynamically to avoid image distortion when resizing.
