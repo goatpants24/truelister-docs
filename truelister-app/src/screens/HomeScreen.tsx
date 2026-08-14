@@ -182,19 +182,19 @@ export default function HomeScreen() {
   /**
    * Bolt: Optimized layout calculation for FlatList.
    * Allows the list to skip dynamic measurement of items during scrolling.
+   * In grid view (numColumns = 2), FlatList internally groups items into rows, so the
+   * index passed represents the row index. Thus, offset is row index * itemHeight.
    */
   const getItemLayout = useCallback((_data: ArrayLike<CatalogItem> | null | undefined, index: number) => {
     let itemHeight = 0;
-    let offset = 0;
     const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
 
     if (viewMode === 'grid') {
       itemHeight = size + 76;
-      offset = 16 + itemHeight * Math.floor(index / 2);
     } else {
       itemHeight = 96;
-      offset = 16 + itemHeight * index;
     }
+    const offset = 16 + itemHeight * index;
 
     return { length: itemHeight, offset, index };
   }, [viewMode, thumbnailSize]);
