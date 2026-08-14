@@ -1,3 +1,7 @@
+## 2026-08-06 - [Regex Priority-Ordering for Sequential OCR Parsing]
+**Learning:** Sequential regular expression evaluation breaks immediately on the first matching pattern. When generic regexes (such as 1-2 digit rule matches) are positioned before highly specific ones (such as multi-dimensional sizing '32x30' or EU sizing 'EU 40'), the generic pattern will prematurely intercept the string (yielding '32' or '40' instead of '32x30' or 'EU 40'). Sorting and placing highly specific patterns before generic fallbacks ensures precise parsing in a single-pass sequential matching sequence, reducing re-evaluations, correction logic, and UI reconciliation overhead.
+**Action:** Always sort sequential regex arrays from most specific/complex to most generic/simple to prevent premature matching and ensure perfect parsing accuracy and efficiency.
+
 ## 2026-08-05 - [Fast-Path Image Bypass and Aspect-Ratio-Preserving Proportional Scaling]
 **Learning:** Performing unconditional image resizing operations on already small/compliant images wastes CPU cycles, memory, and disk I/O, while passing fixed bounding box dimensions directly to resize operations distorts and stretches non-square portrait/landscape images. Querying the original size and dimensions using a zero-operation pass enables a fast-path bypass for compliant images, and allows calculating proportional scale factors for correct aspect-ratio-preserving resizing.
 **Action:** Always check input image size and dimensions first to enable bypass opportunities, and calculate proportional width and height scaling factors dynamically to avoid image distortion when resizing.
@@ -51,7 +55,7 @@
 **Action:** Prefer direct string manipulation over Regular Expressions for simple, fixed-prefix pattern parsing in hot paths or large data loops.
 
 ## 2026-06-25 - [Optimized Iterative Image Compression]
-**Learning:** Performing a high-resolution `resize` operation inside an iterative quality-reduction loop is a massive CPU bottleneck and causes cumulative "generation loss" artifacts. Decoupling the operations—resizing exactly once to a high-quality intermediate and then iterating only on JPEG quality—preserves image fidelity and significantly reduces processing time per pass.
+**Learning:** Performing a high-resolution `resize` operation inside an iterative quality-reduction loop is a massive CPU bottleneck and causes cumulative "generation loss" artifacts. Decoupling the operations—resizing exactly once to high-quality intermediate and then iterating only on JPEG quality—preserves image fidelity and significantly reduces processing time per pass.
 **Action:** Always hoist expensive pixel-rescaling operations outside of iterative optimization loops to minimize CPU cycles and maintain output quality.
 
 ## 2025-05-28 - [Memoized QuickActionsBar]
