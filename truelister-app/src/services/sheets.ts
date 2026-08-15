@@ -37,9 +37,23 @@ const SHEETS_CSV_URL = (spreadsheetId: string, sheet: string) =>
   `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
 
 /**
+ * Helper to slice and trim a substring in a single pass without allocating
+ * intermediate untrimmed string objects or allocating for empty cells.
+ */
+function trimSlice(str: string, start: number, end: number): string {
+  while (start < end && str.charCodeAt(start) <= 32) {
+    start++;
+  }
+  while (end > start && str.charCodeAt(end - 1) <= 32) {
+    end--;
+  }
+  return start < end ? str.slice(start, end) : '';
+}
+
+/**
  * Optimized CSV parser that operates in a single pass over the raw string.
- * Bolt: Uses index-based slicing to extract cell values directly from the raw string without
- * character-by-character concatenation, falling back to string accumulation only when the cell contains quotes.
+ * Bolt: Uses index-based slice-trimming to extract cell values directly from the raw string without
+ * character-by-character concatenation or temporary untrimmed string allocations.
  * This prevents creating a huge number of intermediate strings, reducing memory allocations and garbage collection pressure.
  */
 function parseCSV(csv: string, onRow: (row: string[]) => void): void {
@@ -57,7 +71,7 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
     if (char === '"') {
       if (!hasQuotes) {
         hasQuotes = true;
-        currentCell = csv.slice(cellStart, i);
+        currentCell = trimSlice(csv, cellStart, i);
       }
       if (inQuotes && i + 1 < len && csv[i + 1] === '"') {
         currentCell += '"';
@@ -66,10 +80,9 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
         inQuotes = !inQuotes;
       }
     } else if (char === ',' && !inQuotes) {
-      const val = hasQuotes ? currentCell : csv.slice(cellStart, i);
-      const trimmed = val.trim();
-      if (trimmed) hasDataInRow = true;
-      currentRow.push(trimmed);
+      const val = hasQuotes ? currentCell.trim() : trimSlice(csv, cellStart, i);
+      if (val) hasDataInRow = true;
+      currentRow.push(val);
 
       cellStart = i + 1;
       hasQuotes = false;
@@ -79,10 +92,9 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
       if (char === '\r' && i + 1 < len && csv[i + 1] === '\n') {
         i++;
       }
-      const val = hasQuotes ? currentCell : csv.slice(cellStart, cellEnd);
-      const trimmed = val.trim();
-      if (trimmed) hasDataInRow = true;
-      currentRow.push(trimmed);
+      const val = hasQuotes ? currentCell.trim() : trimSlice(csv, cellStart, cellEnd);
+      if (val) hasDataInRow = true;
+      currentRow.push(val);
 
       if (hasDataInRow || currentRow.length > 1) {
         onRow(currentRow);
@@ -100,10 +112,9 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
   }
 
   if (cellStart < len || currentRow.length > 0) {
-    const val = hasQuotes ? currentCell : csv.slice(cellStart, len);
-    const trimmed = val.trim();
-    if (trimmed) hasDataInRow = true;
-    currentRow.push(trimmed);
+    const val = hasQuotes ? currentCell.trim() : trimSlice(csv, cellStart, len);
+    if (val) hasDataInRow = true;
+    currentRow.push(val);
     if (hasDataInRow || currentRow.length > 1) {
       onRow(currentRow);
     }
