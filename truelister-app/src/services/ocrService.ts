@@ -15,7 +15,13 @@ const FABRIC_KEYWORDS = [
   'chiffon', 'satin', 'velvet', 'fleece', 'jersey', 'tweed', 'organza',
 ];
 
-const CARE_KEYWORDS_BASE = [
+/**
+ * Bolt Performance Optimization: Consolidated & Deduplicated Care Keywords
+ * All 23 unique care instructions are defined here in a single array.
+ * Previously, the last 8 items were appended twice (once in CARE_KEYWORDS_BASE and once in CARE_KEYWORDS),
+ * which caused CARE_REGEX to compile with 8 redundant alternation branches.
+ */
+const CARE_KEYWORDS = [
   'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'bleach',
   'iron', 'cold', 'warm', 'hot', 'hang dry', 'lay flat to dry',
   'low heat', 'no bleach', 'gentle cycle', 'wash inside out',
@@ -23,11 +29,16 @@ const CARE_KEYWORDS_BASE = [
   'warm water', 'cold water', 'separate colors',
 ];
 
+/**
+ * Bolt Performance Optimization: Specific-First Pattern Ordering
+ * Places multi-dimensional patterns (32x30) and EU sizes (EU 40) before generic 1-2 digit rules.
+ * Prevents premature generic matching on multi-dimensional/prefixed sizes and eliminates unnecessary regex passes.
+ */
 const SIZE_PATTERNS = [
-  /\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/i,
-  /\b(size\s*)?(\d{1,2})\b/i,
   /\b(\d{2})\s*[xX×]\s*(\d{2})\b/,
   /\b(EU|EUR)\s*(\d{2})\b/i,
+  /\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/i,
+  /\b(size\s*)?(\d{1,2})\b/i,
 ];
 
 /**
@@ -77,12 +88,6 @@ const FABRIC_REGEX = new RegExp('\\b(' + [...FABRIC_KEYWORDS].sort((a, b) => b.l
 const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
 const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
-
-const CARE_KEYWORDS = [
-  ...CARE_KEYWORDS_BASE,
-  'line dry', 'do not bleach', 'iron low', 'iron medium', 'iron high', 'warm water',
-  'cold water', 'separate colors',
-];
 
 const CARE_REGEX = new RegExp('\\b(' + [...CARE_KEYWORDS].sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
