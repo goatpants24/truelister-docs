@@ -92,18 +92,29 @@ export default function PublishScreen({ route, navigation }: Props) {
       {/* Publish button */}
       {!results && (
         <TouchableOpacity
-          style={[styles.publishBtn, publishing && styles.publishBtnDisabled]}
+          style={[styles.publishBtn, (publishing || selected.size === 0) && styles.publishBtnDisabled]}
           onPress={handlePublish}
-          disabled={publishing}
+          disabled={publishing || selected.size === 0}
           accessibilityRole="button"
-          accessibilityLabel={publishing ? 'Publishing' : `Publish to ${selected.size} platform${selected.size !== 1 ? 's' : ''}`}
-          accessibilityState={{ disabled: publishing }}
+          accessibilityLabel={
+            publishing
+              ? 'Publishing'
+              : selected.size === 0
+              ? 'Select at least one platform to publish'
+              : `Publish to ${selected.size} platform${selected.size !== 1 ? 's' : ''}`
+          }
+          accessibilityState={{ disabled: publishing || selected.size === 0 }}
         >
           {publishing ? (
-            <ActivityIndicator color="#fff" />
+            <View style={styles.publishingContent}>
+              <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.publishBtnText}>Publishing…</Text>
+            </View>
           ) : (
             <Text style={styles.publishBtnText}>
-              Publish to {selected.size} Platform{selected.size !== 1 ? 's' : ''}
+              {selected.size === 0
+                ? 'Select a Platform to Publish'
+                : `Publish to ${selected.size} Platform${selected.size !== 1 ? 's' : ''}`}
             </Text>
           )}
         </TouchableOpacity>
@@ -155,6 +166,7 @@ export default function PublishScreen({ route, navigation }: Props) {
             style={styles.doneBtn}
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
+            accessibilityLabel="Done publishing, return to previous screen"
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
@@ -189,6 +201,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   publishBtnDisabled: { opacity: 0.6 },
+  publishingContent: { flexDirection: 'row', alignItems: 'center' },
   publishBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   resultsSection: { gap: 12 },
   resultsSummary: {

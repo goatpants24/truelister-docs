@@ -31,3 +31,7 @@
 ## 2026-07-22 - Conveying Button States to Screen Readers
 **Learning:** In React Native/Expo, simply disabling a button using the `disabled` prop does not automatically inform screen readers (VoiceOver or TalkBack) that the button is interactive/inactive. Providing an explicit `accessibilityState={{ disabled: isBtnDisabled }}` ensures that assistive technologies correctly announce the button's current state to users.
 **Action:** Always accompany `disabled` props on touchable elements with matching `accessibilityState={{ disabled }}` attributes to maintain high accessibility.
+
+## 2026-07-28 - Zero-Selection Action Button Guidance
+**Learning:** When multi-selection controls govern a primary submit action button, disabling the button when 0 items/platforms are selected and dynamically updating its text (e.g., 'Select a Platform to Publish') clearly guides users on required prior steps without relying on error alerts after invalid taps.
+**Action:** Pair multi-select controls with conditionally disabled submit buttons and descriptive label text when zero options are selected.
