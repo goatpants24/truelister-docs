@@ -104,7 +104,13 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
             </Text>
           </View>
 
-          <Image source={{ uri: result.imageUri }} style={styles.tagPreview} resizeMode="contain" />
+          <Image
+            source={{ uri: result.imageUri }}
+            style={styles.tagPreview}
+            resizeMode="contain"
+            accessible={true}
+            accessibilityLabel="Preview of scanned clothing tag"
+          />
 
           {/* Detected Fields */}
           <Text style={styles.sectionLabel}>Detected Fields</Text>
@@ -126,10 +132,20 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
           </View>
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.buttonSecondary} onPress={handleRescan}>
+            <TouchableOpacity
+              style={styles.buttonSecondary}
+              onPress={handleRescan}
+              accessibilityRole="button"
+              accessibilityLabel="Rescan tag photo"
+            >
               <Text style={styles.buttonSecondaryText}>Rescan</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleAccept}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleAccept}
+              accessibilityRole="button"
+              accessibilityLabel="Use detected fields in item form"
+            >
               <Text style={styles.buttonText}>Use These Fields</Text>
             </TouchableOpacity>
           </View>
@@ -205,7 +221,8 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
             onPress={handleCapture}
             disabled={scanning}
             accessibilityRole="button"
-            accessibilityLabel="Capture photo and scan tag"
+            accessibilityLabel={scanning ? 'Scanning tag photo' : 'Capture photo and scan tag'}
+            accessibilityState={{ disabled: scanning }}
           >
             <View style={styles.captureInner}>
               <Text style={styles.captureLabel}>SCAN</Text>
