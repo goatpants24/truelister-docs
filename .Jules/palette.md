@@ -31,3 +31,7 @@
 ## 2026-07-22 - Conveying Button States to Screen Readers
 **Learning:** In React Native/Expo, simply disabling a button using the `disabled` prop does not automatically inform screen readers (VoiceOver or TalkBack) that the button is interactive/inactive. Providing an explicit `accessibilityState={{ disabled: isBtnDisabled }}` ensures that assistive technologies correctly announce the button's current state to users.
 **Action:** Always accompany `disabled` props on touchable elements with matching `accessibilityState={{ disabled }}` attributes to maintain high accessibility.
+
+## 2026-07-28 - Async Capture Control Coordination and Visual Feedback
+**Learning:** In full-screen capture views, async image processing requires lock-step disabling and visual dimming (`opacity: 0.5`) across all adjacent capture actions (such as opening the photo library) to prevent concurrent triggers. Updating `accessibilityLabel` dynamically ('Processing photo...' vs 'Capture photo') along with `accessibilityState={{ disabled }}` provides immediate feedback to both sighted and screen reader users.
+**Action:** When handling async media processing in capture screens, disable all adjacent triggers, dim action buttons, and dynamically update accessibility labels and states.
