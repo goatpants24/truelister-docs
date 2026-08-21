@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { setSpreadsheetId, setAppsScriptUrl } from '../services/localStorage';
+import { setSpreadsheetId, setAppsScriptUrl as setStoredAppsScriptUrl } from '../services/localStorage';
 
 export default function OnboardingScreen() {
   const navigation = useNavigation<any>();
@@ -24,6 +24,23 @@ export default function OnboardingScreen() {
     return match ? match[1] : url;
   };
 
+  const isSheetValid = (() => {
+    const trimmed = sheetUrl.trim();
+    if (trimmed.length === 0) return false;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed.includes('docs.google.com/spreadsheets');
+    }
+    return trimmed.length >= 25 && /^[a-zA-Z0-9-_]+$/.test(trimmed);
+  })();
+
+  const isAppsScriptValid = (() => {
+    const trimmed = appsScriptUrl.trim();
+    if (trimmed.length === 0) return true;
+    return trimmed.startsWith('https://') && trimmed.includes('script.google.com/macros/s/');
+  })();
+
+  const isNextDisabled = step === 1 ? !isSheetValid : !isAppsScriptValid;
+
   const handleNext = async () => {
     if (step === 1) {
       if (!sheetUrl) {
@@ -35,10 +52,20 @@ export default function OnboardingScreen() {
       setStep(2);
     } else {
       if (appsScriptUrl) {
-        await setAppsScriptUrl(appsScriptUrl);
+        await setStoredAppsScriptUrl(appsScriptUrl);
       }
       await AsyncStorage.setItem('has_onboarded', 'true');
       navigation.replace('Main');
+    }
+  };
+
+  const getInputStyle = () => {
+    if (step === 1) {
+      if (!sheetUrl) return styles.input;
+      return [styles.input, isSheetValid ? styles.inputValid : styles.inputInvalid];
+    } else {
+      if (!appsScriptUrl) return styles.input;
+      return [styles.input, isAppsScriptValid ? styles.inputValid : styles.inputInvalid];
     }
   };
 
@@ -55,7 +82,7 @@ export default function OnboardingScreen() {
       </Text>
 
       <TextInput
-        style={styles.input}
+        style={getInputStyle()}
         placeholder={step === 1 ? "https://docs.google.com/spreadsheets/d/..." : "https://script.google.com/macros/s/..."}
         placeholderTextColor="#4a5568"
         value={step === 1 ? sheetUrl : appsScriptUrl}
@@ -68,11 +95,31 @@ export default function OnboardingScreen() {
         onSubmitEditing={handleNext}
       />
 
+      {step === 1 && sheetUrl.trim().length > 0 && (
+        <Text
+          style={[styles.feedbackText, isSheetValid ? styles.feedbackValid : styles.feedbackInvalid]}
+          accessibilityLiveRegion="polite"
+        >
+          {isSheetValid ? '✓ Valid Google Sheet URL format' : '⚠️ Invalid Google Sheet URL format'}
+        </Text>
+      )}
+
+      {step === 2 && appsScriptUrl.trim().length > 0 && (
+        <Text
+          style={[styles.feedbackText, isAppsScriptValid ? styles.feedbackValid : styles.feedbackInvalid]}
+          accessibilityLiveRegion="polite"
+        >
+          {isAppsScriptValid ? '✓ Valid Apps Script URL format' : '⚠️ Invalid Apps Script URL format'}
+        </Text>
+      )}
+
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, isNextDisabled && styles.buttonDisabled]}
         onPress={handleNext}
+        disabled={isNextDisabled}
         accessibilityRole="button"
         accessibilityLabel={step === 1 ? "Next" : "Finish Setup"}
+        accessibilityState={{ disabled: isNextDisabled }}
       >
         <Text style={styles.buttonText}>{step === 1 ? 'Next' : 'Finish Setup'}</Text>
       </TouchableOpacity>
@@ -108,6 +155,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 24,
   },
+  inputValid: {
+    borderColor: '#22c55e',
+  },
+  inputInvalid: {
+    borderColor: '#ef4444',
+  },
+  feedbackText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  feedbackValid: {
+    color: '#22c55e',
+  },
+  feedbackInvalid: {
+    color: '#ef4444',
+  },
   button: {
     backgroundColor: '#4f6ef7',
     width: '100%',
@@ -119,6 +184,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 6,
+  },
+  buttonDisabled: {
+    backgroundColor: '#1e293b',
+    opacity: 0.5,
   },
   buttonText: { color: 'white', fontSize: 16, fontWeight: '700' },
   skip: { marginTop: 20 },
