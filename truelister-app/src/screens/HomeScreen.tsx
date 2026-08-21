@@ -355,22 +355,82 @@ export default function HomeScreen() {
 
 // --- exports / templates ---
 
+/**
+ * Escapes CSV field values containing commas, double quotes, or newlines.
+ */
+function escapeCSVField(val: string | undefined): string {
+  if (!val) return '';
+  if (val.includes('"') || val.includes(',') || val.includes('\n') || val.includes('\r')) {
+    return `"${val.replace(/"/g, '""')}"`;
+  }
+  return val;
+}
+
+/**
+ * Escapes HTML special characters to prevent HTML syntax breakages.
+ */
+function escapeHTML(str: string | undefined): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * Bolt Performance Optimization: Single-pass CSV Generation
+ * Uses string accumulation in a single loop to eliminate O(N) array mapping and
+ * intermediate allocations (`items.map`, `rows.map`, array spread) during exports.
+ */
 function exportCSV(items: CatalogItem[]) {
-  const headers = [
-    'Item #', 'Title', 'Designer/Brand', 'Category', 'Size', 'Condition',
-    'Fabric/Material', 'Color', 'Price', 'Marketplace', 'Date Listed', 'Notes', 'Photo URL',
-  ];
-
-  const rows = items.map((item) => [
-    item.itemNumber, item.title, item.designerBrand, item.category, item.size, item.condition,
-    item.fabricMaterial, item.color, item.price, item.marketplace, item.dateListed, item.notes, item.photoUrl,
-  ]);
-
-  const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+  let csv = 'Item #,Title,Designer/Brand,Category,Size,Condition,Fabric/Material,Color,Price,Marketplace,Date Listed,Notes,Photo URL';
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    csv += `\n${escapeCSVField(item.itemNumber)},${escapeCSVField(item.title)},${escapeCSVField(item.designerBrand)},${escapeCSVField(item.category)},${escapeCSVField(item.size)},${escapeCSVField(item.condition)},${escapeCSVField(item.fabricMaterial)},${escapeCSVField(item.color)},${escapeCSVField(item.price)},${escapeCSVField(item.marketplace)},${escapeCSVField(item.dateListed)},${escapeCSVField(item.notes)},${escapeCSVField(item.photoUrl)}`;
+  }
   saveToFile(csv, 'truelister-catalog.csv', 'text/csv');
 }
 
+/**
+ * Bolt Performance Optimization: Single-pass HTML Generation
+ * Accumulates string contents directly in a single pass to eliminate
+ * intermediate array allocations from `items.map(...).join('')`.
+ */
 function exportHTMLCatalog(items: CatalogItem[]) {
+  let catalogBody = '';
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const safeTitle = escapeHTML(item.title);
+    const safeBrand = escapeHTML(item.designerBrand);
+    const safeSize = escapeHTML(item.size);
+    const safePrice = escapeHTML(item.price);
+    const safeCond = escapeHTML(item.condition);
+    const safeFabric = escapeHTML(item.fabricMaterial);
+    const safeColor = escapeHTML(item.color);
+    const safeCategory = escapeHTML(item.category);
+    const safeMarket = escapeHTML(item.marketplace);
+    const safeDate = escapeHTML(item.dateListed);
+    const safeNotes = escapeHTML(item.notes);
+
+    catalogBody += `
+      <div class="item">
+        ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${safeTitle}" />` : `<div class="no-image">No Image</div>`}
+        <h3>${safeTitle}</h3>
+        <p><strong>Brand:</strong> ${safeBrand || '–'}</p>
+        <p><strong>Size:</strong> ${safeSize || '–'}</p>
+        <p><strong>Price:</strong> <span class="price">$${safePrice || '–'}</span></p>
+        <p><strong>Condition:</strong> ${safeCond || '–'}</p>
+        <p><strong>Fabric:</strong> ${safeFabric || '–'}</p>
+        <p><strong>Color:</strong> ${safeColor || '–'}</p>
+        <p><strong>Category:</strong> ${safeCategory || '–'}</p>
+        ${safeMarket ? `<p><strong>Marketplace:</strong> <span class="badge">${safeMarket}</span></p>` : ''}
+        <p><strong>Date Listed:</strong> ${safeDate || '–'}</p>
+        <p style="font-size: 12px; color: #6b7280;">${safeNotes || 'No notes.'}</p>
+      </div>`;
+  }
+
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -398,22 +458,7 @@ function exportHTMLCatalog(items: CatalogItem[]) {
 </head>
 <body>
   <div class="header"><h1>TrueLister Catalog</h1></div>
-  <div class="catalog">
-    ${items.map((item) => `
-      <div class="item">
-        ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.title}" />` : `<div class="no-image">No Image</div>`}
-        <h3>${item.title}</h3>
-        <p><strong>Brand:</strong> ${item.designerBrand || '–'}</p>
-        <p><strong>Size:</strong> ${item.size || '–'}</p>
-        <p><strong>Price:</strong> <span class="price">$${item.price || '–'}</span></p>
-        <p><strong>Condition:</strong> ${item.condition || '–'}</p>
-        <p><strong>Fabric:</strong> ${item.fabricMaterial || '–'}</p>
-        <p><strong>Color:</strong> ${item.color || '–'}</p>
-        <p><strong>Category:</strong> ${item.category || '–'}</p>
-        ${item.marketplace ? `<p><strong>Marketplace:</strong> <span class="badge">${item.marketplace}</span></p>` : ''}
-        <p><strong>Date Listed:</strong> ${item.dateListed || '–'}</p>
-        <p style="font-size: 12px; color: #6b7280;">${item.notes || 'No notes.'}</p>
-      </div>`).join('')}
+  <div class="catalog">${catalogBody}
   </div>
 </body>
 </html>`;
