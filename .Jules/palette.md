@@ -31,3 +31,7 @@
 ## 2026-07-22 - Conveying Button States to Screen Readers
 **Learning:** In React Native/Expo, simply disabling a button using the `disabled` prop does not automatically inform screen readers (VoiceOver or TalkBack) that the button is interactive/inactive. Providing an explicit `accessibilityState={{ disabled: isBtnDisabled }}` ensures that assistive technologies correctly announce the button's current state to users.
 **Action:** Always accompany `disabled` props on touchable elements with matching `accessibilityState={{ disabled }}` attributes to maintain high accessibility.
+
+## 2026-07-28 - Camera Mode Picker Touch Targets and Hints
+**Learning:** Compact mode pickers used within camera overlays feature small interactive targets (e.g., 56px wide options). Expanding touch target bounds with `hitSlop` and adding state-aware `accessibilityHint` attributes ensures options can be tapped effortlessly with thumbs and clearly communicated by screen readers.
+**Action:** Use `hitSlop` on compact option pickers and set `accessibilityHint` dynamically based on selection state (e.g., "Currently active mode" vs "Selects mode").
