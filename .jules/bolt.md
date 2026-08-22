@@ -1,3 +1,7 @@
+## 2026-08-22 - [Top-Level Memoization for Form Child Components]
+**Learning:** Invoking hooks like `useMemo` inline directly inside JSX prop assignments (e.g. `captureStatus={useMemo(...)}`) evaluates hooks during prop construction, violating React's Rules of Hooks and causing unpredictable memoization references across component renders. Moving `useMemo` declarations to the top level of the component body ensures stable referential equality and preserves `React.memo` optimization on child components like `QuickActionsBar` during high-frequency typing in form fields.
+**Action:** Always declare `useMemo` at the top level of component bodies rather than inline within JSX prop assignments.
+
 ## 2026-08-05 - [Fast-Path Image Bypass and Aspect-Ratio-Preserving Proportional Scaling]
 **Learning:** Performing unconditional image resizing operations on already small/compliant images wastes CPU cycles, memory, and disk I/O, while passing fixed bounding box dimensions directly to resize operations distorts and stretches non-square portrait/landscape images. Querying the original size and dimensions using a zero-operation pass enables a fast-path bypass for compliant images, and allows calculating proportional scale factors for correct aspect-ratio-preserving resizing.
 **Action:** Always check input image size and dimensions first to enable bypass opportunities, and calculate proportional width and height scaling factors dynamically to avoid image distortion when resizing.
