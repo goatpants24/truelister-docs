@@ -1,3 +1,7 @@
+## 2026-08-06 - [Single-Pass Catalog String Accumulation & Escaping]
+**Learning:** Using `items.map()` chaining (`items.map(...).map(...)`) during catalog exports allocates multiple $O(N)$ intermediate arrays and string arrays on the heap, spiking peak memory usage for large catalogs. Refactoring export logic to accumulate final outputs in a single loop over items eliminates intermediate heap allocations and allows integrating field escaping (`escapeCSVField`, `escapeHTML`) in-place without additional array passes.
+**Action:** Always prefer single-pass string accumulation loops over nested array mapping for string document generation tasks like CSV or HTML exports.
+
 ## 2026-08-05 - [Fast-Path Image Bypass and Aspect-Ratio-Preserving Proportional Scaling]
 **Learning:** Performing unconditional image resizing operations on already small/compliant images wastes CPU cycles, memory, and disk I/O, while passing fixed bounding box dimensions directly to resize operations distorts and stretches non-square portrait/landscape images. Querying the original size and dimensions using a zero-operation pass enables a fast-path bypass for compliant images, and allows calculating proportional scale factors for correct aspect-ratio-preserving resizing.
 **Action:** Always check input image size and dimensions first to enable bypass opportunities, and calculate proportional width and height scaling factors dynamically to avoid image distortion when resizing.
