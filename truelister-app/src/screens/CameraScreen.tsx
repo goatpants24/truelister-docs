@@ -150,6 +150,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
           onPress={onCancel}
           accessibilityRole="button"
           accessibilityLabel="Cancel photo capture"
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
@@ -176,20 +177,23 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
 
         <View style={styles.captureRow}>
           <TouchableOpacity
-            style={styles.libraryButton}
+            style={[styles.libraryButton, processing && { opacity: 0.5 }]}
             onPress={handlePickFromLibrary}
+            disabled={processing}
             accessibilityRole="button"
             accessibilityLabel="Open photo library"
+            accessibilityState={{ disabled: processing }}
           >
             <Text style={styles.libraryIcon}>🖼</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.captureButton}
+            style={[styles.captureButton, processing && { opacity: 0.5 }]}
             onPress={handleCapture}
             disabled={processing}
             accessibilityRole="button"
-            accessibilityLabel="Capture photo"
+            accessibilityLabel={processing ? 'Processing photo...' : 'Capture photo'}
+            accessibilityState={{ disabled: processing }}
           >
             <View style={styles.captureInner} />
           </TouchableOpacity>

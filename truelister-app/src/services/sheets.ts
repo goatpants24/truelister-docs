@@ -38,47 +38,54 @@ const SHEETS_CSV_URL = (spreadsheetId: string, sheet: string) =>
 
 /**
  * Optimized CSV parser that operates in a single pass over the raw string.
- * Bolt: Uses index-based slicing to extract cell values directly from the raw string without
- * character-by-character concatenation, falling back to string accumulation only when the cell contains quotes.
- * This prevents creating a huge number of intermediate strings, reducing memory allocations and garbage collection pressure.
+ * Bolt: Uses a fast-path scanner when no double quotes are present (!csv.includes('"')),
+ * scanning line by line and slicing cell values directly without character-by-character
+ * quote state tracking or string accumulation.
+ * Fallback to character-by-character quote state tracking for CSVs containing quotes.
  */
 function parseCSV(csv: string, onRow: (row: string[]) => void): void {
-  /**
-   * Bolt Performance Optimization: Quote-Free Fast-Path Scanner
-   * When no double quotes are present in the CSV string (common case for raw catalog records),
-   * uses native indexOf line and field searches rather than per-character iteration.
-   * Measured impact: ~90% speedup in CSV parsing time for quote-free datasets.
-   */
-  if (!csv.includes('"')) {
-    let start = 0;
-    const len = csv.length;
-    while (start < len) {
-      let nextNewline = csv.indexOf('\n', start);
-      let lineEnd = nextNewline === -1 ? len : nextNewline;
-      let line = csv.slice(start, lineEnd);
-      if (line.endsWith('\r')) line = line.slice(0, -1);
+  const len = csv.length;
+  if (!len) return;
 
-      if (line.length > 0) {
-        const row: string[] = [];
-        let cellStart = 0;
-        let hasData = false;
-        while (cellStart <= line.length) {
-          let commaIdx = line.indexOf(',', cellStart);
-          if (commaIdx === -1) commaIdx = line.length;
-          const cell = line.slice(cellStart, commaIdx).trim();
-          if (cell) hasData = true;
-          row.push(cell);
-          cellStart = commaIdx + 1;
-        }
-        if (hasData || row.length > 1) {
-          onRow(row);
+  // Fast-Path: When CSV contains no double quotes, parse line-by-line using index scanning
+  if (!csv.includes('"')) {
+    let lineStart = 0;
+    while (lineStart < len) {
+      let lineEnd = csv.indexOf('\n', lineStart);
+      if (lineEnd === -1) lineEnd = len;
+
+      let effectiveEnd = lineEnd;
+      if (effectiveEnd > lineStart && csv[effectiveEnd - 1] === '\r') {
+        effectiveEnd--;
+      }
+
+      const line = csv.slice(lineStart, effectiveEnd);
+      lineStart = lineEnd + 1;
+
+      if (!line) continue;
+
+      const currentRow: string[] = [];
+      let hasDataInRow = false;
+      let cellStart = 0;
+      const lineLen = line.length;
+
+      for (let i = 0; i <= lineLen; i++) {
+        if (i === lineLen || line[i] === ',') {
+          const val = line.slice(cellStart, i).trim();
+          if (val) hasDataInRow = true;
+          currentRow.push(val);
+          cellStart = i + 1;
         }
       }
-      start = lineEnd + 1;
+
+      if (hasDataInRow || currentRow.length > 1) {
+        onRow(currentRow);
+      }
     }
     return;
   }
 
+  // Fallback: character-by-character parsing with quote state tracking
   let currentRow: string[] = [];
   let inQuotes = false;
   let hasQuotes = false;
@@ -86,7 +93,6 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
   let currentCell = '';
   let hasDataInRow = false;
 
-  const len = csv.length;
   for (let i = 0; i < len; i++) {
     const char = csv[i];
 
