@@ -42,7 +42,41 @@ const SHEETS_CSV_URL = (spreadsheetId: string, sheet: string) =>
  * character-by-character concatenation, falling back to string accumulation only when the cell contains quotes.
  * This prevents creating a huge number of intermediate strings, reducing memory allocations and garbage collection pressure.
  */
+/**
+ * Optimized CSV parser that operates in a single pass over the raw string.
+ * Bolt: Includes a fast-path quote scanner. When no double quotes are present in the CSV payload
+ * (!csv.includes('"')), line and comma parsing use fast string methods (indexOf & split) without per-character
+ * quote state checks. Falls back to index-based character scanning when quotes are detected.
+ */
 function parseCSV(csv: string, onRow: (row: string[]) => void): void {
+  if (!csv.includes('"')) {
+    let lineStart = 0;
+    const len = csv.length;
+    while (lineStart < len) {
+      let lineEnd = csv.indexOf('\n', lineStart);
+      if (lineEnd === -1) lineEnd = len;
+
+      let line = csv.slice(lineStart, lineEnd);
+      if (line.endsWith('\r')) line = line.slice(0, -1);
+
+      if (line.length > 0) {
+        const rawFields = line.split(',');
+        const row = new Array(rawFields.length);
+        let hasDataInRow = false;
+        for (let i = 0; i < rawFields.length; i++) {
+          const trimmed = rawFields[i].trim();
+          if (trimmed) hasDataInRow = true;
+          row[i] = trimmed;
+        }
+        if (hasDataInRow || row.length > 1) {
+          onRow(row);
+        }
+      }
+      lineStart = lineEnd + 1;
+    }
+    return;
+  }
+
   let currentRow: string[] = [];
   let inQuotes = false;
   let hasQuotes = false;
