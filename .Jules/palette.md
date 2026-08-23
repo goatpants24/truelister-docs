@@ -31,3 +31,7 @@
 ## 2026-07-22 - Conveying Button States to Screen Readers
 **Learning:** In React Native/Expo, simply disabling a button using the `disabled` prop does not automatically inform screen readers (VoiceOver or TalkBack) that the button is interactive/inactive. Providing an explicit `accessibilityState={{ disabled: isBtnDisabled }}` ensures that assistive technologies correctly announce the button's current state to users.
 **Action:** Always accompany `disabled` props on touchable elements with matching `accessibilityState={{ disabled }}` attributes to maintain high accessibility.
+
+## 2026-07-28 - Undo/Redo History Counter and Touch Target UX
+**Learning:** Compact toolbar controls like Undo/Redo buttons often suffer from small touch targets on mobile displays and non-descriptive screen reader output for numerical badge counters. Adding `hitSlop` touch expansion, `accessibilityHint` descriptors, and `accessible={true}` text labels to history counts makes undo/redo controls significantly more accessible and forgiving to tap.
+**Action:** Always add `hitSlop` to small toolbar action buttons and ensure numeric history/counter badges are wrapped with explicit `accessibilityLabel` attributes for screen reader clarity.
