@@ -308,20 +308,31 @@ export default function ItemFormScreen() {
     ]);
   }, [updateField]);
 
-  const handleCapture = useCallback((f: PhotoField) => {
-    setPhotoField(f);
-    setMode('camera');
-  }, []);
-
-  const handleScanTag = useCallback(() => {
-    setMode('tagScan');
-  }, []);
-
   /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Callbacks
-   * Stabilizing these handlers prevents the memoized QuickActionsBar from
-   * re-rendering on every keystroke during form entry.
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Top-level Memoization & Stabilized Callbacks
+   * Memoizing captureStatus at the top level strictly complies with React's Rules of
+   * Hooks and prevents QuickActionsBar re-renders when editing non-photo form fields.
    */
+  const captureStatus = useMemo(() => ({
+    photoUrlCard: !!item.photoUrlCard,
+    photoUrlFront: !!item.photoUrlFront,
+    photoUrlBack: !!item.photoUrlBack,
+    photoUrlDetail: !!item.photoUrlDetail,
+    photoUrlTabletopWide: !!item.photoUrlTabletopWide,
+    photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
+    photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
+    photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
+  }), [
+    item.photoUrlCard,
+    item.photoUrlFront,
+    item.photoUrlBack,
+    item.photoUrlDetail,
+    item.photoUrlTabletopWide,
+    item.photoUrlTabletopDetail,
+    item.photoUrlTabletopMeasure1,
+    item.photoUrlTabletopMeasure2,
+  ]);
+
   const handleCaptureTrigger = useCallback((f: PhotoField) => {
     setPhotoField(f);
     setMode('camera');
