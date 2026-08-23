@@ -1,6 +1,6 @@
-## 2026-08-22 - [Top-Level Memoization for Form Child Components]
-**Learning:** Invoking hooks like `useMemo` inline directly inside JSX prop assignments (e.g. `captureStatus={useMemo(...)}`) evaluates hooks during prop construction, violating React's Rules of Hooks and causing unpredictable memoization references across component renders. Moving `useMemo` declarations to the top level of the component body ensures stable referential equality and preserves `React.memo` optimization on child components like `QuickActionsBar` during high-frequency typing in form fields.
-**Action:** Always declare `useMemo` at the top level of component bodies rather than inline within JSX prop assignments.
+## 2026-08-06 - [Single-Pass Catalog String Accumulation & Escaping]
+**Learning:** Using `items.map()` chaining (`items.map(...).map(...)`) during catalog exports allocates multiple $O(N)$ intermediate arrays and string arrays on the heap, spiking peak memory usage for large catalogs. Refactoring export logic to accumulate final outputs in a single loop over items eliminates intermediate heap allocations and allows integrating field escaping (`escapeCSVField`, `escapeHTML`) in-place without additional array passes.
+**Action:** Always prefer single-pass string accumulation loops over nested array mapping for string document generation tasks like CSV or HTML exports.
 
 ## 2026-08-05 - [Fast-Path Image Bypass and Aspect-Ratio-Preserving Proportional Scaling]
 **Learning:** Performing unconditional image resizing operations on already small/compliant images wastes CPU cycles, memory, and disk I/O, while passing fixed bounding box dimensions directly to resize operations distorts and stretches non-square portrait/landscape images. Querying the original size and dimensions using a zero-operation pass enables a fast-path bypass for compliant images, and allows calculating proportional scale factors for correct aspect-ratio-preserving resizing.
