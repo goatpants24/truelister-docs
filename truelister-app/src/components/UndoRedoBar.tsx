@@ -26,7 +26,9 @@ export default memo(function UndoRedoBar({
         style={[styles.btn, !canUndo && styles.btnDisabled]}
         onPress={onUndo}
         disabled={!canUndo}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityLabel="Undo"
+        accessibilityHint="Reverts the last modification"
         accessibilityRole="button"
         accessibilityState={{ disabled: !canUndo }}
       >
@@ -35,7 +37,12 @@ export default memo(function UndoRedoBar({
       </TouchableOpacity>
 
       {historyLength > 0 && (
-        <View style={styles.badge}>
+        <View
+          style={styles.badge}
+          accessible={true}
+          accessibilityRole="text"
+          accessibilityLabel={`${historyLength} change${historyLength === 1 ? '' : 's'} in history`}
+        >
           <Text style={styles.badgeText}>{historyLength}</Text>
         </View>
       )}
@@ -44,7 +51,9 @@ export default memo(function UndoRedoBar({
         style={[styles.btn, !canRedo && styles.btnDisabled]}
         onPress={onRedo}
         disabled={!canRedo}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityLabel="Redo"
+        accessibilityHint="Reapplies the previously undone modification"
         accessibilityRole="button"
         accessibilityState={{ disabled: !canRedo }}
       >

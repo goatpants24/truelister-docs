@@ -29,8 +29,10 @@ export default function WhiteBalancePicker({ selected, onSelect }: Props) {
             key={mode}
             style={[styles.option, selected === mode && styles.optionSelected]}
             onPress={() => onSelect(mode)}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             accessibilityRole="button"
             accessibilityLabel={`Set white balance to ${label}`}
+            accessibilityHint={selected === mode ? 'Currently active mode' : `Selects ${label} white balance mode`}
             accessibilityState={{ selected: selected === mode }}
           >
             <Text style={styles.icon}>{icon}</Text>

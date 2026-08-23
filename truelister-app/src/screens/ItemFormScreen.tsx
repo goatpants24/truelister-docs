@@ -200,11 +200,6 @@ export default function ItemFormScreen() {
   const isDirty = canUndo;
   const isTitleValid = item.title.trim().length > 0;
 
-  /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Top-level Memoized Capture Status
-   * Memoizing captureStatus at top-level instead of inline in JSX props enforces React's Rules of Hooks
-   * and preserves referential stability to prevent redundant re-renders of QuickActionsBar.
-   */
   const captureStatus = useMemo(() => ({
     photoUrlCard: !!item.photoUrlCard,
     photoUrlFront: !!item.photoUrlFront,
@@ -215,14 +210,8 @@ export default function ItemFormScreen() {
     photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
     photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
   }), [
-    item.photoUrlCard,
-    item.photoUrlFront,
-    item.photoUrlBack,
-    item.photoUrlDetail,
-    item.photoUrlTabletopWide,
-    item.photoUrlTabletopDetail,
-    item.photoUrlTabletopMeasure1,
-    item.photoUrlTabletopMeasure2,
+    item.photoUrlCard, item.photoUrlFront, item.photoUrlBack, item.photoUrlDetail,
+    item.photoUrlTabletopWide, item.photoUrlTabletopDetail, item.photoUrlTabletopMeasure1, item.photoUrlTabletopMeasure2
   ]);
 
   const categoryItems = useMemo(() => dropdowns.categories.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.categories]);
@@ -319,20 +308,31 @@ export default function ItemFormScreen() {
     ]);
   }, [updateField]);
 
-  const handleCapture = useCallback((f: PhotoField) => {
-    setPhotoField(f);
-    setMode('camera');
-  }, []);
-
-  const handleScanTag = useCallback(() => {
-    setMode('tagScan');
-  }, []);
-
   /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Callbacks
-   * Stabilizing these handlers prevents the memoized QuickActionsBar from
-   * re-rendering on every keystroke during form entry.
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Top-level Memoization & Stabilized Callbacks
+   * Memoizing captureStatus at the top level strictly complies with React's Rules of
+   * Hooks and prevents QuickActionsBar re-renders when editing non-photo form fields.
    */
+  const captureStatus = useMemo(() => ({
+    photoUrlCard: !!item.photoUrlCard,
+    photoUrlFront: !!item.photoUrlFront,
+    photoUrlBack: !!item.photoUrlBack,
+    photoUrlDetail: !!item.photoUrlDetail,
+    photoUrlTabletopWide: !!item.photoUrlTabletopWide,
+    photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
+    photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
+    photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
+  }), [
+    item.photoUrlCard,
+    item.photoUrlFront,
+    item.photoUrlBack,
+    item.photoUrlDetail,
+    item.photoUrlTabletopWide,
+    item.photoUrlTabletopDetail,
+    item.photoUrlTabletopMeasure1,
+    item.photoUrlTabletopMeasure2,
+  ]);
+
   const handleCaptureTrigger = useCallback((f: PhotoField) => {
     setPhotoField(f);
     setMode('camera');
