@@ -200,20 +200,6 @@ export default function ItemFormScreen() {
   const isDirty = canUndo;
   const isTitleValid = item.title.trim().length > 0;
 
-  const captureStatus = useMemo(() => ({
-    photoUrlCard: !!item.photoUrlCard,
-    photoUrlFront: !!item.photoUrlFront,
-    photoUrlBack: !!item.photoUrlBack,
-    photoUrlDetail: !!item.photoUrlDetail,
-    photoUrlTabletopWide: !!item.photoUrlTabletopWide,
-    photoUrlTabletopDetail: !!item.photoUrlTabletopDetail,
-    photoUrlTabletopMeasure1: !!item.photoUrlTabletopMeasure1,
-    photoUrlTabletopMeasure2: !!item.photoUrlTabletopMeasure2,
-  }), [
-    item.photoUrlCard, item.photoUrlFront, item.photoUrlBack, item.photoUrlDetail,
-    item.photoUrlTabletopWide, item.photoUrlTabletopDetail, item.photoUrlTabletopMeasure1, item.photoUrlTabletopMeasure2
-  ]);
-
   const categoryItems = useMemo(() => dropdowns.categories.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.categories]);
   const conditionItems = useMemo(() => dropdowns.conditions.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.conditions]);
   const colorItems = useMemo(() => dropdowns.colors.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.colors]);

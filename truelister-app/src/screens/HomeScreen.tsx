@@ -345,6 +345,7 @@ export default function HomeScreen() {
         style={styles.fab}
         onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
         accessibilityLabel="Add new item"
+        accessibilityHint="Opens item form to create a new inventory item"
         accessibilityRole="button"
       >
         <Text style={styles.fabText}>+</Text>
