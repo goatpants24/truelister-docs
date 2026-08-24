@@ -35,3 +35,7 @@
 ## 2026-07-28 - Undo/Redo History Counter and Touch Target UX
 **Learning:** Compact toolbar controls like Undo/Redo buttons often suffer from small touch targets on mobile displays and non-descriptive screen reader output for numerical badge counters. Adding `hitSlop` touch expansion, `accessibilityHint` descriptors, and `accessible={true}` text labels to history counts makes undo/redo controls significantly more accessible and forgiving to tap.
 **Action:** Always add `hitSlop` to small toolbar action buttons and ensure numeric history/counter badges are wrapped with explicit `accessibilityLabel` attributes for screen reader clarity.
+
+## 2026-08-02 - Tag Scanner Feedback and Touch Target Expansion
+**Learning:** In camera and scanning flows, async processes (like OCR tag reading) need clear visual dimming (`opacity: 0.5`) and explicit screen reader status announcements (`accessibilityState={{ disabled: scanning }}` and dynamic labels like 'Scanning tag photo...'). Expanding header cancel buttons with `hitSlop` ensures reliable touch targets during camera modes.
+**Action:** Always dim and disable secondary controls during async image operations and add `hitSlop` to camera header close/cancel controls.

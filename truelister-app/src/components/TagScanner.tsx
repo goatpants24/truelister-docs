@@ -104,7 +104,13 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
             </Text>
           </View>
 
-          <Image source={{ uri: result.imageUri }} style={styles.tagPreview} resizeMode="contain" />
+          <Image
+            source={{ uri: result.imageUri }}
+            style={styles.tagPreview}
+            resizeMode="contain"
+            accessible={true}
+            accessibilityLabel="Preview of scanned clothing tag"
+          />
 
           {/* Detected Fields */}
           <Text style={styles.sectionLabel}>Detected Fields</Text>
@@ -126,10 +132,20 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
           </View>
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.buttonSecondary} onPress={handleRescan}>
+            <TouchableOpacity
+              style={styles.buttonSecondary}
+              onPress={handleRescan}
+              accessibilityRole="button"
+              accessibilityLabel="Rescan tag photo"
+            >
               <Text style={styles.buttonSecondaryText}>Rescan</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleAccept}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleAccept}
+              accessibilityRole="button"
+              accessibilityLabel="Use detected fields in item form"
+            >
               <Text style={styles.buttonText}>Use These Fields</Text>
             </TouchableOpacity>
           </View>
@@ -160,6 +176,7 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
           onPress={onCancel}
           accessibilityRole="button"
           accessibilityLabel="Cancel tag scan"
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
@@ -192,20 +209,23 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
         <WhiteBalancePicker selected={whiteBalance} onSelect={setWhiteBalance} />
         <View style={styles.captureRow}>
           <TouchableOpacity
-            style={styles.libraryButton}
+            style={[styles.libraryButton, scanning && { opacity: 0.5 }]}
             onPress={handlePickImage}
+            disabled={scanning}
             accessibilityRole="button"
             accessibilityLabel="Open photo library"
+            accessibilityState={{ disabled: scanning }}
           >
             <Text style={styles.libraryIcon}>🖼</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.captureButton}
+            style={[styles.captureButton, scanning && { opacity: 0.5 }]}
             onPress={handleCapture}
             disabled={scanning}
             accessibilityRole="button"
-            accessibilityLabel="Capture photo and scan tag"
+            accessibilityLabel={scanning ? 'Scanning tag photo...' : 'Capture photo and scan tag'}
+            accessibilityState={{ disabled: scanning }}
           >
             <View style={styles.captureInner}>
               <Text style={styles.captureLabel}>SCAN</Text>
