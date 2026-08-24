@@ -47,7 +47,7 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
   const len = csv.length;
   if (!len) return;
 
-  // Fast-Path: When CSV contains no double quotes, parse line-by-line using index scanning
+  // Fast-Path: When CSV contains no double quotes, parse line-by-line using index scanning directly on raw csv string
   if (!csv.includes('"')) {
     let lineStart = 0;
     while (lineStart < len) {
@@ -59,28 +59,26 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
         effectiveEnd--;
       }
 
-      const line = csv.slice(lineStart, effectiveEnd);
-      lineStart = lineEnd + 1;
+      if (lineStart < effectiveEnd) {
+        const currentRow: string[] = [];
+        let hasDataInRow = false;
+        let cellStart = lineStart;
 
-      if (!line) continue;
+        for (let i = lineStart; i <= effectiveEnd; i++) {
+          if (i === effectiveEnd || csv[i] === ',') {
+            const val = csv.slice(cellStart, i).trim();
+            if (val) hasDataInRow = true;
+            currentRow.push(val);
+            cellStart = i + 1;
+          }
+        }
 
-      const currentRow: string[] = [];
-      let hasDataInRow = false;
-      let cellStart = 0;
-      const lineLen = line.length;
-
-      for (let i = 0; i <= lineLen; i++) {
-        if (i === lineLen || line[i] === ',') {
-          const val = line.slice(cellStart, i).trim();
-          if (val) hasDataInRow = true;
-          currentRow.push(val);
-          cellStart = i + 1;
+        if (hasDataInRow || currentRow.length > 1) {
+          onRow(currentRow);
         }
       }
 
-      if (hasDataInRow || currentRow.length > 1) {
-        onRow(currentRow);
-      }
+      lineStart = lineEnd + 1;
     }
     return;
   }
