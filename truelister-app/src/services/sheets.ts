@@ -47,7 +47,7 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
   const len = csv.length;
   if (!len) return;
 
-  // Fast-Path: When CSV contains no double quotes, parse line-by-line using index scanning directly on raw csv string
+  // Fast-Path: When CSV contains no double quotes, parse line-by-line using native indexOf comma scanning
   if (!csv.includes('"')) {
     let lineStart = 0;
     while (lineStart < len) {
@@ -64,13 +64,19 @@ function parseCSV(csv: string, onRow: (row: string[]) => void): void {
         let hasDataInRow = false;
         let cellStart = lineStart;
 
-        for (let i = lineStart; i <= effectiveEnd; i++) {
-          if (i === effectiveEnd || csv[i] === ',') {
-            const val = csv.slice(cellStart, i).trim();
-            if (val) hasDataInRow = true;
-            currentRow.push(val);
-            cellStart = i + 1;
+        // Bolt: Jump directly from comma to comma using native C++ indexOf (memchr)
+        // Reduces loop iterations per row from character count (~150-200) to column count (~15)
+        while (cellStart <= effectiveEnd) {
+          let nextComma = csv.indexOf(',', cellStart);
+          if (nextComma === -1 || nextComma > effectiveEnd) {
+            nextComma = effectiveEnd;
           }
+
+          const val = csv.slice(cellStart, nextComma).trim();
+          if (val) hasDataInRow = true;
+          currentRow.push(val);
+
+          cellStart = nextComma + 1;
         }
 
         if (hasDataInRow || currentRow.length > 1) {
