@@ -100,6 +100,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
       {/* Docs link */}
       <TouchableOpacity
         onPress={() => Linking.openURL(marketplace.docsUrl)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="link"
         accessibilityLabel={`View API documentation for ${marketplace.name}`}
         accessibilityHint="Opens in your browser"
@@ -172,6 +173,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
           onPress={handleSave}
           accessibilityRole="button"
           accessibilityLabel={saved ? `Saved ${marketplace.name} credentials` : `Save ${marketplace.name} credentials`}
+          accessibilityHint={`Saves API credentials for ${marketplace.name} locally`}
         >
           <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
         </TouchableOpacity>
@@ -180,6 +182,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
           onPress={handleClear}
           accessibilityRole="button"
           accessibilityLabel={`Clear ${marketplace.name} credentials`}
+          accessibilityHint={`Removes saved credentials for ${marketplace.name}`}
         >
           <Text style={styles.clearBtnText}>Clear</Text>
         </TouchableOpacity>
