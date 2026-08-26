@@ -33,6 +33,7 @@ const DraftCard = memo(({
     activeOpacity={0.75}
     accessibilityRole="button"
     accessibilityLabel={`Edit draft ${item.itemNumber}: ${item.title || 'Untitled'}`}
+    accessibilityHint="Opens item form to edit this draft"
   >
     <View style={styles.cardLeft}>
       <Text style={styles.itemNumber}>{item.itemNumber}</Text>
@@ -51,6 +52,7 @@ const DraftCard = memo(({
       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
       accessibilityRole="button"
       accessibilityLabel={`Delete draft ${item.itemNumber}`}
+      accessibilityHint="Permanently removes this draft"
     >
       <Text style={styles.deleteIcon}>🗑</Text>
     </TouchableOpacity>
@@ -118,7 +120,7 @@ export default function DraftsScreen() {
   if (drafts.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyIcon}>📝</Text>
+        <Text style={styles.emptyIcon} accessibilityElementsHidden={true} importantForAccessibility="no">📝</Text>
         <Text style={styles.emptyTitle}>No Drafts</Text>
         <Text style={styles.emptySubtitle}>
           Items saved offline will appear here.
@@ -137,7 +139,7 @@ export default function DraftsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Drafts ({drafts.length})</Text>
+      <Text style={styles.header} accessibilityRole="header">Drafts ({drafts.length})</Text>
       <FlatList
         data={drafts}
         keyExtractor={(item) => item.itemNumber}
