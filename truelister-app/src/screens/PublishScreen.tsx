@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,54 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-import { MARKETPLACES, MarketplaceId, ListingResult } from '../services/marketplaces/types';
+import { MARKETPLACES, MarketplaceId, MarketplaceMeta, ListingResult } from '../services/marketplaces/types';
 import { publishToMarketplaces } from '../services/marketplaces/publisher';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Publish'>;
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Map & Memoized Card Component
+ * Pre-building a lookup map eliminates O(N) Array.find calls during result rendering.
+ * Memoizing PlatformCard prevents unnecessary re-renders of un-selected platform buttons.
+ */
+const MARKETPLACE_MAP: Record<MarketplaceId, MarketplaceMeta> = MARKETPLACES.reduce((acc, m) => {
+  acc[m.id] = m;
+  return acc;
+}, {} as Record<MarketplaceId, MarketplaceMeta>);
+
+const PlatformCard = memo(({
+  meta,
+  isSelected,
+  onToggle,
+}: {
+  meta: MarketplaceMeta;
+  isSelected: boolean;
+  onToggle: (id: MarketplaceId) => void;
+}) => (
+  <TouchableOpacity
+    style={[
+      styles.platformBtn,
+      isSelected && { borderColor: meta.color, backgroundColor: `${meta.color}18` },
+    ]}
+    onPress={() => onToggle(meta.id)}
+    activeOpacity={0.7}
+    accessibilityRole="button"
+    accessibilityLabel={meta.name}
+    accessibilityState={{ selected: isSelected }}
+  >
+    <Text style={[styles.platformName, isSelected && { color: meta.color }]}>
+      {isSelected ? '✓ ' : ''}{meta.name}
+    </Text>
+    <Text style={[
+      styles.platformStatus,
+      meta.apiStatus === 'official' && { color: '#22c55e' },
+      meta.apiStatus === 'partner_only' && { color: '#eab308' },
+      meta.apiStatus === 'no_api' && { color: '#ef4444' },
+    ]}>
+      {meta.apiStatus === 'official' ? '● Direct' : meta.apiStatus === 'partner_only' ? '● Partner' : '○ Manual'}
+    </Text>
+  </TouchableOpacity>
+));
 
 export default function PublishScreen({ route, navigation }: Props) {
   const { item } = route.params;
@@ -22,15 +66,15 @@ export default function PublishScreen({ route, navigation }: Props) {
   const [publishing, setPublishing] = useState(false);
   const [results, setResults] = useState<ListingResult[] | null>(null);
 
-  const toggleMarketplace = (id: MarketplaceId) => {
+  const toggleMarketplace = useCallback((id: MarketplaceId) => {
     setSelected(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  };
+  }, []);
 
-  const handlePublish = async () => {
+  const handlePublish = useCallback(async () => {
     if (selected.size === 0) {
       Alert.alert('No Platforms Selected', 'Select at least one marketplace to publish to.');
       return;
@@ -45,7 +89,7 @@ export default function PublishScreen({ route, navigation }: Props) {
     } finally {
       setPublishing(false);
     }
-  };
+  }, [selected, item]);
 
   const successCount = results?.filter(r => r.success).length ?? 0;
   const failCount = results?.filter(r => !r.success).length ?? 0;
@@ -58,35 +102,14 @@ export default function PublishScreen({ route, navigation }: Props) {
       {/* Platform selector */}
       <Text style={styles.sectionLabel}>Select Platforms</Text>
       <View style={styles.platformGrid}>
-        {MARKETPLACES.map(m => {
-          const isSelected = selected.has(m.id);
-          return (
-            <TouchableOpacity
-              key={m.id}
-              style={[
-                styles.platformBtn,
-                isSelected && { borderColor: m.color, backgroundColor: `${m.color}18` },
-              ]}
-              onPress={() => toggleMarketplace(m.id)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={m.name}
-              accessibilityState={{ selected: isSelected }}
-            >
-              <Text style={[styles.platformName, isSelected && { color: m.color }]}>
-                {isSelected ? '✓ ' : ''}{m.name}
-              </Text>
-              <Text style={[
-                styles.platformStatus,
-                m.apiStatus === 'official' && { color: '#22c55e' },
-                m.apiStatus === 'partner_only' && { color: '#eab308' },
-                m.apiStatus === 'no_api' && { color: '#ef4444' },
-              ]}>
-                {m.apiStatus === 'official' ? '● Direct' : m.apiStatus === 'partner_only' ? '● Partner' : '○ Manual'}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        {MARKETPLACES.map(m => (
+          <PlatformCard
+            key={m.id}
+            meta={m}
+            isSelected={selected.has(m.id)}
+            onToggle={toggleMarketplace}
+          />
+        ))}
       </View>
 
       {/* Publish button */}
@@ -120,7 +143,7 @@ export default function PublishScreen({ route, navigation }: Props) {
           </View>
 
           {results.map(r => {
-            const meta = MARKETPLACES.find(m => m.id === r.marketplace)!;
+            const meta = MARKETPLACE_MAP[r.marketplace];
             return (
               <View
                 key={r.marketplace}
