@@ -142,8 +142,21 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   } else {
     const found = text.match(FABRIC_REGEX);
     if (found) {
-      const unique = Array.from(new Set(found.map(f => f.toLowerCase())));
-      result.fabricMaterial = unique.map(f => f.charAt(0).toUpperCase() + f.slice(1)).join(', ');
+      /**
+       * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass Set Accumulation
+       * Deduplicates and formats extracted fabric keywords in a single loop over `found`,
+       * replacing `.map().Set().map()` array chaining to avoid intermediate array allocations.
+       */
+      const seen = new Set<string>();
+      const formatted: string[] = [];
+      for (let i = 0; i < found.length; i++) {
+        const lower = found[i].toLowerCase();
+        if (!seen.has(lower)) {
+          seen.add(lower);
+          formatted.push(lower.charAt(0).toUpperCase() + lower.slice(1));
+        }
+      }
+      result.fabricMaterial = formatted.join(', ');
     }
   }
 
@@ -156,8 +169,21 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   // ── Care Instructions ──
   const careFound = text.match(CARE_REGEX);
   if (careFound) {
-    const unique = Array.from(new Set(careFound.map(c => c.toLowerCase())));
-    const careNote = `Care: ${unique.join(', ')}`;
+    /**
+     * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass Set Accumulation
+     * Deduplicates and formats care instructions in a single pass over `careFound`,
+     * eliminating intermediate array allocations and reducing garbage collection pressure.
+     */
+    const seen = new Set<string>();
+    const formatted: string[] = [];
+    for (let i = 0; i < careFound.length; i++) {
+      const lower = careFound[i].toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        formatted.push(lower);
+      }
+    }
+    const careNote = `Care: ${formatted.join(', ')}`;
     result.notes = result.notes ? `${result.notes}. ${careNote}` : careNote;
   }
 
