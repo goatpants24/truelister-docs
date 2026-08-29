@@ -37,3 +37,7 @@
 ## 2026-07-20 - [Setup and Settings Soft Keyboard Flow]
 **Learning:** Completing configuration and connectivity screens can feel tedious if the user has to manually dismiss the soft keyboard and tap buttons. Wiring inputs with step-appropriate `returnKeyType` ('next' or 'done') and `onSubmitEditing` callbacks allows a continuous and natural typing flow that automatically advances steps or saves settings.
 **Action:** Map `returnKeyType` to transition focus or submit the form, and use `useRef` to target the next input without losing focus.
+
+## 2026-07-21 - [Dynamic Proactive Feedback for Action Buttons]
+**Learning:** In multi-selection actions (like marketplace publishing), disabling the action button when 0 items are selected and dynamically updating its label to actionable instructions (e.g. "Select a Platform to Publish") guides users proactively and eliminates unnecessary alert modals.
+**Action:** Disable action buttons when prerequisites are missing, dynamically update their text to describe the required action, and pair with appropriate `accessibilityState={{ disabled: boolean }}` and `accessibilityLabel` attributes.
