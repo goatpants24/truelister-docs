@@ -142,8 +142,16 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   } else {
     const found = text.match(FABRIC_REGEX);
     if (found) {
-      const unique = Array.from(new Set(found.map(f => f.toLowerCase())));
-      result.fabricMaterial = unique.map(f => f.charAt(0).toUpperCase() + f.slice(1)).join(', ');
+      /**
+       * Bolt Performance Optimization: Single-pass Set accumulation
+       * Eliminates intermediate .map(), Set conversion, and second .map() array allocations.
+       */
+      const unique = new Set<string>();
+      for (let i = 0; i < found.length; i++) {
+        const f = found[i].toLowerCase();
+        unique.add(f.charAt(0).toUpperCase() + f.slice(1));
+      }
+      result.fabricMaterial = Array.from(unique).join(', ');
     }
   }
 
@@ -156,8 +164,15 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   // ── Care Instructions ──
   const careFound = text.match(CARE_REGEX);
   if (careFound) {
-    const unique = Array.from(new Set(careFound.map(c => c.toLowerCase())));
-    const careNote = `Care: ${unique.join(', ')}`;
+    /**
+     * Bolt Performance Optimization: Single-pass Set accumulation
+     * Eliminates intermediate .map() and Set array allocations.
+     */
+    const unique = new Set<string>();
+    for (let i = 0; i < careFound.length; i++) {
+      unique.add(careFound[i].toLowerCase());
+    }
+    const careNote = `Care: ${Array.from(unique).join(', ')}`;
     result.notes = result.notes ? `${result.notes}. ${careNote}` : careNote;
   }
 
