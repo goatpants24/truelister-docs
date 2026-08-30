@@ -81,7 +81,14 @@ const FABRIC_REGEX = new RegExp('\\b(' + [...FABRIC_KEYWORDS].sort((a, b) => b.l
 
 const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
-const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
+/**
+ * Bolt Performance Optimization & Correctness Guard:
+ * Restrict MADE_IN_REGEX capturing group to horizontal whitespace ([\t ]).
+ * Using \s previously matched line breaks (\n, \r), causing the regex engine
+ * to greedily consume multi-line OCR text and bleed subsequent lines into result.notes,
+ * as well as risking catastrophic backtracking.
+ */
+const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\t ]+)/i;
 
 const CARE_REGEX = new RegExp('\\b(' + Array.from(new Set(CARE_KEYWORDS)).sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
