@@ -42,9 +42,17 @@ export default function OnboardingScreen() {
     }
   };
 
+  const isStep1Disabled = step === 1 && !sheetUrl.trim();
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.emoji}>{step === 1 ? '📊' : '🚀'}</Text>
+      <Text
+        style={styles.emoji}
+        accessibilityElementsHidden={true}
+        importantForAccessibility="no"
+      >
+        {step === 1 ? '📊' : '🚀'}
+      </Text>
       <Text style={styles.title}>
         {step === 1 ? 'Connect your Catalog' : 'Enable Saving'}
       </Text>
@@ -69,10 +77,17 @@ export default function OnboardingScreen() {
       />
 
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, isStep1Disabled && { opacity: 0.5 }]}
         onPress={handleNext}
+        disabled={isStep1Disabled}
         accessibilityRole="button"
         accessibilityLabel={step === 1 ? "Next" : "Finish Setup"}
+        accessibilityHint={
+          step === 1
+            ? "Saves Google Sheet URL and advances to Apps Script configuration"
+            : "Completes onboarding and opens the catalog home screen"
+        }
+        accessibilityState={{ disabled: isStep1Disabled }}
       >
         <Text style={styles.buttonText}>{step === 1 ? 'Next' : 'Finish Setup'}</Text>
       </TouchableOpacity>
@@ -81,8 +96,10 @@ export default function OnboardingScreen() {
         <TouchableOpacity
           style={styles.skip}
           onPress={() => setStep(2)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
           accessibilityLabel="Use default demo sheet"
+          accessibilityHint="Skips custom sheet entry and uses pre-configured demo inventory"
         >
           <Text style={styles.skipText}>Use default demo sheet</Text>
         </TouchableOpacity>
