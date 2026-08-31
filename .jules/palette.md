@@ -41,3 +41,7 @@
 ## 2026-07-21 - [Dynamic Proactive Feedback for Action Buttons]
 **Learning:** In multi-selection actions (like marketplace publishing), disabling the action button when 0 items are selected and dynamically updating its label to actionable instructions (e.g. "Select a Platform to Publish") guides users proactively and eliminates unnecessary alert modals.
 **Action:** Disable action buttons when prerequisites are missing, dynamically update their text to describe the required action, and pair with appropriate `accessibilityState={{ disabled: boolean }}` and `accessibilityLabel` attributes.
+
+## 2026-07-22 - [Smart Title Auto-Generation Assistant]
+**Learning:** Turning static placeholder triggers (like "AI Suggest coming soon") into functional, deterministic title generators based on existing form fields (Brand, Color, Category, Size) eliminates dead-ends and provides immediate utility for resellers without requiring complex external APIs.
+**Action:** When key form fields are present, offer local smart helpers that auto-compose structured text (like marketplace listing titles) and prompt the user to apply them.
