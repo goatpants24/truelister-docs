@@ -1,3 +1,7 @@
+## 2026-08-31 - [Single-Line Regex Scope & Backtracking Guard for OCR]
+**Learning:** Using generic whitespace matchers (`\s` or `\s+`) in capturing groups inside multi-line text parsers (such as clothing tag OCR scans) allows regex engines to consume newlines (`\n`, `\r`) across lines, leading to potential catastrophic regex backtracking on long inputs and unwanted line bleed into parsed object fields. Restricting capturing groups to horizontal whitespace (`[\t ]`) bounds regex scanning strictly to the target line, improving parsing speed and correctness.
+**Action:** In multi-line text parsing regular expressions, use horizontal whitespace (`[\t ]`) instead of `\s` inside capturing groups whenever match fields are expected to exist on a single line.
+
 ## 2026-08-26 - [Zero-Accumulation Quoted CSV Parser]
 **Learning:** Character-by-character string concatenation (`currentCell += char`) in CSV parsers when processing quoted cells creates $O(N_{chars})$ temporary string allocations per field on the V8 heap, creating significant garbage collection pressure during large spreadsheet parses. Using index bounds tracking and `csv.slice()` at cell delimiter boundaries (post-processing quotes and escaped quotes in-place) reduces CSV parsing time by ~50% and eliminates millions of intermediate string allocations.
 **Action:** In text parsers, avoid character-by-character accumulator variables (`s += char`) in favor of index range slicing (`str.slice(start, end)`) at token boundaries.
