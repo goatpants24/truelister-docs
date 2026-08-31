@@ -81,7 +81,13 @@ const FABRIC_REGEX = new RegExp('\\b(' + [...FABRIC_KEYWORDS].sort((a, b) => b.l
 
 const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
-const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
+/**
+ * Bolt Performance Optimization: Restricted Country Regex
+ * Uses horizontal whitespace [\t ] instead of \s in the capturing group to restrict
+ * country extraction to the current line, preventing multi-line bleeding into notes
+ * and eliminating catastrophic regex backtracking across newlines on multi-line OCR outputs.
+ */
+const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\t ]+)/i;
 
 const CARE_REGEX = new RegExp('\\b(' + Array.from(new Set(CARE_KEYWORDS)).sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
