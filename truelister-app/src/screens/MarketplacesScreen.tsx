@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -39,7 +39,12 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
 
 // ── Single Marketplace Card ───────────────────────────────────────────────────
 
-function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized MarketplaceCard Component
+ * Wrapping MarketplaceCard in React.memo skips re-rendering card instances when parent
+ * screen re-renders, taking advantage of the referential stability of MARKETPLACES items.
+ */
+const MarketplaceCard = memo(function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -189,7 +194,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
       </View>
     </View>
   );
-}
+});
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
