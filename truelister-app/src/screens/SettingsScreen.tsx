@@ -207,7 +207,8 @@ export default function SettingsScreen() {
         style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
         onPress={handleSave}
         accessibilityRole="button"
-        accessibilityLabel="Save settings"
+        accessibilityLabel={saved ? 'Settings saved successfully' : 'Save settings'}
+        accessibilityState={{ disabled: saved }}
       >
         <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save Settings'}</Text>
       </TouchableOpacity>
@@ -220,6 +221,7 @@ export default function SettingsScreen() {
           onPress={handleClearData}
           accessibilityRole="button"
           accessibilityLabel="Clear all local data and reset app"
+          accessibilityHint="Permanently removes all saved drafts, settings, and local marketplace credentials"
         >
           <Text style={styles.dangerBtnText}>Clear All Local Data</Text>
         </TouchableOpacity>
