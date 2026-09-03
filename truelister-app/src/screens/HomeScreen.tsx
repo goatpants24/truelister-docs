@@ -224,37 +224,45 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.viewModeRow}>
-            {VIEW_MODES.map((mode) => (
-              <TouchableOpacity
-                key={mode}
-                onPress={() => setViewMode(mode)}
-                style={[styles.modeButton, viewMode === mode && { backgroundColor: '#4f6ef7' }]}
-                accessibilityRole="button"
-                accessibilityLabel={`${mode} view`}
-                accessibilityState={{ selected: viewMode === mode }}
-              >
-                <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
-                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {VIEW_MODES.map((mode) => {
+              const isSelected = viewMode === mode;
+              return (
+                <TouchableOpacity
+                  key={mode}
+                  onPress={() => setViewMode(mode)}
+                  style={[styles.modeButton, isSelected && { backgroundColor: '#4f6ef7' }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${mode} view`}
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityHint={`Switches catalog layout mode to ${mode}`}
+                >
+                  <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
+                    {isSelected ? '✓ ' : ''}{mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           <View style={styles.thumbnailSizeRow}>
-            {THUMBNAIL_SIZES.map((size) => (
-              <TouchableOpacity
-                key={size}
-                onPress={() => setThumbnailSize(size)}
-                style={[styles.sizeButton, thumbnailSize === size && { backgroundColor: '#4f6ef7' }]}
-                accessibilityRole="button"
-                accessibilityLabel={`${size} thumbnails`}
-                accessibilityState={{ selected: thumbnailSize === size }}
-              >
-                <Text style={{ color: 'white', fontSize: 12 }}>
-                  {size.charAt(0).toUpperCase()}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {THUMBNAIL_SIZES.map((size) => {
+              const isSelected = thumbnailSize === size;
+              return (
+                <TouchableOpacity
+                  key={size}
+                  onPress={() => setThumbnailSize(size)}
+                  style={[styles.sizeButton, isSelected && { backgroundColor: '#4f6ef7' }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${size} thumbnails`}
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityHint={`Changes item thumbnail size to ${size}`}
+                >
+                  <Text style={{ color: 'white', fontSize: 12, fontWeight: isSelected ? '700' : '400' }}>
+                    {isSelected ? '✓ ' : ''}{size.charAt(0).toUpperCase()}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -277,7 +285,7 @@ export default function HomeScreen() {
         </View>
       ) : error ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorIcon} accessibilityElementsHidden={true} importantForAccessibility="no">⚠️</Text>
           <Text style={styles.errorTitle}>Connection Issue</Text>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => loadItems()}>
@@ -292,7 +300,7 @@ export default function HomeScreen() {
         </View>
       ) : items.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📦</Text>
+          <Text style={styles.emptyIcon} accessibilityElementsHidden={true} importantForAccessibility="no">📦</Text>
           <Text style={styles.emptyTitle}>No Items Found</Text>
           <Text style={styles.emptyText}>Add your first item or check your connection.</Text>
           <TouchableOpacity

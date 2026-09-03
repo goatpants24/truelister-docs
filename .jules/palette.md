@@ -41,3 +41,7 @@
 ## 2026-07-21 - [Dynamic Proactive Feedback for Action Buttons]
 **Learning:** In multi-selection actions (like marketplace publishing), disabling the action button when 0 items are selected and dynamically updating its label to actionable instructions (e.g. "Select a Platform to Publish") guides users proactively and eliminates unnecessary alert modals.
 **Action:** Disable action buttons when prerequisites are missing, dynamically update their text to describe the required action, and pair with appropriate `accessibilityState={{ disabled: boolean }}` and `accessibilityLabel` attributes.
+
+## 2026-07-22 - [Visual Indicators for View Control Toggles]
+**Learning:** In view mode and layout size toggles, relying solely on background color changes to indicate the active state can be ambiguous, especially for colorblind users or in direct sunlight. Adding a visual checkmark (`✓ `) prefix to the active option text provides immediate, high-contrast visual confirmation.
+**Action:** Include a visual prefix (such as `✓ `) on active control toggles alongside `accessibilityState={{ selected: boolean }}` and descriptive `accessibilityHint` attributes.
