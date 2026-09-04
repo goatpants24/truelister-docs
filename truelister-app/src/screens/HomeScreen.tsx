@@ -232,9 +232,10 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`${mode} view`}
                 accessibilityState={{ selected: viewMode === mode }}
+                accessibilityHint={`Switches catalog layout to ${mode} view`}
               >
                 <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
-                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  {viewMode === mode ? '✓ ' : ''}{mode.charAt(0).toUpperCase() + mode.slice(1)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -249,9 +250,10 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`${size} thumbnails`}
                 accessibilityState={{ selected: thumbnailSize === size }}
+                accessibilityHint={`Changes image thumbnail size to ${size}`}
               >
                 <Text style={{ color: 'white', fontSize: 12 }}>
-                  {size.charAt(0).toUpperCase()}
+                  {thumbnailSize === size ? '✓ ' : ''}{size.charAt(0).toUpperCase()}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -263,6 +265,7 @@ export default function HomeScreen() {
           onPress={handleExport}
           accessibilityRole="button"
           accessibilityLabel="Export catalog or use marketplace templates"
+          accessibilityHint="Opens options to export catalog as CSV, HTML, or generate marketplace templates"
         >
           <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
             ⚙️ Export / Templates
