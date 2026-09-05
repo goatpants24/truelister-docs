@@ -119,13 +119,20 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             {preview.compressed.width} x {preview.compressed.height}
           </Text>
         </View>
-        <Image source={{ uri: preview.compressed.uri }} style={styles.previewImage} resizeMode="contain" />
+        <Image
+          source={{ uri: preview.compressed.uri }}
+          style={styles.previewImage}
+          resizeMode="contain"
+          accessible={true}
+          accessibilityLabel={`Captured photo preview for item ${itemNumber}`}
+        />
         <View style={styles.previewActions}>
           <TouchableOpacity
             style={styles.buttonSecondary}
             onPress={handleRetake}
             accessibilityRole="button"
             accessibilityLabel="Retake photo"
+            accessibilityHint="Discards captured photo and reopens camera view"
           >
             <Text style={styles.buttonSecondaryText}>Retake</Text>
           </TouchableOpacity>
@@ -134,6 +141,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             onPress={handleConfirm}
             accessibilityRole="button"
             accessibilityLabel="Use this photo"
+            accessibilityHint="Saves captured photo and assigns it to item"
           >
             <Text style={styles.buttonText}>Use Photo</Text>
           </TouchableOpacity>
@@ -182,6 +190,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             disabled={processing}
             accessibilityRole="button"
             accessibilityLabel="Open photo library"
+            accessibilityHint="Selects an existing photo from device photo library"
             accessibilityState={{ disabled: processing }}
           >
             <Text style={styles.libraryIcon}>🖼</Text>
