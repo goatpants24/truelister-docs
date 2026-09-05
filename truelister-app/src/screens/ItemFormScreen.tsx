@@ -102,6 +102,37 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: {
   );
 });
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Dropdown Picker Component
+ * Extracting pickers into a memoized component with stabilized change callbacks
+ * prevents expensive native Picker controls from re-rendering on every keystroke
+ * during text input edits.
+ */
+const FormPicker = memo(({
+  label,
+  selectedValue,
+  onValueChange,
+  items,
+}: {
+  label: string;
+  selectedValue: string;
+  onValueChange: (val: string) => void;
+  items: React.ReactNode;
+}) => (
+  <View style={{ flex: 1 }}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={styles.pickerWrapper}>
+      <Picker
+        selectedValue={selectedValue}
+        onValueChange={(v) => onValueChange(v as string)}
+        style={styles.picker}
+      >
+        {items}
+      </Picker>
+    </View>
+  </View>
+));
+
 interface QuickActionsBarProps {
   captureStatus: Record<PhotoField, boolean>;
   ocrRawText: string;
@@ -217,6 +248,10 @@ export default function ItemFormScreen() {
   const updateField = useCallback((field: keyof CatalogItem, value: string, immediate = false) => {
     setItem((prev) => ({ ...prev, [field]: value }), immediate);
   }, [setItem]);
+
+  const handleCategoryChange = useCallback((v: string) => updateField('category', v, true), [updateField]);
+  const handleConditionChange = useCallback((v: string) => updateField('condition', v, true), [updateField]);
+  const handleColorChange = useCallback((v: string) => updateField('color', v, true), [updateField]);
 
   const toggleMarketplace = useCallback((m: string) => {
     setItem((prev) => {
@@ -451,7 +486,12 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.row}>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Category</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.category} onValueChange={(v) => updateField('category', v as string, true)} style={styles.picker}>{categoryItems}</Picker></View></View>
+          <FormPicker
+            label="Category"
+            selectedValue={item.category}
+            onValueChange={handleCategoryChange}
+            items={categoryItems}
+          />
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Size</Text>
             <TextInput
@@ -470,8 +510,18 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.row}>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Condition</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.condition} onValueChange={(v) => updateField('condition', v as string, true)} style={styles.picker}>{conditionItems}</Picker></View></View>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Color</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.color} onValueChange={(v) => updateField('color', v as string, true)} style={styles.picker}>{colorItems}</Picker></View></View>
+          <FormPicker
+            label="Condition"
+            selectedValue={item.condition}
+            onValueChange={handleConditionChange}
+            items={conditionItems}
+          />
+          <FormPicker
+            label="Color"
+            selectedValue={item.color}
+            onValueChange={handleColorChange}
+            items={colorItems}
+          />
         </View>
 
         <View style={styles.field}>
@@ -612,7 +662,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   pickerWrapper: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, overflow: 'hidden' },
-  picker: { color: '#e8eaf6', height: 48 },
+  picker: { color: '#e8eaf6', height: 48, backgroundColor: 'transparent' },
   fieldFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
   validationError: { fontSize: 11, color: '#f87171', fontWeight: '500' },
   charCount: { fontSize: 11, color: '#94a3b8' },
