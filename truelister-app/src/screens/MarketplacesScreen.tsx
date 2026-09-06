@@ -42,6 +42,7 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
 function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,9 +57,14 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
   }, [marketplace.id]);
 
   const handleSave = async () => {
-    await saveCredentials(marketplace.id, values);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaving(true);
+    try {
+      await saveCredentials(marketplace.id, values);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleClear = () => {
@@ -169,13 +175,25 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
       {/* Actions */}
       <View style={styles.cardActions}>
         <TouchableOpacity
-          style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
+          style={[styles.saveBtn, saved && styles.saveBtnSuccess, (saving || saved) && { opacity: 0.8 }]}
           onPress={handleSave}
+          disabled={saving || saved}
           accessibilityRole="button"
-          accessibilityLabel={saved ? `Saved ${marketplace.name} credentials` : `Save ${marketplace.name} credentials`}
+          accessibilityLabel={
+            saving
+              ? `Saving ${marketplace.name} credentials`
+              : saved
+              ? `Saved ${marketplace.name} credentials`
+              : `Save ${marketplace.name} credentials`
+          }
+          accessibilityState={{ disabled: saving || saved }}
           accessibilityHint={`Saves API credentials for ${marketplace.name} locally`}
         >
-          <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
+          {saving ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.clearBtn}
