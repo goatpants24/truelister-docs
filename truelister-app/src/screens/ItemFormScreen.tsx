@@ -70,6 +70,35 @@ const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   photoUrlTabletopMeasure2: '',
 });
 
+interface FormPickerProps {
+  label: string;
+  selectedValue: string;
+  onValueChange: (value: string) => void;
+  items: React.ReactNode[];
+}
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Dropdown Picker
+ * Extracting dropdown pickers (Category, Condition, Color) into a memoized component
+ * skips picker re-renders during high-frequency text input edits (Title, Brand, Price, Notes).
+ */
+const FormPicker = memo(({ label, selectedValue, onValueChange, items }: FormPickerProps) => {
+  return (
+    <View style={{ flex: 1 }}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.pickerWrapper}>
+        <Picker
+          selectedValue={selectedValue}
+          onValueChange={onValueChange}
+          style={styles.picker}
+        >
+          {items}
+        </Picker>
+      </View>
+    </View>
+  );
+});
+
 const MarketplaceSelector = memo(({ selected, available, onToggle }: {
   selected: string;
   available: string[];
@@ -205,6 +234,22 @@ export default function ItemFormScreen() {
   const colorItems = useMemo(() => dropdowns.colors.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.colors]);
   const saleStatusItems = useMemo(() => dropdowns.saleStatuses.map(s => <Picker.Item key={s} label={s} value={s} color="#e2e8f0" />), [dropdowns.saleStatuses]);
 
+  const updateField = useCallback((field: keyof CatalogItem, value: string, immediate = false) => {
+    setItem((prev) => ({ ...prev, [field]: value }), immediate);
+  }, [setItem]);
+
+  const handleCategoryChange = useCallback((v: string) => {
+    updateField('category', v, true);
+  }, [updateField]);
+
+  const handleConditionChange = useCallback((v: string) => {
+    updateField('condition', v, true);
+  }, [updateField]);
+
+  const handleColorChange = useCallback((v: string) => {
+    updateField('color', v, true);
+  }, [updateField]);
+
   usePreventRemove(isDirty && !saving, ({ data }) => {
     Alert.alert('Unsaved Changes', 'Discard changes and go back?', [
       { text: 'Keep Editing', style: 'cancel' },
@@ -213,10 +258,6 @@ export default function ItemFormScreen() {
   });
 
   useEffect(() => { fetchDropdowns().then(setDropdowns); }, []);
-
-  const updateField = useCallback((field: keyof CatalogItem, value: string, immediate = false) => {
-    setItem((prev) => ({ ...prev, [field]: value }), immediate);
-  }, [setItem]);
 
   const toggleMarketplace = useCallback((m: string) => {
     setItem((prev) => {
@@ -451,7 +492,12 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.row}>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Category</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.category} onValueChange={(v) => updateField('category', v as string, true)} style={styles.picker}>{categoryItems}</Picker></View></View>
+          <FormPicker
+            label="Category"
+            selectedValue={item.category}
+            onValueChange={handleCategoryChange}
+            items={categoryItems}
+          />
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Size</Text>
             <TextInput
@@ -470,8 +516,18 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.row}>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Condition</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.condition} onValueChange={(v) => updateField('condition', v as string, true)} style={styles.picker}>{conditionItems}</Picker></View></View>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Color</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.color} onValueChange={(v) => updateField('color', v as string, true)} style={styles.picker}>{colorItems}</Picker></View></View>
+          <FormPicker
+            label="Condition"
+            selectedValue={item.condition}
+            onValueChange={handleConditionChange}
+            items={conditionItems}
+          />
+          <FormPicker
+            label="Color"
+            selectedValue={item.color}
+            onValueChange={handleColorChange}
+            items={colorItems}
+          />
         </View>
 
         <View style={styles.field}>
@@ -612,7 +668,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   pickerWrapper: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, overflow: 'hidden' },
-  picker: { color: '#e8eaf6', height: 48 },
+  picker: { color: '#e8eaf6', height: 48, backgroundColor: 'transparent' },
   fieldFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
   validationError: { fontSize: 11, color: '#f87171', fontWeight: '500' },
   charCount: { fontSize: 11, color: '#94a3b8' },
