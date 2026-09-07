@@ -1,3 +1,7 @@
+## 2026-08-27 - [Horizontal Whitespace Single-Line Regex Bounds]
+**Learning:** Using `\s` inside capturing groups in regexes meant to parse single-line metadata (such as country of origin in `MADE_IN_REGEX`) causes the engine to match newlines (`\n`, `\r`), leading to multi-line string bleeding into result fields and expensive $O(N)$ regex backtracking across large multi-line OCR text outputs. Restricting capturing groups to horizontal whitespace `[\t ]` forces single-line boundaries, eliminating line bleed and multi-line backtracking.
+**Action:** When extracting single-line field metadata from multi-line text blocks, avoid `\s` in capturing groups in favor of horizontal whitespace `[\t ]`.
+
 ## 2026-08-26 - [Zero-Accumulation Quoted CSV Parser]
 **Learning:** Character-by-character string concatenation (`currentCell += char`) in CSV parsers when processing quoted cells creates $O(N_{chars})$ temporary string allocations per field on the V8 heap, creating significant garbage collection pressure during large spreadsheet parses. Using index bounds tracking and `csv.slice()` at cell delimiter boundaries (post-processing quotes and escaped quotes in-place) reduces CSV parsing time by ~50% and eliminates millions of intermediate string allocations.
 **Action:** In text parsers, avoid character-by-character accumulator variables (`s += char`) in favor of index range slicing (`str.slice(start, end)`) at token boundaries.
