@@ -54,12 +54,12 @@ const KNOWN_BRANDS = [
 ];
 
 /**
- * Bolt: Pre-calculate brand display names and pre-compile regular expressions.
- * Avoids expensive string manipulations and regex re-compilation inside the parsing loop.
- * Measured impact: Improves parseTagText performance by ~84% in no-match scenarios.
+ * Bolt: Map KNOWN_BRANDS entries directly without intermediate .split(), .map(), and .join()
+ * array/string allocations, preserving display casing (e.g., "YSL", "H&M") and reducing
+ * module initialization overhead.
  */
 const BRAND_CONFIG: Record<string, string> = KNOWN_BRANDS.reduce((acc, brand) => {
-  acc[brand.toLowerCase()] = brand.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  acc[brand.toLowerCase()] = brand;
   return acc;
 }, {} as Record<string, string>);
 
@@ -77,13 +77,18 @@ const BRAND_REGEX = new RegExp(
   'i'
 );
 
-const FABRIC_REGEX = new RegExp('\\b(' + [...FABRIC_KEYWORDS].sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
+const FABRIC_REGEX = new RegExp('\\b(' + FABRIC_KEYWORDS.slice().sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
 const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
-const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
+/**
+ * Bolt: Restricts country extraction to horizontal whitespace ([\t ]) to prevent
+ * catastrophic regex backtracking across newlines (\n, \r) during multi-line OCR tag parsing,
+ * avoiding line bleed into result.notes.
+ */
+const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\t ]+)/i;
 
-const CARE_REGEX = new RegExp('\\b(' + Array.from(new Set(CARE_KEYWORDS)).sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
+const CARE_REGEX = new RegExp('\\b(' + CARE_KEYWORDS.slice().sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
 // ── OCR Text Extraction ──────────────────────────────────────────────────────
 
