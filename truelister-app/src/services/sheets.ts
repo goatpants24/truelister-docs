@@ -448,16 +448,17 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
  */
 export function generateItemNumber(existingItems: CatalogItem[]): string {
   /**
-   * Bolt: Optimized to use direct string slicing instead of regex matching.
-   * Measured impact: ~45% speedup on large catalogs by avoiding regex overhead.
+   * Bolt Performance Optimization: Fast Unary Number Coercion
+   * Replaces parseInt and isNaN checks with direct unary '+' coercion on the prefix slice.
+   * Invalid numeric strings evaluate to NaN (which fails the > maxNum check cleanly),
+   * eliminating function call overhead per item.
    */
   let maxNum = 0;
   for (let i = 0; i < existingItems.length; i++) {
     const s = existingItems[i].itemNumber;
-    // Fast prefix check without regex
     if (s.length > 3 && s[0] === 'T' && s[1] === 'L' && s[2] === '-') {
-      const num = parseInt(s.slice(3), 10);
-      if (!isNaN(num) && num > maxNum) {
+      const num = +s.slice(3);
+      if (num > maxNum) {
         maxNum = num;
       }
     }
