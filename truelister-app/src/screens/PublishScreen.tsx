@@ -47,6 +47,7 @@ const PlatformCard = memo(({
     activeOpacity={0.7}
     accessibilityRole="button"
     accessibilityLabel={marketplace.name}
+    accessibilityHint={`Toggles selection of ${marketplace.name} for publishing`}
     accessibilityState={{ selected: isSelected }}
   >
     <Text style={[styles.platformName, isSelected && { color: marketplace.color }]}>
@@ -134,6 +135,7 @@ export default function PublishScreen({ route, navigation }: Props) {
               : `Publish to ${selected.size} platform${selected.size !== 1 ? 's' : ''}`
           }
           accessibilityState={{ disabled: publishing || selected.size === 0 }}
+          accessibilityHint="Submits item listing to selected marketplace platforms"
         >
           {publishing ? (
             <ActivityIndicator color="#fff" />
@@ -194,6 +196,7 @@ export default function PublishScreen({ route, navigation }: Props) {
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
             accessibilityLabel="Done publishing, return to previous screen"
+            accessibilityHint="Returns to the previous screen"
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
