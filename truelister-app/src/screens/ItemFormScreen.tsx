@@ -162,6 +162,40 @@ const QuickActionsBar = memo(({
   );
 });
 
+interface FormPickerProps {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized FormPicker Component
+ * Extracts dropdown pickers into a React.memo-wrapped component that maps string options
+ * internally. Skips picker re-renders during high-frequency text input editing.
+ */
+const FormPicker = memo(({ label, value, options, onChange }: FormPickerProps) => {
+  const items = useMemo(
+    () => options.map((opt) => <Picker.Item key={opt} label={opt} value={opt} color="#e2e8f0" />),
+    [options]
+  );
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.pickerWrapper}>
+        <Picker
+          selectedValue={value}
+          onValueChange={(v) => onChange(v as string)}
+          style={styles.picker}
+        >
+          {items}
+        </Picker>
+      </View>
+    </View>
+  );
+});
+
 export default function ItemFormScreen() {
   const navigation = useNavigation<RootStackNavProp<'ItemForm'>>();
   const route = useRoute<ItemFormRouteProp>();
@@ -200,11 +234,6 @@ export default function ItemFormScreen() {
   const isDirty = canUndo;
   const isTitleValid = item.title.trim().length > 0;
 
-  const categoryItems = useMemo(() => dropdowns.categories.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.categories]);
-  const conditionItems = useMemo(() => dropdowns.conditions.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.conditions]);
-  const colorItems = useMemo(() => dropdowns.colors.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.colors]);
-  const saleStatusItems = useMemo(() => dropdowns.saleStatuses.map(s => <Picker.Item key={s} label={s} value={s} color="#e2e8f0" />), [dropdowns.saleStatuses]);
-
   usePreventRemove(isDirty && !saving, ({ data }) => {
     Alert.alert('Unsaved Changes', 'Discard changes and go back?', [
       { text: 'Keep Editing', style: 'cancel' },
@@ -217,6 +246,10 @@ export default function ItemFormScreen() {
   const updateField = useCallback((field: keyof CatalogItem, value: string, immediate = false) => {
     setItem((prev) => ({ ...prev, [field]: value }), immediate);
   }, [setItem]);
+
+  const handleCategoryChange = useCallback((val: string) => updateField('category', val, true), [updateField]);
+  const handleConditionChange = useCallback((val: string) => updateField('condition', val, true), [updateField]);
+  const handleColorChange = useCallback((val: string) => updateField('color', val, true), [updateField]);
 
   const toggleMarketplace = useCallback((m: string) => {
     setItem((prev) => {
@@ -451,7 +484,7 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.row}>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Category</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.category} onValueChange={(v) => updateField('category', v as string, true)} style={styles.picker}>{categoryItems}</Picker></View></View>
+          <FormPicker label="Category" value={item.category} options={dropdowns.categories} onChange={handleCategoryChange} />
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Size</Text>
             <TextInput
@@ -470,8 +503,8 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.row}>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Condition</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.condition} onValueChange={(v) => updateField('condition', v as string, true)} style={styles.picker}>{conditionItems}</Picker></View></View>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Color</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.color} onValueChange={(v) => updateField('color', v as string, true)} style={styles.picker}>{colorItems}</Picker></View></View>
+          <FormPicker label="Condition" value={item.condition} options={dropdowns.conditions} onChange={handleConditionChange} />
+          <FormPicker label="Color" value={item.color} options={dropdowns.colors} onChange={handleColorChange} />
         </View>
 
         <View style={styles.field}>
