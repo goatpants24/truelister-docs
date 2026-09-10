@@ -70,6 +70,35 @@ const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   photoUrlTabletopMeasure2: '',
 });
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized FormPicker Component
+ * Extracting pickers into a memoized component prevents re-rendering all dropdown
+ * item elements when unrelated form fields (like title, brand, price) are edited.
+ */
+interface FormPickerProps {
+  selectedValue: string;
+  options: string[];
+  onValueChange: (val: string) => void;
+  accessibilityLabel?: string;
+}
+
+const FormPicker = memo(({ selectedValue, options, onValueChange, accessibilityLabel }: FormPickerProps) => {
+  return (
+    <View style={styles.pickerWrapper}>
+      <Picker
+        selectedValue={selectedValue}
+        onValueChange={(itemValue) => onValueChange(itemValue as string)}
+        style={styles.picker}
+        accessibilityLabel={accessibilityLabel}
+      >
+        {options.map((opt) => (
+          <Picker.Item key={opt} label={opt} value={opt} color="#e2e8f0" />
+        ))}
+      </Picker>
+    </View>
+  );
+});
+
 const MarketplaceSelector = memo(({ selected, available, onToggle }: {
   selected: string;
   available: string[];
@@ -200,11 +229,6 @@ export default function ItemFormScreen() {
   const isDirty = canUndo;
   const isTitleValid = item.title.trim().length > 0;
 
-  const categoryItems = useMemo(() => dropdowns.categories.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.categories]);
-  const conditionItems = useMemo(() => dropdowns.conditions.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.conditions]);
-  const colorItems = useMemo(() => dropdowns.colors.map(c => <Picker.Item key={c} label={c} value={c} color="#e2e8f0" />), [dropdowns.colors]);
-  const saleStatusItems = useMemo(() => dropdowns.saleStatuses.map(s => <Picker.Item key={s} label={s} value={s} color="#e2e8f0" />), [dropdowns.saleStatuses]);
-
   usePreventRemove(isDirty && !saving, ({ data }) => {
     Alert.alert('Unsaved Changes', 'Discard changes and go back?', [
       { text: 'Keep Editing', style: 'cancel' },
@@ -217,6 +241,18 @@ export default function ItemFormScreen() {
   const updateField = useCallback((field: keyof CatalogItem, value: string, immediate = false) => {
     setItem((prev) => ({ ...prev, [field]: value }), immediate);
   }, [setItem]);
+
+  const handleCategoryChange = useCallback((v: string) => {
+    updateField('category', v, true);
+  }, [updateField]);
+
+  const handleConditionChange = useCallback((v: string) => {
+    updateField('condition', v, true);
+  }, [updateField]);
+
+  const handleColorChange = useCallback((v: string) => {
+    updateField('color', v, true);
+  }, [updateField]);
 
   const toggleMarketplace = useCallback((m: string) => {
     setItem((prev) => {
@@ -451,7 +487,15 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.row}>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Category</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.category} onValueChange={(v) => updateField('category', v as string, true)} style={styles.picker}>{categoryItems}</Picker></View></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Category</Text>
+            <FormPicker
+              selectedValue={item.category}
+              options={dropdowns.categories}
+              onValueChange={handleCategoryChange}
+              accessibilityLabel="Category picker"
+            />
+          </View>
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Size</Text>
             <TextInput
@@ -470,8 +514,24 @@ export default function ItemFormScreen() {
         </View>
 
         <View style={styles.row}>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Condition</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.condition} onValueChange={(v) => updateField('condition', v as string, true)} style={styles.picker}>{conditionItems}</Picker></View></View>
-          <View style={{ flex: 1 }}><Text style={styles.label}>Color</Text><View style={styles.pickerWrapper}><Picker selectedValue={item.color} onValueChange={(v) => updateField('color', v as string, true)} style={styles.picker}>{colorItems}</Picker></View></View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Condition</Text>
+            <FormPicker
+              selectedValue={item.condition}
+              options={dropdowns.conditions}
+              onValueChange={handleConditionChange}
+              accessibilityLabel="Condition picker"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Color</Text>
+            <FormPicker
+              selectedValue={item.color}
+              options={dropdowns.colors}
+              onValueChange={handleColorChange}
+              accessibilityLabel="Color picker"
+            />
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -612,7 +672,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   pickerWrapper: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, overflow: 'hidden' },
-  picker: { color: '#e8eaf6', height: 48 },
+  picker: { color: '#e8eaf6', height: 48, backgroundColor: 'transparent' },
   fieldFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 },
   validationError: { fontSize: 11, color: '#f87171', fontWeight: '500' },
   charCount: { fontSize: 11, color: '#94a3b8' },
