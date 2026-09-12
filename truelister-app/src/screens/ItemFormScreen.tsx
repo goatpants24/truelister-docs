@@ -317,8 +317,21 @@ export default function ItemFormScreen() {
   }, [item.designerBrand, item.title]);
 
   const handleAISuggest = useCallback(() => {
-    Alert.alert('AI Assistant', 'AI suggestion feature coming soon.');
-  }, []);
+    const parts = [item.designerBrand, item.color, item.fabricMaterial, item.category, item.size].filter(Boolean);
+    if (parts.length === 0) {
+      Alert.alert('AI Title Suggestion', 'Please enter brand, category, size, color, or fabric details first to generate a title suggestion.');
+      return;
+    }
+    const suggestedTitle = parts.join(' ').slice(0, 80);
+    Alert.alert(
+      'AI Title Suggestion',
+      `Apply this suggested title?\n\n"${suggestedTitle}"`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Apply', onPress: () => updateField('title', suggestedTitle, true) }
+      ]
+    );
+  }, [item.designerBrand, item.color, item.fabricMaterial, item.category, item.size, updateField]);
 
   const handleMarkAsSold = useCallback(() => {
     Alert.alert('Mark as Sold?', 'This will update status to Sold.', [
@@ -416,6 +429,7 @@ export default function ItemFormScreen() {
               style={styles.aiBadge}
               accessibilityRole="button"
               accessibilityLabel="AI Suggest title"
+              accessibilityHint="Generates a title suggestion from brand, category, color, fabric, and size"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
