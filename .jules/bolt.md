@@ -1,3 +1,7 @@
+## 2026-08-27 - [Horizontal Whitespace in Multi-Line Regexes]
+**Learning:** Using `\s` in capturing groups for multi-line OCR text parsing can match across newline boundaries (`\n`, `\r`), causing catastrophic regex backtracking and extracting extraneous lines into parsed fields. Restricting captures to horizontal whitespace (`[\t ]`) keeps matches strictly on the current line, prevents line-bleed in extracted attributes, and speeds up execution.
+**Action:** Use `[\t ]` instead of `\s` when extracting regex capturing groups from multi-line strings to prevent newline crossing and backtracking overhead.
+
 ## 2026-08-26 - [Zero-Accumulation Quoted CSV Parser]
 **Learning:** Character-by-character string concatenation (`currentCell += char`) in CSV parsers when processing quoted cells creates $O(N_{chars})$ temporary string allocations per field on the V8 heap, creating significant garbage collection pressure during large spreadsheet parses. Using index bounds tracking and `csv.slice()` at cell delimiter boundaries (post-processing quotes and escaped quotes in-place) reduces CSV parsing time by ~50% and eliminates millions of intermediate string allocations.
 **Action:** In text parsers, avoid character-by-character accumulator variables (`s += char`) in favor of index range slicing (`str.slice(start, end)`) at token boundaries.
