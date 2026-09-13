@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { testConnection } from '../services/sheets';
@@ -24,7 +25,8 @@ export default function SettingsScreen() {
   const [appsScriptUrl, setAppsScriptUrl] = useState('');
   const [driveFolderId, setDriveFolderId] = useState('');
   const [saved, setSaved] = useState(false);
-  const [testing, setTesting] = useState(false);
+  const [testingSheet, setTestingSheet] = useState(false);
+  const [testingScript, setTestingScript] = useState(false);
 
   const driveFolderIdRef = useRef<TextInput>(null);
 
@@ -94,11 +96,11 @@ export default function SettingsScreen() {
             <Text style={styles.linkBtnText}>Open Sheet ↗</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.testBtn, testing && { opacity: 0.5 }]}
+            style={[styles.testBtn, testingSheet && { opacity: 0.5 }]}
             onPress={async () => {
-              setTesting(true);
+              setTestingSheet(true);
               const result = await testConnection('sheet');
-              setTesting(false);
+              setTestingSheet(false);
               Alert.alert(
                 result.success ? 'Success!' : 'Connection Failed',
                 result.success
@@ -106,12 +108,13 @@ export default function SettingsScreen() {
                   : `Error: ${result.error}\n\nCheck if the sheet is "Published to the Web" as a CSV.`
               );
             }}
-            disabled={testing}
+            disabled={testingSheet}
             accessibilityRole="button"
-            accessibilityLabel="Test connection to Google Sheet"
-            accessibilityState={{ disabled: testing }}
+            accessibilityLabel={testingSheet ? "Testing Google Sheet connection" : "Test connection to Google Sheet"}
+            accessibilityState={{ disabled: testingSheet }}
           >
-            <Text style={styles.testBtnText}>Test Connection</Text>
+            {testingSheet && <ActivityIndicator size="small" color="#22c55e" style={{ marginRight: 6 }} />}
+            <Text style={styles.testBtnText}>{testingSheet ? 'Testing…' : 'Test Connection'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -140,15 +143,15 @@ export default function SettingsScreen() {
         />
         <View style={styles.buttonRow}>
           <TouchableOpacity
-            style={[styles.testBtn, testing && { opacity: 0.5 }]}
+            style={[styles.testBtn, testingScript && { opacity: 0.5 }]}
             onPress={async () => {
               if (!appsScriptUrl) {
                 Alert.alert('Required', 'Please paste your Apps Script URL first.');
                 return;
               }
-              setTesting(true);
+              setTestingScript(true);
               const result = await testConnection('script');
-              setTesting(false);
+              setTestingScript(false);
               Alert.alert(
                 result.success ? 'Success!' : 'Connection Failed',
                 result.success
@@ -156,12 +159,13 @@ export default function SettingsScreen() {
                   : `Error: ${result.error}`
               );
             }}
-            disabled={testing}
+            disabled={testingScript}
             accessibilityRole="button"
-            accessibilityLabel="Test Apps Script connection"
-            accessibilityState={{ disabled: testing }}
+            accessibilityLabel={testingScript ? "Testing Apps Script connection" : "Test Apps Script connection"}
+            accessibilityState={{ disabled: testingScript }}
           >
-            <Text style={styles.testBtnText}>Test Script Connection</Text>
+            {testingScript && <ActivityIndicator size="small" color="#22c55e" style={{ marginRight: 6 }} />}
+            <Text style={styles.testBtnText}>{testingScript ? 'Testing…' : 'Test Script Connection'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -253,6 +257,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e2235',
     borderWidth: 1,
     borderColor: '#22c55e',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   testBtnText: { fontSize: 13, color: '#22c55e', fontWeight: '600' },
   input: {
