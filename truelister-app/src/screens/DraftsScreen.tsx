@@ -128,8 +128,11 @@ export default function DraftsScreen() {
         <TouchableOpacity
           style={styles.ctaButton}
           onPress={() => navigation.navigate('ItemForm', {})}
+          activeOpacity={0.8}
+          hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
           accessibilityRole="button"
           accessibilityLabel="Create New Item"
+          accessibilityHint="Navigates to the item creation form to create a draft offline"
         >
           <Text style={styles.ctaButtonText}>Create New Item</Text>
         </TouchableOpacity>
