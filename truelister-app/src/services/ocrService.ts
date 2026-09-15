@@ -81,7 +81,13 @@ const FABRIC_REGEX = new RegExp('\\b(' + [...FABRIC_KEYWORDS].sort((a, b) => b.l
 
 const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
-const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
+/**
+ * Bolt Performance Optimization: Restricted Line Scanning
+ * Replaces \s in the capturing group with [\t ] (horizontal whitespace)
+ * to restrict country matching to the current line, preventing catastrophic
+ * regex backtracking across newlines (\n, \r) during multi-line OCR tag scans.
+ */
+const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\t ]+)/i;
 
 const CARE_REGEX = new RegExp('\\b(' + Array.from(new Set(CARE_KEYWORDS)).sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
@@ -111,14 +117,16 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   if (!text) return result;
 
   // ── Brand Detection ──
-  const brandMatch = text.match(BRAND_REGEX);
+  // Bolt: Use BRAND_REGEX.exec(text) instead of String.prototype.match for zero intermediate array allocation overhead on single matches
+  const brandMatch = BRAND_REGEX.exec(text);
   if (brandMatch) {
     result.designerBrand = BRAND_CONFIG[brandMatch[0].toLowerCase()];
   }
 
   // ── Size Detection ──
+  // Bolt: Use SIZE_PATTERNS[i].exec(text) for zero intermediate array allocation overhead on single matches
   for (let i = 0; i < SIZE_PATTERNS.length; i++) {
-    const match = text.match(SIZE_PATTERNS[i]);
+    const match = SIZE_PATTERNS[i].exec(text);
     if (match) {
       if (match[0].includes('x') || match[0].includes('X') || match[0].includes('×')) {
         result.size = match[0].toUpperCase();
@@ -156,7 +164,8 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   }
 
   // ── Country of Origin ──
-  const madeInMatch = text.match(MADE_IN_REGEX);
+  // Bolt: Use MADE_IN_REGEX.exec(text) instead of String.prototype.match for zero intermediate array allocation overhead
+  const madeInMatch = MADE_IN_REGEX.exec(text);
   if (madeInMatch) {
     result.notes = `Made in ${madeInMatch[1].trim()}`;
   }
