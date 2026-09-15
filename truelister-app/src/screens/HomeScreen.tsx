@@ -232,9 +232,10 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`${mode} view`}
                 accessibilityState={{ selected: viewMode === mode }}
+                accessibilityHint={`Switches inventory display to ${mode} layout`}
               >
-                <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
-                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                <Text style={{ color: 'white', fontSize: 12, fontWeight: viewMode === mode ? '700' : '600' }}>
+                  {viewMode === mode ? '✓ ' : ''}{mode.charAt(0).toUpperCase() + mode.slice(1)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -249,9 +250,10 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`${size} thumbnails`}
                 accessibilityState={{ selected: thumbnailSize === size }}
+                accessibilityHint={`Changes image thumbnail size to ${size}`}
               >
-                <Text style={{ color: 'white', fontSize: 12 }}>
-                  {size.charAt(0).toUpperCase()}
+                <Text style={{ color: 'white', fontSize: 12, fontWeight: thumbnailSize === size ? '700' : '400' }}>
+                  {thumbnailSize === size ? '✓ ' : ''}{size.charAt(0).toUpperCase()}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -277,7 +279,7 @@ export default function HomeScreen() {
         </View>
       ) : error ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorIcon} accessibilityElementsHidden={true} importantForAccessibility="no">⚠️</Text>
           <Text style={styles.errorTitle}>Connection Issue</Text>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={() => loadItems()}>
@@ -292,7 +294,7 @@ export default function HomeScreen() {
         </View>
       ) : items.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📦</Text>
+          <Text style={styles.emptyIcon} accessibilityElementsHidden={true} importantForAccessibility="no">📦</Text>
           <Text style={styles.emptyTitle}>No Items Found</Text>
           <Text style={styles.emptyText}>Add your first item or check your connection.</Text>
           <TouchableOpacity
