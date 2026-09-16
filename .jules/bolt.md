@@ -1,3 +1,7 @@
+## 2026-08-27 - [OCR Horizontal Line-Boundary Isolation & Exec Scanning]
+**Learning:** Using `\s` inside a regex capturing group (such as `/made\s+in\s+([A-Za-z\s]+)/i`) when scanning multi-line text matches newlines (`\n`, `\r`), causing catastrophic backtracking across subsequent text lines and bleeding unrelated text into fields. Restricting capturing groups to horizontal whitespace `[\t ]` restricts extraction strictly to the target line. Additionally, calling `RegExp.exec(text)` directly instead of `text.match(regex)` for single-match pattern scans avoids intermediate array wrapper allocations.
+**Action:** When scanning multi-line OCR text, use `[\t ]` instead of `\s` in capturing groups to enforce line-boundary isolation, and use `RegExp.exec(text)` for single-match scans.
+
 ## 2026-08-26 - [Zero-Accumulation Quoted CSV Parser]
 **Learning:** Character-by-character string concatenation (`currentCell += char`) in CSV parsers when processing quoted cells creates $O(N_{chars})$ temporary string allocations per field on the V8 heap, creating significant garbage collection pressure during large spreadsheet parses. Using index bounds tracking and `csv.slice()` at cell delimiter boundaries (post-processing quotes and escaped quotes in-place) reduces CSV parsing time by ~50% and eliminates millions of intermediate string allocations.
 **Action:** In text parsers, avoid character-by-character accumulator variables (`s += char`) in favor of index range slicing (`str.slice(start, end)`) at token boundaries.
