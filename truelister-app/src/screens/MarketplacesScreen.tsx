@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -39,24 +39,34 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
 
 // ── Single Marketplace Card ───────────────────────────────────────────────────
 
-function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized MarketplaceCard
+ * Wrapping MarketplaceCard in React.memo prevents re-rendering all marketplace cards
+ * when the parent screen or an individual card updates state.
+ */
+const MarketplaceCard = memo(({ marketplace }: { marketplace: MarketplaceMeta }) => {
   const [values, setValues] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const fieldKeys = useMemo(
+    () => marketplace.credentialFields.map(f => f.key),
+    [marketplace.credentialFields]
+  );
 
   useEffect(() => {
     (async () => {
-      const creds = await loadCredentials(
-        marketplace.id,
-        marketplace.credentialFields.map(f => f.key)
-      );
+      const creds = await loadCredentials(marketplace.id, fieldKeys);
       setValues(creds);
       setLoading(false);
     })();
-  }, [marketplace.id]);
+  }, [marketplace.id, fieldKeys]);
 
   const handleSave = async () => {
+    setSaving(true);
     await saveCredentials(marketplace.id, values);
+    setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -169,17 +179,24 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
       {/* Actions */}
       <View style={styles.cardActions}>
         <TouchableOpacity
-          style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
+          style={[styles.saveBtn, saved && styles.saveBtnSuccess, saving && { opacity: 0.6 }]}
           onPress={handleSave}
+          disabled={saving || saved}
           accessibilityRole="button"
-          accessibilityLabel={saved ? `Saved ${marketplace.name} credentials` : `Save ${marketplace.name} credentials`}
+          accessibilityLabel={saving ? `Saving ${marketplace.name} credentials` : saved ? `Saved ${marketplace.name} credentials` : `Save ${marketplace.name} credentials`}
+          accessibilityState={{ disabled: saving || saved }}
           accessibilityHint={`Saves API credentials for ${marketplace.name} locally`}
         >
-          <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
+          {saving ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.clearBtn}
           onPress={handleClear}
+          disabled={saving}
           accessibilityRole="button"
           accessibilityLabel={`Clear ${marketplace.name} credentials`}
           accessibilityHint={`Removes saved credentials for ${marketplace.name}`}
@@ -189,7 +206,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
       </View>
     </View>
   );
-}
+});
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
