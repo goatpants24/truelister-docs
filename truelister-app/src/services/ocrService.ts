@@ -81,7 +81,12 @@ const FABRIC_REGEX = new RegExp('\\b(' + [...FABRIC_KEYWORDS].sort((a, b) => b.l
 
 const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
-const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
+/**
+ * Bolt: Restrict country extraction capturing group to horizontal whitespace ([\\t ]) instead of \\s.
+ * Restricts country extraction strictly to the current line, preventing multi-line regex backtracking
+ * across large OCR texts and avoiding line bleed into result.notes.
+ */
+const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\t ]+)/i;
 
 const CARE_REGEX = new RegExp('\\b(' + Array.from(new Set(CARE_KEYWORDS)).sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
@@ -111,14 +116,15 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   if (!text) return result;
 
   // ── Brand Detection ──
-  const brandMatch = text.match(BRAND_REGEX);
+  // Bolt: Use RegExp.prototype.exec(text) directly on non-global regexes to avoid String.prototype.match wrapper overhead.
+  const brandMatch = BRAND_REGEX.exec(text);
   if (brandMatch) {
     result.designerBrand = BRAND_CONFIG[brandMatch[0].toLowerCase()];
   }
 
   // ── Size Detection ──
   for (let i = 0; i < SIZE_PATTERNS.length; i++) {
-    const match = text.match(SIZE_PATTERNS[i]);
+    const match = SIZE_PATTERNS[i].exec(text);
     if (match) {
       if (match[0].includes('x') || match[0].includes('X') || match[0].includes('×')) {
         result.size = match[0].toUpperCase();
@@ -156,7 +162,7 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   }
 
   // ── Country of Origin ──
-  const madeInMatch = text.match(MADE_IN_REGEX);
+  const madeInMatch = MADE_IN_REGEX.exec(text);
   if (madeInMatch) {
     result.notes = `Made in ${madeInMatch[1].trim()}`;
   }
