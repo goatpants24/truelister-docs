@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackNavProp } from '../navigation/types';
-import { getDrafts, deleteDraft } from '../services/localStorage';
+import { getDrafts, deleteDraft, clearDrafts } from '../services/localStorage';
 import { CatalogItem } from '../types';
 
 /**
@@ -102,6 +102,24 @@ export default function DraftsScreen() {
     ]);
   }, [loadDrafts]);
 
+  const handleClearAll = useCallback(() => {
+    Alert.alert(
+      'Clear All Drafts',
+      `Permanently remove all ${drafts.length} draft item${drafts.length === 1 ? '' : 's'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear All',
+          style: 'destructive',
+          onPress: async () => {
+            await clearDrafts();
+            loadDrafts();
+          },
+        },
+      ]
+    );
+  }, [drafts.length, loadDrafts]);
+
   /**
    * ⚡ BOLT PERFORMANCE OPTIMIZATION: List Virtualization Tuning
    * getItemLayout allows the list to skip dynamic measurement, improving scroll speed.
@@ -139,7 +157,19 @@ export default function DraftsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header} accessibilityRole="header">Drafts ({drafts.length})</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.header} accessibilityRole="header">Drafts ({drafts.length})</Text>
+        <TouchableOpacity
+          style={styles.clearAllBtn}
+          onPress={handleClearAll}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Clear all drafts"
+          accessibilityHint="Permanently removes all saved drafts from this device"
+        >
+          <Text style={styles.clearAllText}>Clear All</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={drafts}
         keyExtractor={(item) => item.itemNumber}
@@ -157,7 +187,15 @@ export default function DraftsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117', paddingHorizontal: 16, paddingTop: 16 },
-  header: { fontSize: 22, fontWeight: '700', color: '#e8eaf6', marginBottom: 16 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  header: { fontSize: 22, fontWeight: '700', color: '#e8eaf6' },
+  clearAllBtn: { paddingVertical: 4, paddingHorizontal: 8 },
+  clearAllText: { fontSize: 13, fontWeight: '600', color: '#f87171' },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
