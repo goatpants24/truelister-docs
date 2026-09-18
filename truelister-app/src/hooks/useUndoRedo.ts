@@ -1,11 +1,18 @@
 import { useCallback, useReducer, useRef } from 'react';
 import { shallowEqual } from '../services/utils';
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: State-Driven Dirty Tracking
+ * Added `isDirty` flag to UndoRedoState to track uncommitted edits directly in state.
+ * This avoids executing expensive O(K) object property comparisons (`shallowEqual`)
+ * on every component render cycle to calculate `canUndo`.
+ */
 interface UndoRedoState<T> {
   past: T[];
   present: T;
   future: T[];
   lastCommitted: T;
+  isDirty: boolean;
 }
 
 type UndoRedoAction<T> =
@@ -24,18 +31,34 @@ function undoRedoReducer<T>(
       if (shallowEqual(state.present, action.payload)) {
         return state;
       }
-      return { ...state, present: action.payload, future: [] };
+      // Bolt: Compute dirty status once during UPDATE rather than on every render
+      const isDirty = !shallowEqual(action.payload, state.lastCommitted);
+      // Bolt: Reuse state.future if already empty to prevent redundant [] array allocations
+      const future = state.future.length === 0 ? state.future : [];
+      return {
+        ...state,
+        present: action.payload,
+        future,
+        isDirty,
+      };
     }
     case 'COMMIT': {
+      const future = state.future.length === 0 ? state.future : [];
       // Don't push if value is identical to the last committed one
       if (shallowEqual(state.lastCommitted, action.payload)) {
-        return { ...state, present: action.payload, future: [] };
+        return {
+          ...state,
+          present: action.payload,
+          future,
+          isDirty: false,
+        };
       }
       return {
         past: [...state.past, state.lastCommitted],
         present: action.payload,
         lastCommitted: action.payload,
         future: [],
+        isDirty: false,
       };
     }
     case 'UNDO': {
@@ -45,6 +68,7 @@ function undoRedoReducer<T>(
           ...state,
           present: state.lastCommitted,
           future: [state.present, ...state.future],
+          isDirty: false,
         };
       }
       if (state.past.length === 0) return state;
@@ -54,6 +78,7 @@ function undoRedoReducer<T>(
         present: previous,
         lastCommitted: previous,
         future: [state.present, ...state.future],
+        isDirty: false,
       };
     }
     case 'REDO': {
@@ -64,10 +89,17 @@ function undoRedoReducer<T>(
         present: next,
         lastCommitted: next,
         future: state.future.slice(1),
+        isDirty: false,
       };
     }
     case 'RESET': {
-      return { past: [], present: action.payload, lastCommitted: action.payload, future: [] };
+      return {
+        past: [],
+        present: action.payload,
+        lastCommitted: action.payload,
+        future: [],
+        isDirty: false,
+      };
     }
     default:
       return state;
@@ -86,7 +118,7 @@ function undoRedoReducer<T>(
 export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
   const [state, dispatch] = useReducer(
     (s: UndoRedoState<T>, a: UndoRedoAction<T>) => undoRedoReducer(s, a),
-    { past: [], present: initialValue, future: [], lastCommitted: initialValue }
+    { past: [], present: initialValue, future: [], lastCommitted: initialValue, isDirty: false }
   );
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -166,7 +198,11 @@ export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
     undo,
     redo,
     reset,
-    canUndo: state.past.length > 0 || !shallowEqual(state.present, state.lastCommitted),
+    /**
+     * Bolt: Fast O(1) canUndo check using cached isDirty flag from state
+     * instead of executing full shallowEqual key iteration on every component render.
+     */
+    canUndo: state.past.length > 0 || state.isDirty,
     canRedo: state.future.length > 0,
     historyLength: state.past.length,
   };
