@@ -119,21 +119,33 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             {preview.compressed.width} x {preview.compressed.height}
           </Text>
         </View>
-        <Image source={{ uri: preview.compressed.uri }} style={styles.previewImage} resizeMode="contain" />
+        <Image
+          source={{ uri: preview.compressed.uri }}
+          style={styles.previewImage}
+          resizeMode="contain"
+          accessible={true}
+          accessibilityLabel={`Captured photo preview for item ${itemNumber}`}
+        />
         <View style={styles.previewActions}>
           <TouchableOpacity
             style={styles.buttonSecondary}
             onPress={handleRetake}
+            activeOpacity={0.75}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Retake photo"
+            accessibilityHint="Discards photo and reopens camera shutter"
           >
             <Text style={styles.buttonSecondaryText}>Retake</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.button}
             onPress={handleConfirm}
+            activeOpacity={0.75}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Use this photo"
+            accessibilityHint="Saves photo to item field and returns to form"
           >
             <Text style={styles.buttonText}>Use Photo</Text>
           </TouchableOpacity>
@@ -180,8 +192,11 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             style={[styles.libraryButton, processing && { opacity: 0.5 }]}
             onPress={handlePickFromLibrary}
             disabled={processing}
+            activeOpacity={0.75}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             accessibilityRole="button"
             accessibilityLabel="Open photo library"
+            accessibilityHint="Selects an existing photo from device photo library"
             accessibilityState={{ disabled: processing }}
           >
             <Text style={styles.libraryIcon}>🖼</Text>
