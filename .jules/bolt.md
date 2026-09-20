@@ -121,3 +121,7 @@
 ## 2026-08-04 - [Cache-Bypassing Manual Refresh with Content-Matching Optimization]
 **Learning:** Time-based TTL caching can prevent manual "pull-to-refresh" requests from actually fetching fresh data. Introducing a force-refresh capability ensures network requests are made, but retaining raw string comparison on the response prevents redundant JSON/CSV parsing, object allocation, and React tree reconciliation if the remote data hasn't changed.
 **Action:** Always decouple time-based TTL cache checks from manual refresh actions, but continue to employ raw content comparison to exit early before parsing.
+
+## 2026-08-27 - [Reducer-Maintained Dirty Flag & Empty Reference Reuse]
+**Learning:** Computing form dirty state by executing `shallowEqual` on the render path during every component re-render pass incurs $O(K)$ object key iterations per render frame during high-frequency typing. Offloading the dirty calculation directly into the state reducer (`undoRedoReducer`) when state actions (`UPDATE`, `COMMIT`, `UNDO`, `REDO`) dispatch converts render-time evaluation of `canUndo` to $O(1)$. Furthermore, reusing `state.future` references when empty avoids allocating new `[]` array instances on every keystroke.
+**Action:** Calculate derived boolean flags directly inside reducers upon action dispatch rather than recalculating expensive object comparisons during component render passes.
