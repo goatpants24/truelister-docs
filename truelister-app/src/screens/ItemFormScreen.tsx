@@ -31,6 +31,8 @@ import { useUndoRedo } from '../hooks/useUndoRedo';
  * Also fixes a critical runtime crash by providing the missing PHOTO_ACTIONS array.
  */
 type FormMode = 'form' | 'camera' | 'tagScan';
+const EMPTY_SET = new Set<string>();
+
 const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
   { field: 'photoUrlCard', label: 'Card', icon: '📇' },
   { field: 'photoUrlFront', label: 'Front', icon: '👕' },
@@ -76,7 +78,8 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: {
   onToggle: (marketplace: string) => void;
 }) => {
   const selectedSet = useMemo(() => {
-    return new Set(selected ? selected.split(',').map(s => s.trim()) : []);
+    if (!selected) return EMPTY_SET;
+    return new Set(selected.split(',').map(s => s.trim()));
   }, [selected]);
 
   return (
