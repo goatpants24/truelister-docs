@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackNavProp } from '../navigation/types';
-import { getDrafts, deleteDraft } from '../services/localStorage';
+import { getDrafts, deleteDraft, clearDrafts } from '../services/localStorage';
 import { CatalogItem } from '../types';
 
 /**
@@ -102,6 +102,20 @@ export default function DraftsScreen() {
     ]);
   }, [loadDrafts]);
 
+  const handleClearAll = useCallback(() => {
+    Alert.alert('Clear All Drafts', 'Remove all saved drafts permanently?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear All',
+        style: 'destructive',
+        onPress: async () => {
+          await clearDrafts();
+          loadDrafts();
+        },
+      },
+    ]);
+  }, [loadDrafts]);
+
   /**
    * ⚡ BOLT PERFORMANCE OPTIMIZATION: List Virtualization Tuning
    * getItemLayout allows the list to skip dynamic measurement, improving scroll speed.
@@ -128,8 +142,11 @@ export default function DraftsScreen() {
         <TouchableOpacity
           style={styles.ctaButton}
           onPress={() => navigation.navigate('ItemForm', {})}
+          activeOpacity={0.8}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel="Create New Item"
+          accessibilityHint="Navigates to the item creation form to create a draft offline"
         >
           <Text style={styles.ctaButtonText}>Create New Item</Text>
         </TouchableOpacity>
@@ -139,7 +156,18 @@ export default function DraftsScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header} accessibilityRole="header">Drafts ({drafts.length})</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.header} accessibilityRole="header">Drafts ({drafts.length})</Text>
+        <TouchableOpacity
+          onPress={handleClearAll}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Clear all drafts"
+          accessibilityHint="Permanently removes all saved drafts from this device"
+        >
+          <Text style={styles.clearAllText}>Clear All</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={drafts}
         keyExtractor={(item) => item.itemNumber}
@@ -157,7 +185,14 @@ export default function DraftsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117', paddingHorizontal: 16, paddingTop: 16 },
-  header: { fontSize: 22, fontWeight: '700', color: '#e8eaf6', marginBottom: 16 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  header: { fontSize: 22, fontWeight: '700', color: '#e8eaf6' },
+  clearAllText: { fontSize: 14, color: '#f87171', fontWeight: '600' },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
