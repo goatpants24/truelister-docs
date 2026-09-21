@@ -103,7 +103,7 @@ export default function DraftsScreen() {
   }, [loadDrafts]);
 
   const handleClearAll = useCallback(() => {
-    Alert.alert('Clear All Drafts', 'Are you sure you want to delete all saved drafts permanently?', [
+    Alert.alert('Clear All Drafts', 'Remove all saved drafts permanently?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Clear All',
@@ -159,9 +159,8 @@ export default function DraftsScreen() {
       <View style={styles.headerRow}>
         <Text style={styles.header} accessibilityRole="header">Drafts ({drafts.length})</Text>
         <TouchableOpacity
-          style={styles.clearAllBtn}
           onPress={handleClearAll}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
           accessibilityLabel="Clear all drafts"
           accessibilityHint="Permanently removes all saved drafts from this device"
@@ -188,20 +187,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117', paddingHorizontal: 16, paddingTop: 16 },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
   },
   header: { fontSize: 22, fontWeight: '700', color: '#e8eaf6' },
-  clearAllBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: 'rgba(239, 68, 68, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.3)',
-  },
-  clearAllText: { fontSize: 13, fontWeight: '600', color: '#ef4444' },
+  clearAllText: { fontSize: 14, color: '#f87171', fontWeight: '600' },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
