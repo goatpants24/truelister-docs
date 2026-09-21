@@ -2,16 +2,17 @@ import { useCallback, useReducer, useRef } from 'react';
 import { shallowEqual } from '../services/utils';
 
 /**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Reducer State
- * Tracks `isDirty` state directly inside the reducer to avoid running key-by-key
- * `shallowEqual` checks on every component re-render pass. Also reuses empty `future`
- * array references to prevent redundant array allocations.
+ * Bolt Performance Optimization:
+ * Static module-level constant reference for empty future array to avoid redundant `[]` array allocations.
  */
+const EMPTY_FUTURE: never[] = [];
+
 interface UndoRedoState<T> {
   past: T[];
   present: T;
   future: T[];
   lastCommitted: T;
+  /** Bolt: Pre-computed flag indicating uncommitted pending changes, eliminating O(K) shallowEqual on every re-render */
   isDirty: boolean;
 }
 
@@ -34,21 +35,19 @@ function undoRedoReducer<T>(
         return state;
       }
       const isDirty = !shallowEqual(action.payload, state.lastCommitted);
-      const future = state.future.length === 0 ? state.future : (EMPTY_FUTURE as T[]);
-      return { ...state, present: action.payload, isDirty, future };
+      return { ...state, present: action.payload, future: EMPTY_FUTURE, isDirty };
     }
     case 'COMMIT': {
       // Don't push if value is identical to the last committed one
       if (shallowEqual(state.lastCommitted, action.payload)) {
-        const future = state.future.length === 0 ? state.future : (EMPTY_FUTURE as T[]);
-        return { ...state, present: action.payload, isDirty: false, future };
+        return { ...state, present: action.payload, future: EMPTY_FUTURE, isDirty: false };
       }
       return {
         past: [...state.past, state.lastCommitted],
         present: action.payload,
         lastCommitted: action.payload,
+        future: EMPTY_FUTURE,
         isDirty: false,
-        future: EMPTY_FUTURE as T[],
       };
     }
     case 'UNDO': {
@@ -59,6 +58,7 @@ function undoRedoReducer<T>(
           present: state.lastCommitted,
           isDirty: false,
           future: [state.present, ...state.future],
+          isDirty: false,
         };
       }
       if (state.past.length === 0) return state;
@@ -69,6 +69,7 @@ function undoRedoReducer<T>(
         lastCommitted: previous,
         isDirty: false,
         future: [state.present, ...state.future],
+        isDirty: false,
       };
     }
     case 'REDO': {
@@ -80,10 +81,17 @@ function undoRedoReducer<T>(
         lastCommitted: next,
         isDirty: false,
         future: state.future.slice(1),
+        isDirty: false,
       };
     }
     case 'RESET': {
-      return { past: [], present: action.payload, lastCommitted: action.payload, isDirty: false, future: EMPTY_FUTURE as T[] };
+      return {
+        past: [],
+        present: action.payload,
+        lastCommitted: action.payload,
+        future: EMPTY_FUTURE,
+        isDirty: false,
+      };
     }
     default:
       return state;
@@ -102,7 +110,7 @@ function undoRedoReducer<T>(
 export function useUndoRedo<T>(initialValue: T, debounceMs = 600) {
   const [state, dispatch] = useReducer(
     (s: UndoRedoState<T>, a: UndoRedoAction<T>) => undoRedoReducer(s, a),
-    { past: [], present: initialValue, future: EMPTY_FUTURE as T[], lastCommitted: initialValue, isDirty: false }
+    { past: [], present: initialValue, future: EMPTY_FUTURE, lastCommitted: initialValue, isDirty: false }
   );
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
