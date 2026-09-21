@@ -23,6 +23,8 @@ type UndoRedoAction<T> =
   | { type: 'REDO' }
   | { type: 'RESET'; payload: T };
 
+const EMPTY_FUTURE: any[] = [];
+
 function undoRedoReducer<T>(
   state: UndoRedoState<T>,
   action: UndoRedoAction<T>
@@ -54,6 +56,7 @@ function undoRedoReducer<T>(
         return {
           ...state,
           present: state.lastCommitted,
+          isDirty: false,
           future: [state.present, ...state.future],
           isDirty: false,
         };
@@ -64,6 +67,7 @@ function undoRedoReducer<T>(
         past: state.past.slice(0, -1),
         present: previous,
         lastCommitted: previous,
+        isDirty: false,
         future: [state.present, ...state.future],
         isDirty: false,
       };
@@ -75,6 +79,7 @@ function undoRedoReducer<T>(
         past: [...state.past, state.present],
         present: next,
         lastCommitted: next,
+        isDirty: false,
         future: state.future.slice(1),
         isDirty: false,
       };
