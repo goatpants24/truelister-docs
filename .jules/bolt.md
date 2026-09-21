@@ -1,3 +1,7 @@
+## 2026-08-27 - [Pre-Computed Reducer Dirty Flag]
+**Learning:** Evaluating `shallowEqual(state.present, state.lastCommitted)` inside custom hooks during every component re-render pass introduces redundant $O(K)$ field comparisons on hot UI rendering paths (such as typing in form inputs). Pre-computing an `isDirty` boolean flag inside the state reducer during dispatch actions (`UPDATE`, `COMMIT`, `UNDO`, `REDO`, `RESET`) reduces `canUndo` checks to an $O(1)$ property lookup on every re-render.
+**Action:** In custom state hooks with history or dirty tracking, compute dirty/modified flags directly within the reducer during state updates rather than evaluating object comparisons on every render.
+
 ## 2026-08-26 - [Zero-Accumulation Quoted CSV Parser]
 **Learning:** Character-by-character string concatenation (`currentCell += char`) in CSV parsers when processing quoted cells creates $O(N_{chars})$ temporary string allocations per field on the V8 heap, creating significant garbage collection pressure during large spreadsheet parses. Using index bounds tracking and `csv.slice()` at cell delimiter boundaries (post-processing quotes and escaped quotes in-place) reduces CSV parsing time by ~50% and eliminates millions of intermediate string allocations.
 **Action:** In text parsers, avoid character-by-character accumulator variables (`s += char`) in favor of index range slicing (`str.slice(start, end)`) at token boundaries.
