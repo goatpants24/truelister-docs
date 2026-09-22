@@ -89,7 +89,8 @@ export default function SettingsScreen() {
                 'https://docs.google.com/spreadsheets/d/1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI/edit'
               )
             }
-            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="link"
             accessibilityLabel="Open inventory sheet in browser"
             accessibilityHint="Opens in your browser"
           >
@@ -109,6 +110,7 @@ export default function SettingsScreen() {
               );
             }}
             disabled={testingSheet}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel={testingSheet ? "Testing Google Sheet connection" : "Test connection to Google Sheet"}
             accessibilityState={{ disabled: testingSheet }}
@@ -160,6 +162,7 @@ export default function SettingsScreen() {
               );
             }}
             disabled={testingScript}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel={testingScript ? "Testing Apps Script connection" : "Test Apps Script connection"}
             accessibilityState={{ disabled: testingScript }}
@@ -210,8 +213,11 @@ export default function SettingsScreen() {
       <TouchableOpacity
         style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
         onPress={handleSave}
+        disabled={saved}
         accessibilityRole="button"
-        accessibilityLabel="Save settings"
+        accessibilityLabel={saved ? 'Settings saved successfully' : 'Save settings'}
+        accessibilityState={{ disabled: saved }}
+        accessibilityHint="Saves Google Apps Script URL and Drive Folder ID locally"
       >
         <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save Settings'}</Text>
       </TouchableOpacity>
@@ -224,6 +230,7 @@ export default function SettingsScreen() {
           onPress={handleClearData}
           accessibilityRole="button"
           accessibilityLabel="Clear all local data and reset app"
+          accessibilityHint="Permanently removes all saved drafts, settings, and credentials from this device"
         >
           <Text style={styles.dangerBtnText}>Clear All Local Data</Text>
         </TouchableOpacity>
