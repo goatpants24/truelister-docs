@@ -427,11 +427,21 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
     const result = await response.json();
     if (result.success === true) {
       // Bolt: Update local cache directly on success to avoid a full network re-fetch.
-      // Measured impact: Makes the Home screen refresh instantaneous (~0ms vs ~2s).
+      // Implements upsert logic to avoid duplicate entries when editing an existing item,
+      // and synchronizes itemRefCache to preserve referential integrity.
+      // Measured impact: Makes the Home screen refresh instantaneous (~0ms vs ~2s) without duplicate keys.
       if (inventoryCache) {
-        inventoryCache.data = [...inventoryCache.data, item];
+        const index = inventoryCache.data.findIndex(i => i.itemNumber === item.itemNumber);
+        if (index !== -1) {
+          const updated = [...inventoryCache.data];
+          updated[index] = item;
+          inventoryCache.data = updated;
+        } else {
+          inventoryCache.data = [...inventoryCache.data, item];
+        }
         inventoryCache.timestamp = Date.now();
       }
+      itemRefCache.set(item.itemNumber, item);
       return true;
     }
     return false;
