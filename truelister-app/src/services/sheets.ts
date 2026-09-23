@@ -448,23 +448,21 @@ export async function appendItem(item: CatalogItem): Promise<boolean> {
  */
 export function generateItemNumber(existingItems: CatalogItem[]): string {
   /**
-   * Bolt: Optimized to use direct character code parsing instead of string slicing.
-   * Eliminates temporary string allocations (s.slice(3)) and parseInt overhead.
-   * Measured impact: ~50% faster execution and zero heap allocations per item scanned.
+   * Bolt: Optimized to use zero-allocation character-code digit parsing loop
+   * instead of string slicing (`s.slice(3)`) and `parseInt()`.
+   * Measured impact: Eliminates intermediate string heap allocations and function call overhead.
    */
   let maxNum = 0;
   for (let i = 0; i < existingItems.length; i++) {
     const s = existingItems[i].itemNumber;
-    const len = s.length;
-    // Fast prefix check without regex or string slicing
-    if (len > 3 && s[0] === 'T' && s[1] === 'L' && s[2] === '-') {
+    // Fast prefix check without regex
+    if (s.length > 3 && s[0] === 'T' && s[1] === 'L' && s[2] === '-') {
       let num = 0;
-      let valid = false;
-      for (let j = 3; j < len; j++) {
+      let valid = true;
+      for (let j = 3; j < s.length; j++) {
         const code = s.charCodeAt(j);
-        if (code >= 48 && code <= 57) {
+        if (code >= 48 && code <= 57) { // '0'..'9'
           num = num * 10 + (code - 48);
-          valid = true;
         } else {
           valid = false;
           break;
