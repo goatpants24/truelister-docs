@@ -41,27 +41,32 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
 
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized MarketplaceCard Component
- * Wrapping MarketplaceCard with React.memo prevents unnecessary re-renders of
- * un-edited marketplace cards when parent screen state or sibling card state updates.
+ * Prevents re-rendering all marketplace cards when an individual card's form value
+ * or credentials state changes.
  */
-const MarketplaceCard = memo(function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
+const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const fieldKeys = React.useMemo(
+    () => marketplace.credentialFields.map(f => f.key),
+    [marketplace.credentialFields]
+  );
 
   useEffect(() => {
     (async () => {
-      const creds = await loadCredentials(
-        marketplace.id,
-        marketplace.credentialFields.map(f => f.key)
-      );
+      const creds = await loadCredentials(marketplace.id, fieldKeys);
       setValues(creds);
       setLoading(false);
     })();
-  }, [marketplace.id]);
+  }, [marketplace.id, fieldKeys]);
 
   const handleSave = async () => {
+    setSaving(true);
     await saveCredentials(marketplace.id, values);
+    setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -174,13 +179,19 @@ const MarketplaceCard = memo(function MarketplaceCard({ marketplace }: { marketp
       {/* Actions */}
       <View style={styles.cardActions}>
         <TouchableOpacity
-          style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
+          style={[styles.saveBtn, saved && styles.saveBtnSuccess, (saving || saved) && { opacity: 0.8 }]}
           onPress={handleSave}
+          disabled={saving || saved}
           accessibilityRole="button"
-          accessibilityLabel={saved ? `Saved ${marketplace.name} credentials` : `Save ${marketplace.name} credentials`}
+          accessibilityLabel={saving ? `Saving ${marketplace.name} credentials` : saved ? `Saved ${marketplace.name} credentials` : `Save ${marketplace.name} credentials`}
           accessibilityHint={`Saves API credentials for ${marketplace.name} locally`}
+          accessibilityState={{ disabled: saving || saved }}
         >
-          <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
+          {saving ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.clearBtn}
