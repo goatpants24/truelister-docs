@@ -45,9 +45,11 @@ const PlatformCard = memo(({
     ]}
     onPress={() => onToggle(marketplace.id)}
     activeOpacity={0.7}
+    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
     accessibilityRole="button"
     accessibilityLabel={marketplace.name}
     accessibilityState={{ selected: isSelected }}
+    accessibilityHint={isSelected ? `Deselects ${marketplace.name} for publishing` : `Selects ${marketplace.name} for publishing`}
   >
     <Text style={[styles.platformName, isSelected && { color: marketplace.color }]}>
       {isSelected ? '✓ ' : ''}{marketplace.name}
@@ -174,6 +176,7 @@ export default function PublishScreen({ route, navigation }: Props) {
                     {r.listingUrl && (
                       <TouchableOpacity
                         onPress={() => Linking.openURL(r.listingUrl!)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         accessibilityRole="link"
                         accessibilityLabel={`View listing on ${meta.name}`}
                         accessibilityHint="Opens in your browser"
@@ -192,8 +195,10 @@ export default function PublishScreen({ route, navigation }: Props) {
           <TouchableOpacity
             style={styles.doneBtn}
             onPress={() => navigation.goBack()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Done publishing, return to previous screen"
+            accessibilityHint="Returns to the previous screen"
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
