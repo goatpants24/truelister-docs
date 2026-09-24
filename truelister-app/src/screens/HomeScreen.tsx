@@ -32,24 +32,35 @@ const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
 
 /**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Grid Item Dimensions
+ * Static dimension styles for thumbnail sizes eliminate inline object allocations
+ * on every render pass per item in grid mode.
+ */
+const GRID_DIMENSIONS = {
+  small: { itemStyle: { width: 96, height: 128 }, dimensionStyle: { width: 64, height: 64 } },
+  medium: { itemStyle: { width: 128, height: 160 }, dimensionStyle: { width: 96, height: 96 } },
+  large: { itemStyle: { width: 160, height: 192 }, dimensionStyle: { width: 128, height: 128 } },
+};
+
+/**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
  * Wrapping items in React.memo() ensures that items only re-render if their
  * specific data or the thumbnail size changes.
  */
 const GridItem = memo(({ item, thumbnailSize, onPress }: { item: CatalogItem, thumbnailSize: ThumbnailSize, onPress: (item: CatalogItem) => void }) => {
-  const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
+  const { itemStyle, dimensionStyle } = GRID_DIMENSIONS[thumbnailSize];
   const isSold = item.saleStatus === 'Sold';
   return (
     <TouchableOpacity
-      style={[styles.gridItem, { width: size + 32, height: size + 64 }, isSold && { opacity: 0.8 }]}
+      style={[styles.gridItem, itemStyle, isSold && styles.soldOpacity]}
       onPress={() => onPress(item)}
       accessibilityRole="button"
       accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
     >
-      <View style={{ width: size, height: size }}>
-        {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={[styles.thumbnail, { width: size, height: size }]} resizeMode="cover" /> :
-          <View style={[styles.thumbnail, { width: size, height: size, justifyContent: 'center', alignItems: 'center' }]}><Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text></View>}
-        {isSold && <View style={[styles.soldOverlay, { width: size, height: size }]}><View style={styles.soldStamp}><Text style={styles.soldStampText}>SOLD</Text></View></View>}
+      <View style={dimensionStyle}>
+        {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={[styles.thumbnail, dimensionStyle]} resizeMode="cover" /> :
+          <View style={[styles.thumbnail, dimensionStyle, styles.noImageContainer]}><Text style={styles.noImageText}>No Image</Text></View>}
+        {isSold && <View style={[styles.soldOverlay, dimensionStyle]}><View style={styles.soldStamp}><Text style={styles.soldStampText}>SOLD</Text></View></View>}
       </View>
       <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
       <Text style={styles.itemBrand}>{item.designerBrand || '–'}</Text>
@@ -62,11 +73,11 @@ const GridItem = memo(({ item, thumbnailSize, onPress }: { item: CatalogItem, th
 const ListItem = memo(({ item, onPress }: { item: CatalogItem, onPress: (item: CatalogItem) => void }) => {
   const isSold = item.saleStatus === 'Sold';
   return (
-    <TouchableOpacity style={[styles.listItem, isSold && { opacity: 0.8 }]} onPress={() => onPress(item)} accessibilityRole="button" accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}>
-      {item.photoUrl && <Image source={{ uri: item.photoUrl }} style={[styles.listThumbnail, { width: 64, height: 64 }]} resizeMode="cover" />}
+    <TouchableOpacity style={[styles.listItem, isSold && styles.soldOpacity]} onPress={() => onPress(item)} accessibilityRole="button" accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}>
+      {item.photoUrl && <Image source={{ uri: item.photoUrl }} style={styles.listThumbnailImg} resizeMode="cover" />}
       <View style={styles.listTextContainer}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={[styles.listTitle, { flexShrink: 1 }]} numberOfLines={1}>{item.title}</Text>
+        <View style={styles.listTitleHeaderRow}>
+          <Text style={styles.listTitleFlex} numberOfLines={1}>{item.title}</Text>
           {isSold && <View style={styles.soldBadge}><Text style={styles.soldBadgeText}>SOLD</Text></View>}
         </View>
         <Text style={styles.listSubtitle} numberOfLines={1}>{item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}</Text>
@@ -124,7 +135,9 @@ export default function HomeScreen() {
           sheetNumbers.add(sheetItems[i].itemNumber);
         }
         const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
-        combined = [...sheetItems, ...uniqueDrafts];
+        if (uniqueDrafts.length > 0) {
+          combined = [...sheetItems, ...uniqueDrafts];
+        }
       }
 
       setItems(combined);
@@ -495,6 +508,9 @@ const styles = StyleSheet.create({
   emptyTitle: { color: '#e8eaf6', fontSize: 20, fontWeight: '700', marginBottom: 8 },
   emptyText: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginBottom: 24 },
   gridItem: { backgroundColor: '#1a1d27', marginHorizontal: 8, marginVertical: 6, borderRadius: 12, alignItems: 'center', padding: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(79, 110, 247, 0.15)' },
+  soldOpacity: { opacity: 0.8 },
+  noImageContainer: { justifyContent: 'center', alignItems: 'center' },
+  noImageText: { color: '#94a3b8', fontSize: 12 },
   thumbnail: { borderRadius: 8 },
   itemTitle: { color: '#e8eaf6', fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 8 },
   itemBrand: { color: '#94a3b8', fontSize: 11, marginTop: 2 },
@@ -502,7 +518,10 @@ const styles = StyleSheet.create({
   itemMarketplace: { color: '#60a5fa', fontSize: 10, marginTop: 2 },
   listItem: { flexDirection: 'row', backgroundColor: '#1a1d27', padding: 12, height: 88, overflow: 'hidden', borderRadius: 12, marginBottom: 8, gap: 12, borderWidth: 1, borderColor: 'rgba(79, 110, 247, 0.1)' },
   listThumbnail: { borderRadius: 8 },
+  listThumbnailImg: { width: 64, height: 64, borderRadius: 8 },
   listTextContainer: { flex: 1, justifyContent: 'center' },
+  listTitleHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  listTitleFlex: { color: '#e8eaf6', fontSize: 15, fontWeight: '600', flexShrink: 1 },
   listTitle: { color: '#e8eaf6', fontSize: 15, fontWeight: '600' },
   listSubtitle: { color: '#94a3b8', fontSize: 12 },
   listPrice: { color: '#4ade80', fontSize: 13, fontWeight: '600', marginTop: 2 },
