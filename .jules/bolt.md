@@ -1,3 +1,7 @@
+## 2026-08-28 - [High-Frequency Shallow Equality Optimization]
+**Learning:** In hot rendering paths like form text input changes, `shallowEqual` is called repeatedly for state comparisons, history tracking (`useUndoRedo`), and storage write-guards (`AsyncStorage`). Hoisting `Object.prototype.hasOwnProperty` to a module-level reference avoids prototype chain lookups on every property check, adding an empty object fast path (`len === 0`) prevents unnecessary key array allocations, and caching property keys (`const key = keysA[i]`) eliminates repeated array indexing operations per loop iteration.
+**Action:** When writing hot-path equality functions, hoist prototype method references and cache array indices to minimize property resolution and indexing overhead.
+
 ## 2026-08-27 - [Pre-Computed Reducer Dirty Flag]
 **Learning:** Evaluating `shallowEqual(state.present, state.lastCommitted)` inside custom hooks during every component re-render pass introduces redundant $O(K)$ field comparisons on hot UI rendering paths (such as typing in form inputs). Pre-computing an `isDirty` boolean flag inside the state reducer during dispatch actions (`UPDATE`, `COMMIT`, `UNDO`, `REDO`, `RESET`) reduces `canUndo` checks to an $O(1)$ property lookup on every re-render.
 **Action:** In custom state hooks with history or dirty tracking, compute dirty/modified flags directly within the reducer during state updates rather than evaluating object comparisons on every render.
@@ -35,7 +39,7 @@
 **Action:** Add early-exit guards for expensive data processing logic that depends on optional/local state.
 
 ## 2026-05-23 - [OCR Regex & Lookup Optimization]
-**Learning:** Repetitive string transformations (split/map/join) and regex recompilation inside a high-frequency parsing function like `parseTagText` create significant CPU overhead. Hoisting these to module-level constants and using a pre-calculated map reduces execution time by ~38%.
+**Learning:** Repetitive string transformations (split/map/join) inside a high-frequency parsing function like `parseTagText` create significant CPU overhead. Hoisting these to module-level constants and using a pre-calculated map reduces execution time by ~38%.
 **Action:** Always hoist regex patterns and static lookup maps outside of performance-critical functions to avoid redundant work.
 
 ## 2026-05-24 - [Parallel Marketplace Publishing]
@@ -65,10 +69,6 @@
 ## 2026-06-25 - [Optimized Iterative Image Compression]
 **Learning:** Performing a high-resolution `resize` operation inside an iterative quality-reduction loop is a massive CPU bottleneck and causes cumulative "generation loss" artifacts. Decoupling the operations—resizing exactly once to a high-quality intermediate and then iterating only on JPEG quality—preserves image fidelity and significantly reduces processing time per pass.
 **Action:** Always hoist expensive pixel-rescaling operations outside of iterative optimization loops to minimize CPU cycles and maintain output quality.
-
-## 2025-05-28 - [Memoized QuickActionsBar]
-**Learning:** In a large form component like , updating any single field (e.g., Title) triggers a full re-render of all child elements, including the complex action button grid. This causes measurable frame-rate drops during rapid typing.
-**Action:** Extract and memoize static or semi-static UI blocks (like action bars) and stabilize their callbacks via `useCallback` to prevent unnecessary re-renders.
 
 ## 2025-05-28 - [Memoized QuickActionsBar]
 **Learning:** In a large form component like `ItemFormScreen.tsx`, updating any single field (e.g., Title) triggers a full re-render of all child elements, including the complex action button grid. This causes measurable frame-rate drops during rapid typing.

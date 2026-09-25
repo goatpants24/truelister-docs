@@ -9,12 +9,21 @@ const hasOwn = Object.prototype.hasOwnProperty;
  * 2. Cached `keysA.length` in `len` with fast-path `len === 0` exit for empty object comparisons.
  * 3. Cached property key `const key = keysA[i]` to eliminate double array indexing per iteration.
  */
+const hasOwn = Object.prototype.hasOwnProperty;
+
 export function shallowEqual(objA: any, objB: any): boolean {
   if (Object.is(objA, objB)) return true;
   if (typeof objA !== 'object' || objA === null || typeof objB !== 'object' || objB === null) {
     return false;
   }
+
   const keysA = Object.keys(objA);
+  const len = keysA.length;
+
+  if (len === 0) {
+    return Object.keys(objB).length === 0;
+  }
+
   const keysB = Object.keys(objB);
   const len = keysA.length;
   if (len !== keysB.length) return false;
@@ -26,5 +35,6 @@ export function shallowEqual(objA: any, objB: any): boolean {
       return false;
     }
   }
+
   return true;
 }
