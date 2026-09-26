@@ -38,17 +38,6 @@ const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: nu
 };
 
 /**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Grid Item Dimensions
- * Static dimension styles for thumbnail sizes eliminate inline object allocations
- * on every render pass per item in grid mode.
- */
-const GRID_DIMENSIONS = {
-  small: { itemStyle: { width: 96, height: 128 }, dimensionStyle: { width: 64, height: 64 } },
-  medium: { itemStyle: { width: 128, height: 160 }, dimensionStyle: { width: 96, height: 96 } },
-  large: { itemStyle: { width: 160, height: 192 }, dimensionStyle: { width: 128, height: 128 } },
-};
-
-/**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
  * Wrapping items in React.memo() ensures that items only re-render if their
  * specific data or the thumbnail size changes. Inline style allocations are replaced
