@@ -45,3 +45,7 @@
 ## 2026-07-22 - [Dynamic Accessibility Hints for Platform Selection]
 **Learning:** In grid-based platform selection cards, pairing state-dependent `accessibilityHint` strings (e.g. "Selects eBay for publishing" vs "Deselects eBay for publishing") with `hitSlop` expanded touch targets provides screen reader users clear expectations of toggle outcomes while reducing tap accuracy friction on mobile screens.
 **Action:** Provide dynamic state-dependent `accessibilityHint` descriptions for toggleable cards or chips, and always apply `hitSlop` to small or grid-aligned touch targets.
+
+## 2026-09-26 - [Onboarding Step Validation Feedback]
+**Learning:** In multi-step setup flows, disabling and visual/accessibility dimming (`opacity: 0.5`) of the primary action button must be dynamically bound to step-specific input validity checks (`step === 1 ? !step1Valid : !step2Valid`). Otherwise, users receive inconsistent interactive feedback across setup stages.
+**Action:** Always evaluate current step validation state when determining `disabled`, `styles.buttonDisabled`, and `accessibilityState={{ disabled }}` on multi-step submit buttons.

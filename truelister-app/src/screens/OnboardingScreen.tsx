@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { setSpreadsheetId, setAppsScriptUrl } from '../services/localStorage';
+import { setSpreadsheetId, setAppsScriptUrl as setStoredAppsScriptUrl } from '../services/localStorage';
 
 export default function OnboardingScreen() {
   const navigation = useNavigation<any>();
@@ -64,7 +64,7 @@ export default function OnboardingScreen() {
           Alert.alert('Invalid URL', 'Please enter a valid Apps Script Web App URL.');
           return;
         }
-        await setAppsScriptUrl(appsScriptUrl);
+        await setStoredAppsScriptUrl(appsScriptUrl);
       }
       await AsyncStorage.setItem('has_onboarded', 'true');
       navigation.replace('Main');
@@ -111,12 +111,12 @@ export default function OnboardingScreen() {
       </View>
 
       <TouchableOpacity
-        style={[styles.button, step === 1 && !step1Valid && styles.buttonDisabled]}
+        style={[styles.button, (step === 1 ? !step1Valid : !step2Valid) && styles.buttonDisabled]}
         onPress={handleNext}
-        disabled={step === 1 && !step1Valid}
+        disabled={step === 1 ? !step1Valid : !step2Valid}
         accessibilityRole="button"
         accessibilityLabel={step === 1 ? "Next" : "Finish Setup"}
-        accessibilityState={{ disabled: step === 1 && !step1Valid }}
+        accessibilityState={{ disabled: step === 1 ? !step1Valid : !step2Valid }}
         accessibilityHint={step === 1 ? "Saves Google Sheet URL and proceeds to step 2" : "Saves Apps Script URL and finishes onboarding"}
       >
         <Text style={styles.buttonText}>{step === 1 ? 'Next' : 'Finish Setup'}</Text>
