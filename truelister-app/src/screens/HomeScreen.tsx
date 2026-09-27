@@ -31,21 +31,15 @@ const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configurations & Layout Lookups
+ * Moving static arrays and dimension lookups out of the render loop ensures referential stability,
+ * preventing redundant allocations and inline style objects on every list item render.
+ */
 const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: number; thumbSize: number }> = {
   small: { itemWidth: 96, itemHeight: 128, thumbSize: 64 },
   medium: { itemWidth: 128, itemHeight: 160, thumbSize: 96 },
   large: { itemWidth: 160, itemHeight: 192, thumbSize: 128 },
-};
-
-/**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Grid Item Dimensions
- * Static dimension styles for thumbnail sizes eliminate inline object allocations
- * on every render pass per item in grid mode.
- */
-const GRID_DIMENSIONS = {
-  small: { itemStyle: { width: 96, height: 128 }, dimensionStyle: { width: 64, height: 64 } },
-  medium: { itemStyle: { width: 128, height: 160 }, dimensionStyle: { width: 96, height: 96 } },
-  large: { itemStyle: { width: 160, height: 192 }, dimensionStyle: { width: 128, height: 128 } },
 };
 
 /**

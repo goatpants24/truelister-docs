@@ -83,6 +83,16 @@ export default function PublishScreen({ route, navigation }: Props) {
     });
   }, []);
 
+  const isAllSelected = selected.size === MARKETPLACES.length;
+
+  const handleToggleAll = useCallback(() => {
+    if (isAllSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(MARKETPLACES.map(m => m.id)));
+    }
+  }, [isAllSelected]);
+
   const handlePublish = async () => {
     if (selected.size === 0) {
       Alert.alert('No Platforms Selected', 'Select at least one marketplace to publish to.');
@@ -109,7 +119,20 @@ export default function PublishScreen({ route, navigation }: Props) {
       <Text style={styles.itemTitle} numberOfLines={2}>{item.title ?? `Item #${item.itemNumber}`}</Text>
 
       {/* Platform selector */}
-      <Text style={styles.sectionLabel}>Select Platforms</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionLabel}>Select Platforms</Text>
+        <TouchableOpacity
+          onPress={handleToggleAll}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={isAllSelected ? 'Deselect all platforms' : 'Select all platforms'}
+          accessibilityHint={isAllSelected ? 'Clears selection of all marketplace platforms' : 'Selects all available marketplace platforms for publishing'}
+        >
+          <Text style={styles.toggleAllText}>
+            {isAllSelected ? 'Deselect All' : 'Select All'}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.platformGrid}>
         {MARKETPLACES.map(m => (
           <PlatformCard
@@ -213,7 +236,14 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 48 },
   pageTitle: { fontSize: 26, fontWeight: '800', color: '#e8eaf6', marginBottom: 4 },
   itemTitle: { fontSize: 15, color: '#6b7280', marginBottom: 24 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#6b7280', marginBottom: 10, letterSpacing: 0.5, textTransform: 'uppercase' },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#6b7280', letterSpacing: 0.5, textTransform: 'uppercase' },
+  toggleAllText: { fontSize: 12, fontWeight: '600', color: '#4f6ef7' },
   platformGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
   platformBtn: {
     width: '47%',
