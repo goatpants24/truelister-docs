@@ -194,7 +194,16 @@ export async function scanTag(imageUri: string): Promise<{
   if (!rawText) return { rawText: '', parsedFields: {}, confidence: 'low' };
 
   const parsedFields = parseTagText(rawText);
-  const fieldCount = Object.keys(parsedFields).filter(k => (parsedFields as any)[k]).length;
+  /**
+   * Bolt Performance Optimization: Zero-allocation field counting loop
+   * Avoids allocating Object.keys array and intermediate filtered array.
+   */
+  let fieldCount = 0;
+  for (const key in parsedFields) {
+    if (Object.prototype.hasOwnProperty.call(parsedFields, key) && parsedFields[key as keyof CatalogItem]) {
+      fieldCount++;
+    }
+  }
   const confidence = fieldCount >= 3 ? 'high' : fieldCount >= 1 ? 'medium' : 'low';
 
   return { rawText, parsedFields, confidence };
