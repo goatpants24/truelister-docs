@@ -45,3 +45,7 @@
 ## 2026-07-22 - [Dynamic Accessibility Hints for Platform Selection]
 **Learning:** In grid-based platform selection cards, pairing state-dependent `accessibilityHint` strings (e.g. "Selects eBay for publishing" vs "Deselects eBay for publishing") with `hitSlop` expanded touch targets provides screen reader users clear expectations of toggle outcomes while reducing tap accuracy friction on mobile screens.
 **Action:** Provide dynamic state-dependent `accessibilityHint` descriptions for toggleable cards or chips, and always apply `hitSlop` to small or grid-aligned touch targets.
+
+## 2026-07-23 - [Quick Toggle Action for Multi-Selection Headers]
+**Learning:** In multi-selection workflows with multiple options (e.g. publishing platforms), requiring users to tap each card individually creates unnecessary friction. Including a "Select All / Deselect All" header toggle with dynamic screen reader labels ("Select all platforms" / "Deselect all platforms") and expanded touch targets allows rapid bulk selection with minimal effort.
+**Action:** Add a quick bulk toggle link in section header rows for multi-select lists, equipped with dynamic labels, clear visual feedback, and `hitSlop` padding.
