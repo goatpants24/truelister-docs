@@ -91,9 +91,11 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: {
             key={m}
             style={[styles.marketChip, isSelected && styles.marketChipSelected]}
             onPress={() => onToggle(m)}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={`Toggle marketplace ${m}`}
+            accessibilityHint={isSelected ? `Deselects ${m} for cross-listing` : `Selects ${m} for cross-listing`}
           >
             <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
               {isSelected ? '✓ ' : ''}{m}
