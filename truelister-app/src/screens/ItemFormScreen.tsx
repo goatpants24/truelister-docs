@@ -270,27 +270,34 @@ export default function ItemFormScreen() {
     setMode('form');
     if (!photoField) return;
 
-    const fileName = `${item.itemNumber}-${photoField}.jpg`;
-    uploadToDrive(originalUri, fileName, item.itemNumber).then((res) => {
+    const currentItemNumber = item.itemNumber;
+    const currentPhotoField = photoField;
+
+    const fileName = `${currentItemNumber}-${currentPhotoField}.jpg`;
+    uploadToDrive(originalUri, fileName, currentItemNumber).then((res) => {
       if (res.success && res.driveUrl) {
-        const updates: Partial<CatalogItem> = { [photoField]: res.driveUrl };
-        if (photoField === 'photoUrlCard' || !item.photoUrl) updates.photoUrl = res.driveUrl;
-        setItem({ ...item, ...updates }, true);
+        setItem((prev) => {
+          const updates: Partial<CatalogItem> = { [currentPhotoField]: res.driveUrl };
+          if (currentPhotoField === 'photoUrlCard' || !prev.photoUrl) updates.photoUrl = res.driveUrl;
+          return { ...prev, ...updates };
+        }, true);
       } else {
-        addPendingUpload({ itemNumber: item.itemNumber, localUri: originalUri, fieldName: photoField, fileName, timestamp: Date.now() });
+        addPendingUpload({ itemNumber: currentItemNumber, localUri: originalUri, fieldName: currentPhotoField, fileName, timestamp: Date.now() });
       }
     });
-  }, [item, photoField, setItem]);
+  }, [item.itemNumber, photoField, setItem]);
 
   const handleTagScanned = useCallback((fields: Partial<CatalogItem>, rawText: string) => {
-    const updated = { ...item };
-    for (const [key, value] of Object.entries(fields)) {
-      if (value && !(updated as any)[key]) (updated as any)[key] = value;
-    }
-    setItem(updated, true);
+    setItem((prev) => {
+      const updated = { ...prev };
+      for (const [key, value] of Object.entries(fields)) {
+        if (value && !(updated as any)[key]) (updated as any)[key] = value;
+      }
+      return updated;
+    }, true);
     setOcrRawText(rawText);
     setMode('form');
-  }, [item, setItem]);
+  }, [setItem]);
 
   const handleSave = useCallback(async () => {
     if (!isTitleValid) { Alert.alert('Required', 'Please enter a title.'); return; }
