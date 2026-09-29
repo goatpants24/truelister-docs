@@ -31,21 +31,37 @@ const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
 
-const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: number; thumbSize: number }> = {
-  small: { itemWidth: 96, itemHeight: 128, thumbSize: 64 },
-  medium: { itemWidth: 128, itemHeight: 160, thumbSize: 96 },
-  large: { itemWidth: 160, itemHeight: 192, thumbSize: 128 },
-};
-
-/**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Grid Item Dimensions
- * Static dimension styles for thumbnail sizes eliminate inline object allocations
- * on every render pass per item in grid mode.
- */
-const GRID_DIMENSIONS = {
-  small: { itemStyle: { width: 96, height: 128 }, dimensionStyle: { width: 64, height: 64 } },
-  medium: { itemStyle: { width: 128, height: 160 }, dimensionStyle: { width: 96, height: 96 } },
-  large: { itemStyle: { width: 160, height: 192 }, dimensionStyle: { width: 128, height: 128 } },
+const GRID_DIMENSIONS: Record<
+  ThumbnailSize,
+  {
+    itemWidth: number;
+    itemHeight: number;
+    thumbSize: number;
+    itemStyle: { width: number; height: number };
+    frameStyle: { width: number; height: number };
+  }
+> = {
+  small: {
+    itemWidth: 96,
+    itemHeight: 128,
+    thumbSize: 64,
+    itemStyle: { width: 96, height: 128 },
+    frameStyle: { width: 64, height: 64 },
+  },
+  medium: {
+    itemWidth: 128,
+    itemHeight: 160,
+    thumbSize: 96,
+    itemStyle: { width: 128, height: 160 },
+    frameStyle: { width: 96, height: 96 },
+  },
+  large: {
+    itemWidth: 160,
+    itemHeight: 192,
+    thumbSize: 128,
+    itemStyle: { width: 160, height: 192 },
+    frameStyle: { width: 128, height: 128 },
+  },
 };
 
 /**
@@ -55,13 +71,12 @@ const GRID_DIMENSIONS = {
  * with static lookups from GRID_DIMENSIONS and StyleSheet.
  */
 const GridItem = memo(({ item, thumbnailSize, onPress }: { item: CatalogItem, thumbnailSize: ThumbnailSize, onPress: (item: CatalogItem) => void }) => {
-  const { itemWidth, itemHeight, thumbSize } = GRID_DIMENSIONS[thumbnailSize];
+  const { itemStyle, frameStyle } = GRID_DIMENSIONS[thumbnailSize];
   const isSold = item.saleStatus === 'Sold';
-  const frameStyle = { width: thumbSize, height: thumbSize };
 
   return (
     <TouchableOpacity
-      style={[styles.gridItem, { width: itemWidth, height: itemHeight }, isSold && styles.itemSoldOpacity]}
+      style={[styles.gridItem, itemStyle, isSold && styles.itemSoldOpacity]}
       onPress={() => onPress(item)}
       accessibilityRole="button"
       accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
@@ -266,7 +281,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={mode}
                 onPress={() => setViewMode(mode)}
-                style={[styles.modeButton, viewMode === mode && { backgroundColor: '#4f6ef7' }]}
+                style={[styles.modeButton, viewMode === mode && styles.activeButton]}
                 accessibilityRole="button"
                 accessibilityLabel={`${mode} view`}
                 accessibilityState={{ selected: viewMode === mode }}
@@ -284,7 +299,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={size}
                 onPress={() => setThumbnailSize(size)}
-                style={[styles.sizeButton, thumbnailSize === size && { backgroundColor: '#4f6ef7' }]}
+                style={[styles.sizeButton, thumbnailSize === size && styles.activeButton]}
                 accessibilityRole="button"
                 accessibilityLabel={`${size} thumbnails`}
                 accessibilityState={{ selected: thumbnailSize === size }}
@@ -517,6 +532,7 @@ const styles = StyleSheet.create({
   modeButton: { backgroundColor: '#1a1d27', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: '#2a2d3a' },
   thumbnailSizeRow: { flexDirection: 'row', gap: 8 },
   sizeButton: { backgroundColor: '#1a1d27', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: '#2a2d3a' },
+  activeButton: { backgroundColor: '#4f6ef7' },
   exportButton: { backgroundColor: '#4f6ef7', paddingHorizontal: 14, paddingVertical: 9, borderRadius: 10, shadowColor: '#4f6ef7', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 4, marginTop: 12 },
   listContainer: { padding: 16 },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
