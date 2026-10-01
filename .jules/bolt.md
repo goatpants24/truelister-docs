@@ -1,3 +1,7 @@
+## 2026-08-28 - [Pre-Allocated Layout & Frame Style Objects for FlatList Grid Items]
+**Learning:** Defining inline style objects (like `{ width: itemWidth, height: itemHeight }` or `{ width: thumbSize, height: thumbSize }`) inside list item components rendered by `FlatList` allocates hundreds of short-lived objects on the JS heap during fast scrolling. Consolidating static thumbnail configurations into a pre-allocated map containing static `itemStyle` and `frameStyle` references eliminates fresh allocations per render pass.
+**Action:** In `FlatList` item components, avoid inline style objects in favor of pre-computed static style objects hoisted to module level or defined in `StyleSheet.create`.
+
 ## 2026-08-27 - [Pre-Computed Reducer Dirty Flag]
 **Learning:** Evaluating `shallowEqual(state.present, state.lastCommitted)` inside custom hooks during every component re-render pass introduces redundant $O(K)$ field comparisons on hot UI rendering paths (such as typing in form inputs). Pre-computing an `isDirty` boolean flag inside the state reducer during dispatch actions (`UPDATE`, `COMMIT`, `UNDO`, `REDO`, `RESET`) reduces `canUndo` checks to an $O(1)$ property lookup on every re-render.
 **Action:** In custom state hooks with history or dirty tracking, compute dirty/modified flags directly within the reducer during state updates rather than evaluating object comparisons on every render.
