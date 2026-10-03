@@ -1,3 +1,7 @@
+## 2026-10-03 - [Pre-Allocated Layout Objects in List Grid Dimensions]
+**Learning:** Pre-allocating nested style/frame objects (`frameStyle: { width, height }`) directly inside static dimension configuration maps avoids generating fresh inline object allocations on every item render pass during `FlatList` scrolling.
+**Action:** When defining static layout/dimension maps for list items, pre-allocate compound style objects (like `frameStyle`) inside the map to ensure zero inline object creation during rendering.
+
 ## 2026-08-27 - [Pre-Computed Reducer Dirty Flag]
 **Learning:** Evaluating `shallowEqual(state.present, state.lastCommitted)` inside custom hooks during every component re-render pass introduces redundant $O(K)$ field comparisons on hot UI rendering paths (such as typing in form inputs). Pre-computing an `isDirty` boolean flag inside the state reducer during dispatch actions (`UPDATE`, `COMMIT`, `UNDO`, `REDO`, `RESET`) reduces `canUndo` checks to an $O(1)$ property lookup on every re-render.
 **Action:** In custom state hooks with history or dirty tracking, compute dirty/modified flags directly within the reducer during state updates rather than evaluating object comparisons on every render.
