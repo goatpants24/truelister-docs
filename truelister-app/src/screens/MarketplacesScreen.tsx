@@ -49,6 +49,11 @@ const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { m
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showSecure, setShowSecure] = useState<Record<string, boolean>>({});
+
+  const toggleSecureVisibility = useCallback((key: string) => {
+    setShowSecure(prev => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   const fieldKeys = React.useMemo(
     () => marketplace.credentialFields.map(f => f.key),
@@ -156,25 +161,42 @@ const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { m
       )}
 
       {/* Credential fields */}
-      {marketplace.credentialFields.map(field => (
-        <View key={field.key} style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{field.label}</Text>
-          {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
-          <TextInput
-            style={styles.input}
-            value={values[field.key] ?? ''}
-            onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
-            placeholder={field.placeholder}
-            placeholderTextColor="#4a4d60"
-            autoCapitalize="none"
-            autoCorrect={false}
-            secureTextEntry={field.secure}
-            keyboardType={field.key === 'email' ? 'email-address' : 'default'}
-            accessibilityLabel={field.label}
-            accessibilityHint={field.hint || undefined}
-          />
-        </View>
-      ))}
+      {marketplace.credentialFields.map(field => {
+        const isVisible = showSecure[field.key];
+        return (
+          <View key={field.key} style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{field.label}</Text>
+            {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
+            <View style={field.secure ? styles.inputWrapper : undefined}>
+              <TextInput
+                style={[styles.input, field.secure && styles.inputWithToggle]}
+                value={values[field.key] ?? ''}
+                onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
+                placeholder={field.placeholder}
+                placeholderTextColor="#4a4d60"
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={field.secure && !isVisible}
+                keyboardType={field.key === 'email' ? 'email-address' : 'default'}
+                accessibilityLabel={field.label}
+                accessibilityHint={field.hint || undefined}
+              />
+              {field.secure && (
+                <TouchableOpacity
+                  style={styles.toggleVisibilityBtn}
+                  onPress={() => toggleSecureVisibility(field.key)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={isVisible ? `Hide ${field.label}` : `Show ${field.label}`}
+                  accessibilityHint={isVisible ? `Hides ${field.label} characters` : `Displays ${field.label} characters in plain text`}
+                >
+                  <Text style={styles.toggleVisibilityText}>{isVisible ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        );
+      })}
 
       {/* Actions */}
       <View style={styles.cardActions}>
@@ -304,6 +326,10 @@ const styles = StyleSheet.create({
   fieldGroup: { marginBottom: 12 },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: '#c8cae0', marginBottom: 3 },
   fieldHint: { fontSize: 11, color: '#4a4d60', marginBottom: 5, lineHeight: 15 },
+  inputWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   input: {
     backgroundColor: '#0f1117',
     borderRadius: 10,
@@ -314,6 +340,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#e8eaf6',
     fontFamily: 'Courier',
+  },
+  inputWithToggle: {
+    paddingRight: 44,
+  },
+  toggleVisibilityBtn: {
+    position: 'absolute',
+    right: 12,
+    padding: 4,
+  },
+  toggleVisibilityText: {
+    fontSize: 16,
   },
   cardActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   saveBtn: {
