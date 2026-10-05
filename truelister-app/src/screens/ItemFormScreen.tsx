@@ -140,8 +140,12 @@ const QuickActionsBar = memo(({
               isCaptured && styles.actionButtonCaptured
             ]}
             onPress={() => onCapture(field)}
+            activeOpacity={0.75}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             accessibilityRole="button"
+            accessibilityState={{ selected: isCaptured }}
             accessibilityLabel={`Capture ${label.toLowerCase()} photo${isCaptured ? ' (Captured)' : ''}`}
+            accessibilityHint={isCaptured ? `Opens camera to retake ${label.toLowerCase()} photo` : `Opens camera to capture ${label.toLowerCase()} photo`}
           >
             <Text style={styles.actionIcon}>{icon}</Text>
             <Text style={[styles.actionLabel, isCaptured && styles.actionLabelCaptured]}>
@@ -153,8 +157,12 @@ const QuickActionsBar = memo(({
       <TouchableOpacity
         style={[styles.actionButton, ocrRawText && styles.actionButtonCaptured]}
         onPress={onScanTag}
+        activeOpacity={0.75}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         accessibilityRole="button"
+        accessibilityState={{ selected: !!ocrRawText }}
         accessibilityLabel={`Scan clothing tag${ocrRawText ? ' (Scanned)' : ''}`}
+        accessibilityHint={ocrRawText ? 'Opens tag scanner to rescan clothing tag' : 'Opens tag scanner to detect text from clothing tag'}
       >
         <Text style={styles.actionIcon}>🏷</Text>
         <Text style={[styles.actionLabel, ocrRawText && styles.actionLabelCaptured]}>
