@@ -45,3 +45,7 @@
 ## 2026-07-22 - [Dynamic Accessibility Hints for Platform Selection]
 **Learning:** In grid-based platform selection cards, pairing state-dependent `accessibilityHint` strings (e.g. "Selects eBay for publishing" vs "Deselects eBay for publishing") with `hitSlop` expanded touch targets provides screen reader users clear expectations of toggle outcomes while reducing tap accuracy friction on mobile screens.
 **Action:** Provide dynamic state-dependent `accessibilityHint` descriptions for toggleable cards or chips, and always apply `hitSlop` to small or grid-aligned touch targets.
+
+## 2026-07-23 - [Inline Visibility Toggle for Secure Inputs]
+**Learning:** Entering sensitive API keys or tokens into obscured password inputs on mobile devices often leads to frustrating typos. Providing an inline visibility toggle button (👁️ / 🙈) with state-aware accessibility labels/hints ("Show [Field]" vs "Hide [Field]") and `hitSlop` expansion gives users complete control to verify complex keys securely and effortlessly.
+**Action:** Include an interactive visibility toggle button for obscured password or API key inputs, paired with state-dependent accessibility attributes explaining the toggle outcome.
