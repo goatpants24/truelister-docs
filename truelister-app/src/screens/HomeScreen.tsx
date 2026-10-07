@@ -31,10 +31,10 @@ const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
 
-const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: number; thumbSize: number }> = {
-  small: { itemWidth: 96, itemHeight: 128, thumbSize: 64 },
-  medium: { itemWidth: 128, itemHeight: 160, thumbSize: 96 },
-  large: { itemWidth: 160, itemHeight: 192, thumbSize: 128 },
+const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: number; thumbSize: number; frameStyle: { width: number; height: number } }> = {
+  small: { itemWidth: 96, itemHeight: 128, thumbSize: 64, frameStyle: { width: 64, height: 64 } },
+  medium: { itemWidth: 128, itemHeight: 160, thumbSize: 96, frameStyle: { width: 96, height: 96 } },
+  large: { itemWidth: 160, itemHeight: 192, thumbSize: 128, frameStyle: { width: 128, height: 128 } },
 };
 
 /**
@@ -44,9 +44,8 @@ const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: nu
  * with static lookups from GRID_DIMENSIONS and StyleSheet.
  */
 const GridItem = memo(({ item, thumbnailSize, onPress }: { item: CatalogItem, thumbnailSize: ThumbnailSize, onPress: (item: CatalogItem) => void }) => {
-  const { itemWidth, itemHeight, thumbSize } = GRID_DIMENSIONS[thumbnailSize];
+  const { itemWidth, itemHeight, frameStyle } = GRID_DIMENSIONS[thumbnailSize];
   const isSold = item.saleStatus === 'Sold';
-  const frameStyle = { width: thumbSize, height: thumbSize };
 
   return (
     <TouchableOpacity
