@@ -31,11 +31,6 @@ const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
 
-/**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Grid Item Dimensions & Layout Lookups
- * Consolidated pre-computed dimensions and frameStyle objects for thumbnail sizes eliminate
- * fresh inline object allocations ({ width, height }) on every render pass per item in grid mode.
- */
 const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: number; thumbSize: number; frameStyle: { width: number; height: number } }> = {
   small: { itemWidth: 96, itemHeight: 128, thumbSize: 64, frameStyle: { width: 64, height: 64 } },
   medium: { itemWidth: 128, itemHeight: 160, thumbSize: 96, frameStyle: { width: 96, height: 96 } },
