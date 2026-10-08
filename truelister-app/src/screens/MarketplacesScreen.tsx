@@ -46,9 +46,14 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
  */
 const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const [showSecure, setShowSecure] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const toggleSecure = useCallback((key: string) => {
+    setShowSecure(prev => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   const fieldKeys = React.useMemo(
     () => marketplace.credentialFields.map(f => f.key),
@@ -156,25 +161,43 @@ const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { m
       )}
 
       {/* Credential fields */}
-      {marketplace.credentialFields.map(field => (
-        <View key={field.key} style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{field.label}</Text>
-          {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
-          <TextInput
-            style={styles.input}
-            value={values[field.key] ?? ''}
-            onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
-            placeholder={field.placeholder}
-            placeholderTextColor="#4a4d60"
-            autoCapitalize="none"
-            autoCorrect={false}
-            secureTextEntry={field.secure}
-            keyboardType={field.key === 'email' ? 'email-address' : 'default'}
-            accessibilityLabel={field.label}
-            accessibilityHint={field.hint || undefined}
-          />
-        </View>
-      ))}
+      {marketplace.credentialFields.map(field => {
+        const isSecureField = !!field.secure;
+        const isVisible = !!showSecure[field.key];
+        return (
+          <View key={field.key} style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{field.label}</Text>
+            {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
+            <View style={isSecureField ? styles.inputWrapper : undefined}>
+              <TextInput
+                style={[styles.input, isSecureField && styles.inputWithToggle]}
+                value={values[field.key] ?? ''}
+                onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
+                placeholder={field.placeholder}
+                placeholderTextColor="#4a4d60"
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={isSecureField && !isVisible}
+                keyboardType={field.key === 'email' ? 'email-address' : 'default'}
+                accessibilityLabel={field.label}
+                accessibilityHint={field.hint || undefined}
+              />
+              {isSecureField && (
+                <TouchableOpacity
+                  style={styles.toggleBtn}
+                  onPress={() => toggleSecure(field.key)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={isVisible ? `Hide ${field.label}` : `Show ${field.label}`}
+                  accessibilityHint={isVisible ? `Masks ${field.label} characters` : `Displays ${field.label} in plain text`}
+                >
+                  <Text style={styles.toggleIcon}>{isVisible ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        );
+      })}
 
       {/* Actions */}
       <View style={styles.cardActions}>
@@ -304,6 +327,10 @@ const styles = StyleSheet.create({
   fieldGroup: { marginBottom: 12 },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: '#c8cae0', marginBottom: 3 },
   fieldHint: { fontSize: 11, color: '#4a4d60', marginBottom: 5, lineHeight: 15 },
+  inputWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   input: {
     backgroundColor: '#0f1117',
     borderRadius: 10,
@@ -314,6 +341,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#e8eaf6',
     fontFamily: 'Courier',
+  },
+  inputWithToggle: {
+    paddingRight: 40,
+  },
+  toggleBtn: {
+    position: 'absolute',
+    right: 12,
+    padding: 4,
+  },
+  toggleIcon: {
+    fontSize: 16,
   },
   cardActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   saveBtn: {
