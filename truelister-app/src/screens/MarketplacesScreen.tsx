@@ -46,6 +46,7 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
  */
 const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const [showSecure, setShowSecure] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -156,25 +157,42 @@ const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { m
       )}
 
       {/* Credential fields */}
-      {marketplace.credentialFields.map(field => (
-        <View key={field.key} style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{field.label}</Text>
-          {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
-          <TextInput
-            style={styles.input}
-            value={values[field.key] ?? ''}
-            onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
-            placeholder={field.placeholder}
-            placeholderTextColor="#4a4d60"
-            autoCapitalize="none"
-            autoCorrect={false}
-            secureTextEntry={field.secure}
-            keyboardType={field.key === 'email' ? 'email-address' : 'default'}
-            accessibilityLabel={field.label}
-            accessibilityHint={field.hint || undefined}
-          />
-        </View>
-      ))}
+      {marketplace.credentialFields.map(field => {
+        const isVisible = showSecure[field.key];
+        return (
+          <View key={field.key} style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{field.label}</Text>
+            {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
+            <View style={field.secure ? styles.secureInputWrapper : null}>
+              <TextInput
+                style={[styles.input, field.secure && styles.secureInput]}
+                value={values[field.key] ?? ''}
+                onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
+                placeholder={field.placeholder}
+                placeholderTextColor="#4a4d60"
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={field.secure && !isVisible}
+                keyboardType={field.key === 'email' ? 'email-address' : 'default'}
+                accessibilityLabel={field.label}
+                accessibilityHint={field.hint || undefined}
+              />
+              {field.secure && (
+                <TouchableOpacity
+                  style={styles.toggleSecureBtn}
+                  onPress={() => setShowSecure(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={isVisible ? `Hide ${field.label}` : `Show ${field.label}`}
+                  accessibilityHint={isVisible ? `Masks ${field.label} text` : `Reveals ${field.label} text`}
+                >
+                  <Text style={styles.toggleSecureIcon}>{isVisible ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        );
+      })}
 
       {/* Actions */}
       <View style={styles.cardActions}>
@@ -314,6 +332,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#e8eaf6',
     fontFamily: 'Courier',
+  },
+  secureInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0f1117',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2a2d3a',
+  },
+  secureInput: {
+    flex: 1,
+    borderWidth: 0,
+    backgroundColor: 'transparent',
+  },
+  toggleSecureBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  toggleSecureIcon: {
+    fontSize: 16,
   },
   cardActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   saveBtn: {
