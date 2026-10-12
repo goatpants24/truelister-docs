@@ -25,6 +25,8 @@ const MARKETPLACE_MAP = new Map<MarketplaceId, MarketplaceMeta>(
   MARKETPLACES.map(m => [m.id, m])
 );
 
+const ALL_MARKETPLACE_IDS: MarketplaceId[] = MARKETPLACES.map(m => m.id);
+
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized PlatformCard Component
  * Prevents re-rendering all platform cards when a single platform is toggled.
@@ -71,9 +73,11 @@ export default function PublishScreen({ route, navigation }: Props) {
   const [publishing, setPublishing] = useState(false);
   const [results, setResults] = useState<ListingResult[] | null>(null);
 
+  const allSelected = selected.size === ALL_MARKETPLACE_IDS.length;
+
   /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Toggle Callback
-   * Wrapping toggleMarketplace in useCallback ensures PlatformCard referential stability.
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Toggle Callbacks
+   * Wrapping toggleMarketplace and toggleSelectAll in useCallback ensures PlatformCard referential stability.
    */
   const toggleMarketplace = useCallback((id: MarketplaceId) => {
     setSelected(prev => {
@@ -82,6 +86,10 @@ export default function PublishScreen({ route, navigation }: Props) {
       return next;
     });
   }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    setSelected(allSelected ? new Set() : new Set(ALL_MARKETPLACE_IDS));
+  }, [allSelected]);
 
   const handlePublish = async () => {
     if (selected.size === 0) {
@@ -109,7 +117,18 @@ export default function PublishScreen({ route, navigation }: Props) {
       <Text style={styles.itemTitle} numberOfLines={2}>{item.title ?? `Item #${item.itemNumber}`}</Text>
 
       {/* Platform selector */}
-      <Text style={styles.sectionLabel}>Select Platforms</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionLabel}>Select Platforms</Text>
+        <TouchableOpacity
+          onPress={toggleSelectAll}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={allSelected ? "Deselect all platforms" : "Select all platforms"}
+          accessibilityHint={allSelected ? "Clears platform selections" : "Selects all available marketplaces for publishing"}
+        >
+          <Text style={styles.selectAllText}>{allSelected ? 'Deselect All' : 'Select All'}</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.platformGrid}>
         {MARKETPLACES.map(m => (
           <PlatformCard
@@ -213,7 +232,14 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 48 },
   pageTitle: { fontSize: 26, fontWeight: '800', color: '#e8eaf6', marginBottom: 4 },
   itemTitle: { fontSize: 15, color: '#6b7280', marginBottom: 24 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#6b7280', marginBottom: 10, letterSpacing: 0.5, textTransform: 'uppercase' },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#6b7280', letterSpacing: 0.5, textTransform: 'uppercase' },
+  selectAllText: { fontSize: 13, fontWeight: '600', color: '#4f6ef7' },
   platformGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
   platformBtn: {
     width: '47%',
