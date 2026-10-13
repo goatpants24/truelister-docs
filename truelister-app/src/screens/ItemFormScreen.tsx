@@ -295,6 +295,12 @@ export default function ItemFormScreen() {
     setMode('form');
   }, []);
 
+  /**
+   * ⚡ BOLT PERFORMANCE & STABILITY OPTIMIZATION: Functional State Updates
+   * Uses functional updates `setItem((prev) => ...)` to remove `item` from useCallback dependencies.
+   * Maintains callback referential stability across form typing re-renders and prevents race-condition
+   * state overwrites when asynchronous Google Drive uploads complete.
+   */
   const handlePhotoCapture = useCallback((compressed: ImageResult, originalUri: string) => {
     setMode('form');
     if (!photoField) return;
@@ -314,6 +320,10 @@ export default function ItemFormScreen() {
     });
   }, [item.itemNumber, photoField, setItem]);
 
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Tag Scan Handler
+   * Uses functional state updates to eliminate `item` from the dependency array, preserving referential stability.
+   */
   const handleTagScanned = useCallback((fields: Partial<CatalogItem>, rawText: string) => {
     setItem((prev) => {
       const updated = { ...prev };
