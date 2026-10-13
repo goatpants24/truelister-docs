@@ -25,6 +25,8 @@ const MARKETPLACE_MAP = new Map<MarketplaceId, MarketplaceMeta>(
   MARKETPLACES.map(m => [m.id, m])
 );
 
+const ALL_MARKETPLACE_IDS: MarketplaceId[] = MARKETPLACES.map(m => m.id);
+
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Module-level Marketplace IDs
  * Hoisted array reference for bulk platform selection toggling.
@@ -77,20 +79,11 @@ export default function PublishScreen({ route, navigation }: Props) {
   const [publishing, setPublishing] = useState(false);
   const [results, setResults] = useState<ListingResult[] | null>(null);
 
-  const allSelected = selected.size === MARKETPLACES.length;
+  const allSelected = selected.size === ALL_MARKETPLACE_IDS.length;
 
   /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Tap Bulk Toggle
-   * Toggles all marketplace selections in a single state update batch,
-   * avoiding sequential single-item toggle loops and preventing redundant re-renders.
-   */
-  const toggleSelectAll = useCallback(() => {
-    setSelected(prev => (prev.size === MARKETPLACES.length ? new Set() : new Set(ALL_MARKETPLACE_IDS)));
-  }, []);
-
-  /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Toggle Callback
-   * Wrapping toggleMarketplace in useCallback ensures PlatformCard referential stability.
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Toggle Callbacks
+   * Wrapping toggleMarketplace and toggleSelectAll in useCallback ensures PlatformCard referential stability.
    */
   const toggleMarketplace = useCallback((id: MarketplaceId) => {
     setSelected(prev => {
@@ -99,6 +92,12 @@ export default function PublishScreen({ route, navigation }: Props) {
       return next;
     });
   }, []);
+
+  const allSelected = selected.size === ALL_MARKETPLACE_IDS.length;
+
+  const toggleSelectAll = useCallback(() => {
+    setSelected(allSelected ? new Set() : new Set(ALL_MARKETPLACE_IDS));
+  }, [allSelected]);
 
   const handlePublish = async () => {
     if (selected.size === 0) {
@@ -132,10 +131,12 @@ export default function PublishScreen({ route, navigation }: Props) {
           onPress={toggleSelectAll}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
-          accessibilityLabel={allSelected ? 'Deselect all platforms' : 'Select all platforms'}
-          accessibilityHint={allSelected ? 'Deselects all marketplaces for cross-listing' : 'Selects all available marketplaces for cross-listing'}
+          accessibilityLabel={allSelected ? "Deselect all platforms" : "Select all platforms"}
+          accessibilityHint={allSelected ? "Deselects all marketplaces at once" : "Selects all marketplaces at once for cross-listing"}
         >
-          <Text style={styles.selectAllText}>{allSelected ? 'Deselect All' : 'Select All'}</Text>
+          <Text style={styles.selectAllText}>
+            {allSelected ? 'Deselect All' : 'Select All'}
+          </Text>
         </TouchableOpacity>
       </View>
       <View style={styles.platformGrid}>
@@ -248,7 +249,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionLabel: { fontSize: 13, fontWeight: '700', color: '#6b7280', letterSpacing: 0.5, textTransform: 'uppercase' },
-  selectAllText: { fontSize: 12, fontWeight: '600', color: '#4f6ef7' },
+  selectAllText: { fontSize: 13, fontWeight: '600', color: '#60a5fa' },
   platformGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
   platformBtn: {
     width: '47%',
