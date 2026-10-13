@@ -87,6 +87,8 @@ export default function PublishScreen({ route, navigation }: Props) {
     });
   }, []);
 
+  const allSelected = selected.size === ALL_MARKETPLACE_IDS.length;
+
   const toggleSelectAll = useCallback(() => {
     setSelected(allSelected ? new Set() : new Set(ALL_MARKETPLACE_IDS));
   }, [allSelected]);
@@ -121,12 +123,14 @@ export default function PublishScreen({ route, navigation }: Props) {
         <Text style={styles.sectionLabel}>Select Platforms</Text>
         <TouchableOpacity
           onPress={toggleSelectAll}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={allSelected ? "Deselect all platforms" : "Select all platforms"}
-          accessibilityHint={allSelected ? "Clears platform selections" : "Selects all available marketplaces for publishing"}
+          accessibilityHint={allSelected ? "Deselects all marketplaces at once" : "Selects all marketplaces at once for cross-listing"}
         >
-          <Text style={styles.selectAllText}>{allSelected ? 'Deselect All' : 'Select All'}</Text>
+          <Text style={styles.selectAllText}>
+            {allSelected ? 'Deselect All' : 'Select All'}
+          </Text>
         </TouchableOpacity>
       </View>
       <View style={styles.platformGrid}>
@@ -239,7 +243,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionLabel: { fontSize: 13, fontWeight: '700', color: '#6b7280', letterSpacing: 0.5, textTransform: 'uppercase' },
-  selectAllText: { fontSize: 13, fontWeight: '600', color: '#4f6ef7' },
+  selectAllText: { fontSize: 13, fontWeight: '600', color: '#60a5fa' },
   platformGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
   platformBtn: {
     width: '47%',
