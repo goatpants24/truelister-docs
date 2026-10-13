@@ -194,11 +194,10 @@ export async function scanTag(imageUri: string): Promise<{
   if (!rawText) return { rawText: '', parsedFields: {}, confidence: 'low' };
 
   const parsedFields = parseTagText(rawText);
-
   /**
-   * Bolt Performance Optimization: Zero-Allocation Field Count Loop
-   * Replaces `Object.keys(parsedFields).filter(...)` which creates two intermediate heap arrays
-   * (`string[]` keys and filtered values array) with a zero-allocation `for...in` loop.
+   * Bolt Performance Optimization: Zero-allocation Field Counter
+   * Replaces Object.keys(parsedFields).filter(...) with a for...in loop.
+   * Eliminates intermediate array allocations (Object.keys array and .filter array) during tag scans.
    */
   let fieldCount = 0;
   for (const k in parsedFields) {
@@ -206,7 +205,6 @@ export async function scanTag(imageUri: string): Promise<{
       fieldCount++;
     }
   }
-
   const confidence = fieldCount >= 3 ? 'high' : fieldCount >= 1 ? 'medium' : 'low';
 
   return { rawText, parsedFields, confidence };
