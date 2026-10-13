@@ -28,6 +28,12 @@ const MARKETPLACE_MAP = new Map<MarketplaceId, MarketplaceMeta>(
 const ALL_MARKETPLACE_IDS: MarketplaceId[] = MARKETPLACES.map(m => m.id);
 
 /**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Module-level Marketplace IDs
+ * Hoisted array reference for bulk platform selection toggling.
+ */
+const ALL_MARKETPLACE_IDS: MarketplaceId[] = MARKETPLACES.map(m => m.id);
+
+/**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized PlatformCard Component
  * Prevents re-rendering all platform cards when a single platform is toggled.
  */
