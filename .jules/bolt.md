@@ -1,3 +1,7 @@
+## 2026-08-28 - [FlatList keyExtractor Hoisting & Referential Stability]
+**Learning:** Passing inline arrow functions (e.g. `keyExtractor={(item) => item.itemNumber}`) to `FlatList` components creates a new function reference on every render cycle of the parent container, invalidating internal prop checks and triggering unneeded child item re-evaluation. Hoisting `keyExtractor` to a module-level constant (`const keyExtractor = (item: CatalogItem) => item.itemNumber;`) provides referential stability across re-renders and eliminates inline function allocations.
+**Action:** Always hoist `keyExtractor` functions outside of component render functions for all `FlatList` and `SectionList` components.
+
 ## 2026-08-27 - [Pre-Computed Reducer Dirty Flag]
 **Learning:** Evaluating `shallowEqual(state.present, state.lastCommitted)` inside custom hooks during every component re-render pass introduces redundant $O(K)$ field comparisons on hot UI rendering paths (such as typing in form inputs). Pre-computing an `isDirty` boolean flag inside the state reducer during dispatch actions (`UPDATE`, `COMMIT`, `UNDO`, `REDO`, `RESET`) reduces `canUndo` checks to an $O(1)$ property lookup on every re-render.
 **Action:** In custom state hooks with history or dirty tracking, compute dirty/modified flags directly within the reducer during state updates rather than evaluating object comparisons on every render.
