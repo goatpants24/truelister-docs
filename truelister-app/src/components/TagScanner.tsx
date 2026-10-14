@@ -135,16 +135,20 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
             <TouchableOpacity
               style={styles.buttonSecondary}
               onPress={handleRescan}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel="Rescan tag photo"
+              accessibilityHint="Discards current scan results and returns to tag camera view"
             >
               <Text style={styles.buttonSecondaryText}>Rescan</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.button}
               onPress={handleAccept}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel="Use detected fields in item form"
+              accessibilityHint="Applies detected fields to the item form and closes scanner"
             >
               <Text style={styles.buttonText}>Use These Fields</Text>
             </TouchableOpacity>
@@ -159,10 +163,24 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
     return (
       <View style={styles.container}>
         <Text style={styles.permissionText}>Camera access needed to scan tags.</Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={requestPermission}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Grant camera permission"
+          accessibilityHint="Requests permission to use the camera for scanning clothing tags"
+        >
           <Text style={styles.buttonText}>Grant Permission</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.buttonSecondary} onPress={onCancel}>
+        <TouchableOpacity
+          style={styles.buttonSecondary}
+          onPress={onCancel}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel permission request"
+          accessibilityHint="Closes the tag scanner and returns to the item form"
+        >
           <Text style={styles.buttonSecondaryText}>Cancel</Text>
         </TouchableOpacity>
       </View>
@@ -212,8 +230,10 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
             style={[styles.libraryButton, scanning && { opacity: 0.5 }]}
             onPress={handlePickImage}
             disabled={scanning}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Open photo library"
+            accessibilityHint="Selects an existing tag image from your photo library to scan"
             accessibilityState={{ disabled: scanning }}
           >
             <Text style={styles.libraryIcon}>🖼</Text>
@@ -223,8 +243,10 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
             style={[styles.captureButton, scanning && { opacity: 0.5 }]}
             onPress={handleCapture}
             disabled={scanning}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel={scanning ? 'Scanning tag photo...' : 'Capture photo and scan tag'}
+            accessibilityHint="Takes a photo of the clothing tag and analyzes text using OCR"
             accessibilityState={{ disabled: scanning }}
           >
             <View style={styles.captureInner}>
