@@ -364,8 +364,40 @@ export default function ItemFormScreen() {
   }, [item.designerBrand, item.title]);
 
   const handleAISuggest = useCallback(() => {
-    Alert.alert('AI Assistant', 'AI suggestion feature coming soon.');
-  }, []);
+    const parts = [
+      item.designerBrand,
+      item.color,
+      item.category,
+      item.fabricMaterial,
+      item.size ? `Size ${item.size}` : '',
+    ].filter(Boolean);
+
+    if (parts.length === 0) {
+      const msg = 'Please fill in at least one detail (e.g. Brand, Category, Color, or Size) to generate a title suggestion.';
+      if (Platform.OS === 'web') {
+        window.alert(`AI Title Suggestion\n\n${msg}`);
+      } else {
+        Alert.alert('AI Title Suggestion', msg);
+      }
+      return;
+    }
+
+    const suggested = parts.join(' ').trim().slice(0, 80);
+    if (Platform.OS === 'web') {
+      if (window.confirm(`AI Title Suggestion\n\nUse suggested title?\n"${suggested}"`)) {
+        updateField('title', suggested, true);
+      }
+    } else {
+      Alert.alert(
+        'AI Title Suggestion',
+        `Use suggested title?\n\n"${suggested}"`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Apply Title', onPress: () => updateField('title', suggested, true) },
+        ]
+      );
+    }
+  }, [item.designerBrand, item.color, item.category, item.fabricMaterial, item.size, updateField]);
 
   const handleMarkAsSold = useCallback(() => {
     Alert.alert('Mark as Sold?', 'This will update status to Sold.', [
@@ -463,6 +495,7 @@ export default function ItemFormScreen() {
               style={styles.aiBadge}
               accessibilityRole="button"
               accessibilityLabel="AI Suggest title"
+              accessibilityHint="Generates a title suggestion from brand, category, color, fabric, and size"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>

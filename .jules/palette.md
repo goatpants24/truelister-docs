@@ -49,3 +49,7 @@
 ## 2026-07-23 - [Single-Tap Bulk Toggling for Multi-Platform Selection]
 **Learning:** When users cross-list items across multiple platforms, toggling individual platform chips one by one can be tedious. Adding a single-tap "Select All / Deselect All" header action with state-aware text and screen reader labels provides an efficient shortcut while keeping selection state clear.
 **Action:** Provide a bulk "Select All / Deselect All" toggle action alongside multi-select section headers, using a module-level constant for target IDs to avoid allocations and providing descriptive state-aware `accessibilityHint` props.
+
+## 2026-07-24 - [Cross-Platform AI Title Suggestion Micro-UX]
+**Learning:** Automatically constructing formatted marketplace title suggestions (capped at 80 characters) from item attributes (brand, color, category, fabric, size) saves users typing time and avoids limit overflow. Providing `Platform.OS === 'web'` fallbacks (`window.confirm`/`window.alert`) alongside React Native `Alert.alert` ensures consistent prompt behavior across web browsers and mobile devices.
+**Action:** Always auto-generate structured suggestions from existing form attributes, handle empty states gracefully, ensure cross-platform alert/dialog compatibility, and supply descriptive `accessibilityHint` attributes.
