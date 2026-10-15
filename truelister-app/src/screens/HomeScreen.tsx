@@ -31,10 +31,10 @@ const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
 
-const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: number; thumbSize: number; frameStyle: { width: number; height: number } }> = {
-  small: { itemWidth: 96, itemHeight: 128, thumbSize: 64, frameStyle: { width: 64, height: 64 } },
-  medium: { itemWidth: 128, itemHeight: 160, thumbSize: 96, frameStyle: { width: 96, height: 96 } },
-  large: { itemWidth: 160, itemHeight: 192, thumbSize: 128, frameStyle: { width: 128, height: 128 } },
+const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: number; thumbSize: number; itemStyle: { width: number; height: number }; frameStyle: { width: number; height: number } }> = {
+  small: { itemWidth: 96, itemHeight: 128, thumbSize: 64, itemStyle: { width: 96, height: 128 }, frameStyle: { width: 64, height: 64 } },
+  medium: { itemWidth: 128, itemHeight: 160, thumbSize: 96, itemStyle: { width: 128, height: 160 }, frameStyle: { width: 96, height: 96 } },
+  large: { itemWidth: 160, itemHeight: 192, thumbSize: 128, itemStyle: { width: 160, height: 192 }, frameStyle: { width: 128, height: 128 } },
 };
 
 /**
@@ -44,12 +44,12 @@ const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: nu
  * with static lookups from GRID_DIMENSIONS and StyleSheet.
  */
 const GridItem = memo(({ item, thumbnailSize, onPress }: { item: CatalogItem, thumbnailSize: ThumbnailSize, onPress: (item: CatalogItem) => void }) => {
-  const { itemWidth, itemHeight, frameStyle } = GRID_DIMENSIONS[thumbnailSize];
+  const { itemStyle, frameStyle } = GRID_DIMENSIONS[thumbnailSize];
   const isSold = item.saleStatus === 'Sold';
 
   return (
     <TouchableOpacity
-      style={[styles.gridItem, { width: itemWidth, height: itemHeight }, isSold && styles.itemSoldOpacity]}
+      style={[styles.gridItem, itemStyle, isSold && styles.itemSoldOpacity]}
       onPress={() => onPress(item)}
       accessibilityRole="button"
       accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
@@ -213,7 +213,7 @@ export default function HomeScreen() {
    * preventing inaccurate layout math and blank layout rendering when fast-scrolling.
    */
   const getItemLayout = useCallback((_data: ArrayLike<CatalogItem> | null | undefined, index: number) => {
-    const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
+    const size = GRID_DIMENSIONS[thumbnailSize].thumbSize;
     const isGrid = viewMode === 'grid';
     const itemHeight = isGrid ? size + 76 : 96;
     const rowIndex = isGrid ? Math.floor(index / 2) : index;
