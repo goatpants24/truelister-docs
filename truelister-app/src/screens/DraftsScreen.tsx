@@ -13,6 +13,12 @@ import { getDrafts, deleteDraft, clearDrafts } from '../services/localStorage';
 import { CatalogItem } from '../types';
 
 /**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Key Extractor
+ * Moving keyExtractor to a module-level constant provides referential stability for FlatList.
+ */
+const keyExtractor = (item: CatalogItem) => item.itemNumber;
+
+/**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Draft Card
  * Extracting the item renderer into a memoized component prevents
  * redundant tree reconciliation when the parent list state updates.
@@ -170,7 +176,7 @@ export default function DraftsScreen() {
       </View>
       <FlatList
         data={drafts}
-        keyExtractor={(item) => item.itemNumber}
+        keyExtractor={keyExtractor}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={renderItem}
         getItemLayout={getItemLayout}
