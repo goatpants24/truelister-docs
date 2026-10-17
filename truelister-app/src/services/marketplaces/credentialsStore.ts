@@ -51,23 +51,39 @@ export async function loadCredentials(
   const cached = credentialsCache.get(marketplaceId);
 
   if (cached) {
-    const hasAllKeys = fieldKeys.every(k => k in cached!);
+    let hasAllKeys = true;
+    for (let i = 0; i < fieldKeys.length; i++) {
+      if (!(fieldKeys[i] in cached)) {
+        hasAllKeys = false;
+        break;
+      }
+    }
     if (hasAllKeys) {
       const result: MarketplaceCredentials = {};
-      fieldKeys.forEach(k => {
-        result[k] = cached![k] ?? '';
-      });
+      for (let i = 0; i < fieldKeys.length; i++) {
+        const k = fieldKeys[i];
+        result[k] = cached[k] ?? '';
+      }
       return result;
     }
   }
 
-  const storageKeys = fieldKeys.map(k => `${KEY_PREFIX}${marketplaceId}_${k}`);
+  const prefix = `${KEY_PREFIX}${marketplaceId}_`;
+  const prefixLen = prefix.length;
+  const storageKeys: string[] = new Array(fieldKeys.length);
+  for (let i = 0; i < fieldKeys.length; i++) {
+    storageKeys[i] = `${prefix}${fieldKeys[i]}`;
+  }
+
   const pairs = await AsyncStorage.multiGet(storageKeys);
   const result: MarketplaceCredentials = {};
-  pairs.forEach(([storageKey, value]) => {
-    const field = storageKey.replace(`${KEY_PREFIX}${marketplaceId}_`, '');
+  for (let i = 0; i < pairs.length; i++) {
+    const pair = pairs[i];
+    const storageKey = pair[0];
+    const value = pair[1];
+    const field = storageKey.slice(prefixLen);
     result[field] = value ?? '';
-  });
+  }
 
   // Update cache with loaded keys
   const currentCache = credentialsCache.get(marketplaceId) || {};
@@ -78,13 +94,22 @@ export async function loadCredentials(
 
 /**
  * Check whether a marketplace has at least one non-empty credential saved.
+ *
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Zero-Allocation Fast Exit
+ * Uses a direct for...in loop to exit immediately on the first non-empty value,
+ * avoiding intermediate array allocations from Object.values().
  */
 export async function isMarketplaceConfigured(
   marketplaceId: MarketplaceId,
   fieldKeys: string[]
 ): Promise<boolean> {
   const creds = await loadCredentials(marketplaceId, fieldKeys);
-  return Object.values(creds).some(v => v.trim().length > 0);
+  for (const k in creds) {
+    if (Object.prototype.hasOwnProperty.call(creds, k) && creds[k].trim().length > 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -93,7 +118,13 @@ export async function isMarketplaceConfigured(
  */
 export async function clearCredentials(marketplaceId: MarketplaceId): Promise<void> {
   const allKeys = await AsyncStorage.getAllKeys();
-  const toRemove = allKeys.filter(k => k.startsWith(`${KEY_PREFIX}${marketplaceId}_`));
+  const prefix = `${KEY_PREFIX}${marketplaceId}_`;
+  const toRemove: string[] = [];
+  for (let i = 0; i < allKeys.length; i++) {
+    if (allKeys[i].startsWith(prefix)) {
+      toRemove.push(allKeys[i]);
+    }
+  }
   if (toRemove.length > 0) {
     await AsyncStorage.multiRemove(toRemove);
   }
