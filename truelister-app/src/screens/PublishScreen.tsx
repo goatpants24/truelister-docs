@@ -25,8 +25,6 @@ const MARKETPLACE_MAP = new Map<MarketplaceId, MarketplaceMeta>(
   MARKETPLACES.map(m => [m.id, m])
 );
 
-const ALL_MARKETPLACE_IDS: MarketplaceId[] = MARKETPLACES.map(m => m.id);
-
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Module-level Marketplace IDs
  * Hoisted array reference for bulk platform selection toggling.
@@ -78,8 +76,6 @@ export default function PublishScreen({ route, navigation }: Props) {
   const [selected, setSelected] = useState<Set<MarketplaceId>>(new Set(['ebay', 'etsy']));
   const [publishing, setPublishing] = useState(false);
   const [results, setResults] = useState<ListingResult[] | null>(null);
-
-  const allSelected = selected.size === ALL_MARKETPLACE_IDS.length;
 
   /**
    * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Toggle Callbacks

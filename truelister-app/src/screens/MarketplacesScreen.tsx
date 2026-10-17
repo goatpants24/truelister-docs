@@ -46,6 +46,7 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
  */
 const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const [showSecure, setShowSecure] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -85,6 +86,7 @@ const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { m
             const empty: Record<string, string> = {};
             marketplace.credentialFields.forEach(f => { empty[f.key] = ''; });
             setValues(empty);
+            setShowSecure({});
           },
         },
       ]
@@ -156,25 +158,43 @@ const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { m
       )}
 
       {/* Credential fields */}
-      {marketplace.credentialFields.map(field => (
-        <View key={field.key} style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{field.label}</Text>
-          {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
-          <TextInput
-            style={styles.input}
-            value={values[field.key] ?? ''}
-            onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
-            placeholder={field.placeholder}
-            placeholderTextColor="#4a4d60"
-            autoCapitalize="none"
-            autoCorrect={false}
-            secureTextEntry={field.secure}
-            keyboardType={field.key === 'email' ? 'email-address' : 'default'}
-            accessibilityLabel={field.label}
-            accessibilityHint={field.hint || undefined}
-          />
-        </View>
-      ))}
+      {marketplace.credentialFields.map(field => {
+        const isSecure = field.secure;
+        const isVisible = showSecure[field.key] ?? false;
+        return (
+          <View key={field.key} style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{field.label}</Text>
+            {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={[styles.input, isSecure && styles.secureInput]}
+                value={values[field.key] ?? ''}
+                onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
+                placeholder={field.placeholder}
+                placeholderTextColor="#4a4d60"
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={isSecure && !isVisible}
+                keyboardType={field.key === 'email' ? 'email-address' : 'default'}
+                accessibilityLabel={field.label}
+                accessibilityHint={field.hint || undefined}
+              />
+              {isSecure && (
+                <TouchableOpacity
+                  style={styles.eyeBtn}
+                  onPress={() => setShowSecure(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={isVisible ? `Hide ${field.label}` : `Show ${field.label}`}
+                  accessibilityHint={isVisible ? `Masks ${field.label} text` : `Reveals ${field.label} text`}
+                >
+                  <Text style={styles.eyeIcon}>{isVisible ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        );
+      })}
 
       {/* Actions */}
       <View style={styles.cardActions}>
@@ -304,6 +324,10 @@ const styles = StyleSheet.create({
   fieldGroup: { marginBottom: 12 },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: '#c8cae0', marginBottom: 3 },
   fieldHint: { fontSize: 11, color: '#4a4d60', marginBottom: 5, lineHeight: 15 },
+  inputWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   input: {
     backgroundColor: '#0f1117',
     borderRadius: 10,
@@ -314,6 +338,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#e8eaf6',
     fontFamily: 'Courier',
+  },
+  secureInput: {
+    paddingRight: 44,
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 12,
+    padding: 4,
+  },
+  eyeIcon: {
+    fontSize: 16,
   },
   cardActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   saveBtn: {
