@@ -102,9 +102,11 @@ const MarketplaceSelector = memo(({ selected, available, onToggle }: {
             key={m}
             style={[styles.marketChip, isSelected && styles.marketChipSelected]}
             onPress={() => onToggle(m)}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             accessibilityRole="button"
             accessibilityState={{ selected: isSelected }}
             accessibilityLabel={`Toggle marketplace ${m}`}
+            accessibilityHint={isSelected ? `Deselects ${m} for cross-listing` : `Selects ${m} for cross-listing`}
           >
             <Text style={[styles.marketChipText, isSelected && styles.marketChipTextSelected]}>
               {isSelected ? '✓ ' : ''}{m}
@@ -151,8 +153,12 @@ const QuickActionsBar = memo(({
               isCaptured && styles.actionButtonCaptured
             ]}
             onPress={() => onCapture(field)}
+            activeOpacity={0.75}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
             accessibilityRole="button"
             accessibilityLabel={`Capture ${label.toLowerCase()} photo${isCaptured ? ' (Captured)' : ''}`}
+            accessibilityState={{ selected: isCaptured }}
+            accessibilityHint={isCaptured ? `Opens camera to retake ${label.toLowerCase()} photo` : `Opens camera to capture ${label.toLowerCase()} photo`}
           >
             <Text style={styles.actionIcon}>{icon}</Text>
             <Text style={[styles.actionLabel, isCaptured && styles.actionLabelCaptured]}>
@@ -164,8 +170,12 @@ const QuickActionsBar = memo(({
       <TouchableOpacity
         style={[styles.actionButton, ocrRawText && styles.actionButtonCaptured]}
         onPress={onScanTag}
+        activeOpacity={0.75}
+        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
         accessibilityRole="button"
         accessibilityLabel={`Scan clothing tag${ocrRawText ? ' (Scanned)' : ''}`}
+        accessibilityState={{ selected: !!ocrRawText }}
+        accessibilityHint={ocrRawText ? 'Opens camera to rescan clothing tag' : 'Opens camera to scan clothing tag'}
       >
         <Text style={styles.actionIcon}>🏷</Text>
         <Text style={[styles.actionLabel, ocrRawText && styles.actionLabelCaptured]}>
