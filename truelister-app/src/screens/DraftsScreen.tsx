@@ -12,6 +12,8 @@ import { RootStackNavProp } from '../navigation/types';
 import { getDrafts, deleteDraft, clearDrafts } from '../services/localStorage';
 import { CatalogItem } from '../types';
 
+const keyExtractor = (item: CatalogItem) => item.itemNumber;
+
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Draft Card
  * Extracting the item renderer into a memoized component prevents
@@ -170,7 +172,7 @@ export default function DraftsScreen() {
       </View>
       <FlatList
         data={drafts}
-        keyExtractor={(item) => item.itemNumber}
+        keyExtractor={keyExtractor}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={renderItem}
         getItemLayout={getItemLayout}
