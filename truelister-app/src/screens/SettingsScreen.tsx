@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
+import { usePreventRemove, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { testConnection } from '../services/sheets';
 import {
@@ -22,8 +23,11 @@ import {
 import { invalidateCredentialsCache } from '../services/marketplaces/credentialsStore';
 
 export default function SettingsScreen() {
+  const navigation = useNavigation();
   const [appsScriptUrl, setAppsScriptUrl] = useState('');
   const [driveFolderId, setDriveFolderId] = useState('');
+  const [initialScriptUrl, setInitialScriptUrl] = useState('');
+  const [initialDriveFolderId, setInitialDriveFolderId] = useState('');
   const [saved, setSaved] = useState(false);
   const [testingSheet, setTestingSheet] = useState(false);
   const [testingScript, setTestingScript] = useState(false);
@@ -38,17 +42,30 @@ export default function SettingsScreen() {
       ]);
       setAppsScriptUrl(url);
       setDriveFolderId(folder);
+      setInitialScriptUrl(url);
+      setInitialDriveFolderId(folder);
     })();
   }, []);
 
-  const handleSave = async () => {
+  const isDirty = appsScriptUrl !== initialScriptUrl || driveFolderId !== initialDriveFolderId;
+
+  usePreventRemove(isDirty && !saved, ({ data }) => {
+    Alert.alert('Unsaved Settings', 'Discard changes to your settings and leave?', [
+      { text: 'Keep Editing', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+    ]);
+  });
+
+  const handleSave = useCallback(async () => {
     await Promise.all([
       setStoredAppsScriptUrl(appsScriptUrl),
       setStoredDriveFolderId(driveFolderId),
     ]);
+    setInitialScriptUrl(appsScriptUrl);
+    setInitialDriveFolderId(driveFolderId);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-  };
+  }, [appsScriptUrl, driveFolderId]);
 
   const handleClearData = () => {
     Alert.alert(
@@ -151,13 +168,14 @@ export default function SettingsScreen() {
                 Alert.alert('Required', 'Please paste your Apps Script URL first.');
                 return;
               }
+              await handleSave();
               setTestingScript(true);
               const result = await testConnection('script');
               setTestingScript(false);
               Alert.alert(
                 result.success ? 'Success!' : 'Connection Failed',
                 result.success
-                  ? 'Your Apps Script is responding correctly.'
+                  ? 'Your Apps Script is responding correctly and settings were saved.'
                   : `Error: ${result.error}`
               );
             }}
@@ -211,15 +229,21 @@ export default function SettingsScreen() {
 
       {/* Save */}
       <TouchableOpacity
-        style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
+        style={[
+          styles.saveBtn,
+          saved && styles.saveBtnSuccess,
+          !isDirty && !saved && styles.saveBtnDisabled,
+        ]}
         onPress={handleSave}
-        disabled={saved}
+        disabled={saved || !isDirty}
         accessibilityRole="button"
-        accessibilityLabel={saved ? 'Settings saved successfully' : 'Save settings'}
-        accessibilityState={{ disabled: saved }}
+        accessibilityLabel={saved ? 'Settings saved successfully' : !isDirty ? 'Settings up to date' : 'Save settings'}
+        accessibilityState={{ disabled: saved || !isDirty }}
         accessibilityHint="Saves Google Apps Script URL and Drive Folder ID locally"
       >
-        <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save Settings'}</Text>
+        <Text style={styles.saveBtnText}>
+          {saved ? '✓ Saved' : isDirty ? 'Save Settings' : 'Settings Up to Date'}
+        </Text>
       </TouchableOpacity>
 
       {/* Danger zone */}
@@ -312,6 +336,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   saveBtnSuccess: { backgroundColor: '#22c55e' },
+  saveBtnDisabled: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a' },
   saveBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   dangerSection: {
     backgroundColor: '#1a1117',
