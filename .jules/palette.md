@@ -49,3 +49,7 @@
 ## 2026-07-23 - [Single-Tap Bulk Toggling for Multi-Platform Selection]
 **Learning:** When users cross-list items across multiple platforms, toggling individual platform chips one by one can be tedious. Adding a single-tap "Select All / Deselect All" header action with state-aware text and screen reader labels provides an efficient shortcut while keeping selection state clear.
 **Action:** Provide a bulk "Select All / Deselect All" toggle action alongside multi-select section headers, using a module-level constant for target IDs to avoid allocations and providing descriptive state-aware `accessibilityHint` props.
+
+## 2026-07-24 - [Inline Credential Visibility Toggle for Secure Inputs]
+**Learning:** Entering complex API tokens, passwords, or secret keys on mobile devices without visual confirmation often leads to frustration from mistyped characters. Providing an inline visibility toggle button (👁️ / 🙈) with state-aware `accessibilityLabel`, `accessibilityHint`, and expanded `hitSlop` gives users control and confidence while maintaining accessibility standards.
+**Action:** Include inline password/secret visibility toggle buttons on all secure input fields, using dynamic `accessibilityLabel` ("Show/Hide [Field]") and `accessibilityHint` to clarify action outcomes for assistive technologies.
