@@ -31,6 +31,12 @@ const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted keyExtractor
+ * Module-level hoisted reference provides referential stability across FlatList re-renders.
+ */
+const keyExtractor = (item: CatalogItem) => item.itemNumber;
+
 const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: number; thumbSize: number; frameStyle: { width: number; height: number } }> = {
   small: { itemWidth: 96, itemHeight: 128, thumbSize: 64, frameStyle: { width: 64, height: 64 } },
   medium: { itemWidth: 128, itemHeight: 160, thumbSize: 96, frameStyle: { width: 96, height: 96 } },
@@ -169,13 +175,6 @@ export default function HomeScreen() {
       loadItems();
     }, [loadItems])
   );
-
-  /**
-   * Bolt: Memoize the onRefresh handler to prevent unnecessary re-renders of the RefreshControl.
-   */
-  const handleRefresh = useCallback(() => {
-    loadItems(true);
-  }, [loadItems]);
 
   const handleEditItem = useCallback((item: CatalogItem) => {
     navigation.navigate('ItemForm', { item });
@@ -347,7 +346,7 @@ export default function HomeScreen() {
           key={viewMode}
           renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
           numColumns={viewMode === 'grid' ? 2 : 1}
-          keyExtractor={(item) => item.itemNumber}
+          keyExtractor={keyExtractor}
           getItemLayout={getItemLayout}
           initialNumToRender={12}
           maxToRenderPerBatch={10}
