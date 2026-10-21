@@ -92,6 +92,8 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
       result.confidence === 'high' ? '#4ade80' :
       result.confidence === 'medium' ? '#fbbf24' : '#f87171';
 
+    const parsedEntries = Object.entries(result.parsedFields);
+
     return (
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.resultContainer}>
@@ -114,8 +116,8 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
 
           {/* Detected Fields */}
           <Text style={styles.sectionLabel}>Detected Fields</Text>
-          {Object.entries(result.parsedFields).length > 0 ? (
-            Object.entries(result.parsedFields).map(([key, value]) => (
+          {parsedEntries.length > 0 ? (
+            parsedEntries.map(([key, value]) => (
               <View key={key} style={styles.fieldRow}>
                 <Text style={styles.fieldKey}>{formatFieldName(key)}</Text>
                 <Text style={styles.fieldValue}>{String(value)}</Text>
@@ -239,11 +241,30 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
   );
 }
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Module-level Field Map
+ * Fast O(1) lookup map for standard CatalogItem field keys, bypassing regex execution.
+ */
+const FIELD_NAME_MAP: Record<string, string> = {
+  itemNumber: 'Item Number',
+  title: 'Title',
+  designerBrand: 'Brand',
+  category: 'Category',
+  size: 'Size',
+  condition: 'Condition',
+  fabricMaterial: 'Material',
+  measurements: 'Measurements',
+  color: 'Color',
+  saleStatus: 'Status',
+  price: 'Price',
+  photoUrl: 'Photo URL',
+  marketplace: 'Marketplace',
+  dateListed: 'Date Listed',
+  notes: 'Notes',
+};
+
 function formatFieldName(key: string): string {
-  return key
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, s => s.toUpperCase())
-    .trim();
+  return FIELD_NAME_MAP[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
 }
 
 const styles = StyleSheet.create({

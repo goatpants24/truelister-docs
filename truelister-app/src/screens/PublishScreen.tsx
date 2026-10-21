@@ -77,6 +77,8 @@ export default function PublishScreen({ route, navigation }: Props) {
   const [publishing, setPublishing] = useState(false);
   const [results, setResults] = useState<ListingResult[] | null>(null);
 
+  const allSelected = selected.size === MARKETPLACES.length;
+
   /**
    * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Toggle Callbacks
    * Wrapping toggleMarketplace and toggleSelectAll in useCallback ensures PlatformCard referential stability.
