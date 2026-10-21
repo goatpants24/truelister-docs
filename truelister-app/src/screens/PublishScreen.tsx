@@ -89,9 +89,11 @@ export default function PublishScreen({ route, navigation }: Props) {
     });
   }, []);
 
+  const allSelected = selected.size === ALL_MARKETPLACE_IDS.length;
+
   const toggleSelectAll = useCallback(() => {
-    setSelected(allSelected ? new Set() : new Set(ALL_MARKETPLACE_IDS));
-  }, [allSelected]);
+    setSelected(prev => (prev.size === ALL_MARKETPLACE_IDS.length ? new Set() : new Set(ALL_MARKETPLACE_IDS)));
+  }, []);
 
   const handlePublish = async () => {
     if (selected.size === 0) {
