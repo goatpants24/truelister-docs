@@ -50,6 +50,7 @@ const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { m
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [secureVisible, setSecureVisible] = useState<Record<string, boolean>>({});
 
   const fieldKeys = React.useMemo(
     () => marketplace.credentialFields.map(f => f.key),
@@ -159,36 +160,35 @@ const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { m
 
       {/* Credential fields */}
       {marketplace.credentialFields.map(field => {
-        const isSecure = field.secure;
-        const isVisible = showSecure[field.key] ?? false;
+        const isVisible = !!secureVisible[field.key];
         return (
           <View key={field.key} style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>{field.label}</Text>
             {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
-            <View style={styles.inputWrapper}>
+            <View style={field.secure ? styles.secureInputContainer : undefined}>
               <TextInput
-                style={[styles.input, isSecure && styles.secureInput]}
+                style={[styles.input, field.secure && styles.secureInput]}
                 value={values[field.key] ?? ''}
                 onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
                 placeholder={field.placeholder}
                 placeholderTextColor="#4a4d60"
                 autoCapitalize="none"
                 autoCorrect={false}
-                secureTextEntry={isSecure && !isVisible}
+                secureTextEntry={field.secure && !isVisible}
                 keyboardType={field.key === 'email' ? 'email-address' : 'default'}
                 accessibilityLabel={field.label}
                 accessibilityHint={field.hint || undefined}
               />
-              {isSecure && (
+              {field.secure && (
                 <TouchableOpacity
-                  style={styles.eyeBtn}
-                  onPress={() => setShowSecure(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
+                  style={styles.secureToggleBtn}
+                  onPress={() => setSecureVisible(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityRole="button"
                   accessibilityLabel={isVisible ? `Hide ${field.label}` : `Show ${field.label}`}
-                  accessibilityHint={isVisible ? `Masks ${field.label} text` : `Reveals ${field.label} text`}
+                  accessibilityHint={isVisible ? "Masks credential text" : "Reveals credential text"}
                 >
-                  <Text style={styles.eyeIcon}>{isVisible ? '🙈' : '👁️'}</Text>
+                  <Text style={styles.secureToggleIcon}>{isVisible ? '🙈' : '👁️'}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -339,15 +339,21 @@ const styles = StyleSheet.create({
     color: '#e8eaf6',
     fontFamily: 'Courier',
   },
-  secureInput: {
-    paddingRight: 44,
+  secureInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
   },
-  eyeBtn: {
+  secureInput: {
+    flex: 1,
+    paddingRight: 40,
+  },
+  secureToggleBtn: {
     position: 'absolute',
     right: 12,
     padding: 4,
   },
-  eyeIcon: {
+  secureToggleIcon: {
     fontSize: 16,
   },
   cardActions: { flexDirection: 'row', gap: 10, marginTop: 4 },

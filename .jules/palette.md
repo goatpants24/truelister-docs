@@ -49,3 +49,11 @@
 ## 2026-07-23 - [Single-Tap Bulk Toggling for Multi-Platform Selection]
 **Learning:** When users cross-list items across multiple platforms, toggling individual platform chips one by one can be tedious. Adding a single-tap "Select All / Deselect All" header action with state-aware text and screen reader labels provides an efficient shortcut while keeping selection state clear.
 **Action:** Provide a bulk "Select All / Deselect All" toggle action alongside multi-select section headers, using a module-level constant for target IDs to avoid allocations and providing descriptive state-aware `accessibilityHint` props.
+
+## 2026-07-24 - [Inline Credential Visibility Toggle for Secure Inputs]
+**Learning:** Entering complex API tokens, passwords, or secret keys on mobile devices without visual confirmation often leads to frustration from mistyped characters. Providing an inline visibility toggle button (👁️ / 🙈) with state-aware `accessibilityLabel`, `accessibilityHint`, and expanded `hitSlop` gives users control and confidence while maintaining accessibility standards.
+**Action:** Include inline password/secret visibility toggle buttons on all secure input fields, using dynamic `accessibilityLabel` ("Show/Hide [Field]") and `accessibilityHint` to clarify action outcomes for assistive technologies.
+
+## 2026-07-25 - [Settings Unsaved Navigation Protection and Auto-Save on Test]
+**Learning:** Users editing settings like API/script URLs often tap "Test Connection" to check new credentials without realizing the test executes against previously saved storage values. Automatically persisting changes before testing and pairing state-driven save button visual indicators ("Settings Up to Date" vs "Save Settings") with `usePreventRemove` navigation protection prevents data loss and avoids testing stale configurations.
+**Action:** Automatically persist dirty configurations before executing test actions, protect unsaved changes with `usePreventRemove` navigation prompts, and dynamically toggle action button state/labels ("Settings Up to Date") when unmodified.

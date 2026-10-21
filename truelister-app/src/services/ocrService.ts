@@ -146,18 +146,22 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   if (fabricMatches.length > 0) {
     result.fabricMaterial = fabricMatches.join(', ');
   } else {
-    const found = text.match(FABRIC_REGEX);
-    if (found) {
-      /**
-       * Bolt Performance Optimization: Single-pass Set accumulation
-       * Eliminates intermediate .map(), Set conversion, and second .map() array allocations.
-       */
-      const unique = new Set<string>();
-      for (let i = 0; i < found.length; i++) {
-        const f = found[i].toLowerCase();
-        unique.add(f.charAt(0).toUpperCase() + f.slice(1));
-      }
-      result.fabricMaterial = Array.from(unique).join(', ');
+    /**
+     * Bolt Performance Optimization: Zero-Allocation Global Match Scanner
+     * Replaces String.prototype.match(FABRIC_REGEX) with an iterative FABRIC_REGEX.exec() loop.
+     * Eliminates intermediate match array allocations returned by .match() and lazily
+     * allocates the Set only when matches are present.
+     */
+    FABRIC_REGEX.lastIndex = 0;
+    let fabricMatch;
+    let uniqueFabrics: Set<string> | null = null;
+    while ((fabricMatch = FABRIC_REGEX.exec(text)) !== null) {
+      if (!uniqueFabrics) uniqueFabrics = new Set<string>();
+      const f = fabricMatch[0].toLowerCase();
+      uniqueFabrics.add(f.charAt(0).toUpperCase() + f.slice(1));
+    }
+    if (uniqueFabrics) {
+      result.fabricMaterial = Array.from(uniqueFabrics).join(', ');
     }
   }
 
@@ -168,17 +172,21 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   }
 
   // ── Care Instructions ──
-  const careFound = text.match(CARE_REGEX);
-  if (careFound) {
-    /**
-     * Bolt Performance Optimization: Single-pass Set accumulation
-     * Eliminates intermediate .map() and Set array allocations.
-     */
-    const unique = new Set<string>();
-    for (let i = 0; i < careFound.length; i++) {
-      unique.add(careFound[i].toLowerCase());
-    }
-    const careNote = `Care: ${Array.from(unique).join(', ')}`;
+  /**
+   * Bolt Performance Optimization: Zero-Allocation Global Match Scanner
+   * Replaces String.prototype.match(CARE_REGEX) with an iterative CARE_REGEX.exec() loop.
+   * Eliminates intermediate match array allocations returned by .match() and lazily
+   * allocates the Set only when matches are present.
+   */
+  CARE_REGEX.lastIndex = 0;
+  let careMatch;
+  let uniqueCare: Set<string> | null = null;
+  while ((careMatch = CARE_REGEX.exec(text)) !== null) {
+    if (!uniqueCare) uniqueCare = new Set<string>();
+    uniqueCare.add(careMatch[0].toLowerCase());
+  }
+  if (uniqueCare) {
+    const careNote = `Care: ${Array.from(uniqueCare).join(', ')}`;
     result.notes = result.notes ? `${result.notes}. ${careNote}` : careNote;
   }
 

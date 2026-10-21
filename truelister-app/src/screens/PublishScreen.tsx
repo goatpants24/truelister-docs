@@ -89,8 +89,6 @@ export default function PublishScreen({ route, navigation }: Props) {
     });
   }, []);
 
-  const allSelected = selected.size === ALL_MARKETPLACE_IDS.length;
-
   const toggleSelectAll = useCallback(() => {
     setSelected(allSelected ? new Set() : new Set(ALL_MARKETPLACE_IDS));
   }, [allSelected]);
