@@ -23,10 +23,11 @@ type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
 
 /**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configurations & Layout Lookups
- * Moving static arrays and dimension lookups out of the render loop ensures referential stability,
- * preventing redundant allocations and inline style objects on every list item render.
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Key Extractor & Configurations
+ * Hoisting static keyExtractor and metadata arrays out of the component scope ensures referential stability
+ * for FlatList, eliminating inline function re-allocations on every render cycle.
  */
+const keyExtractor = (item: CatalogItem) => item.itemNumber;
 const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
@@ -347,7 +348,7 @@ export default function HomeScreen() {
           key={viewMode}
           renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
           numColumns={viewMode === 'grid' ? 2 : 1}
-          keyExtractor={(item) => item.itemNumber}
+          keyExtractor={keyExtractor}
           getItemLayout={getItemLayout}
           initialNumToRender={12}
           maxToRenderPerBatch={10}
