@@ -46,6 +46,7 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
  */
 const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const [showSecure, setShowSecure] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -86,6 +87,7 @@ const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { m
             const empty: Record<string, string> = {};
             marketplace.credentialFields.forEach(f => { empty[f.key] = ''; });
             setValues(empty);
+            setShowSecure({});
           },
         },
       ]
@@ -322,6 +324,10 @@ const styles = StyleSheet.create({
   fieldGroup: { marginBottom: 12 },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: '#c8cae0', marginBottom: 3 },
   fieldHint: { fontSize: 11, color: '#4a4d60', marginBottom: 5, lineHeight: 15 },
+  inputWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   input: {
     backgroundColor: '#0f1117',
     borderRadius: 10,
