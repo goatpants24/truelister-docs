@@ -13,6 +13,32 @@ import { getDrafts, deleteDraft, clearDrafts } from '../services/localStorage';
 import { CatalogItem } from '../types';
 
 /**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Zero-Allocation Draft Metadata Formatter
+ * Formats item metadata using string concatenation without array allocations
+ * (`[...].filter(Boolean).join(' · ')`), preventing heap allocations during list rendering.
+ */
+function formatDraftMeta(item: CatalogItem): string {
+  let res = '';
+  if (item.designerBrand) res = item.designerBrand;
+  if (item.size) res = res ? `${res} · ${item.size}` : item.size;
+  if (item.condition) res = res ? `${res} · ${item.condition}` : item.condition;
+  return res;
+}
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted List Helpers
+ * Hoisting keyExtractor and getItemLayout to module-level constants ensures
+ * referential stability across re-renders and avoids re-allocating closure functions.
+ */
+const keyExtractor = (item: CatalogItem) => item.itemNumber;
+
+const getItemLayout = (_: any, index: number) => ({
+  length: 92,
+  offset: 92 * index,
+  index,
+});
+
+/**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Draft Card
  * Extracting the item renderer into a memoized component prevents
  * redundant tree reconciliation when the parent list state updates.
@@ -41,9 +67,7 @@ const DraftCard = memo(({
         {item.title || 'Untitled'}
       </Text>
       <Text style={styles.itemMeta}>
-        {[item.designerBrand, item.size, item.condition]
-          .filter(Boolean)
-          .join(' · ')}
+        {formatDraftMeta(item)}
       </Text>
     </View>
     <TouchableOpacity
@@ -116,17 +140,6 @@ export default function DraftsScreen() {
     ]);
   }, [loadDrafts]);
 
-  /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: List Virtualization Tuning
-   * getItemLayout allows the list to skip dynamic measurement, improving scroll speed.
-   * Row height = 82 (card) + 10 (margin) = 92px.
-   */
-  const getItemLayout = useCallback((_: any, index: number) => ({
-    length: 92,
-    offset: 92 * index,
-    index,
-  }), []);
-
   const renderItem = useCallback(({ item }: { item: CatalogItem }) => (
     <DraftCard item={item} onEdit={handleEdit} onDelete={handleDelete} />
   ), [handleEdit, handleDelete]);
@@ -170,7 +183,7 @@ export default function DraftsScreen() {
       </View>
       <FlatList
         data={drafts}
-        keyExtractor={(item) => item.itemNumber}
+        keyExtractor={keyExtractor}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={renderItem}
         getItemLayout={getItemLayout}
