@@ -13,6 +13,29 @@ import { getDrafts, deleteDraft, clearDrafts } from '../services/localStorage';
 import { CatalogItem } from '../types';
 
 /**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted keyExtractor & Zero-Allocation String Formatting
+ * Hoisting keyExtractor provides referential stability for FlatList.
+ * Formatting metadata string directly avoids intermediate array allocations ([...].filter().join()) per card.
+ */
+const keyExtractor = (item: CatalogItem) => item.itemNumber;
+
+function formatDraftMeta(item: CatalogItem): string {
+  let res = '';
+  if (item.designerBrand) {
+    res += item.designerBrand;
+  }
+  if (item.size) {
+    if (res) res += ' · ';
+    res += item.size;
+  }
+  if (item.condition) {
+    if (res) res += ' · ';
+    res += item.condition;
+  }
+  return res;
+}
+
+/**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized Draft Card
  * Extracting the item renderer into a memoized component prevents
  * redundant tree reconciliation when the parent list state updates.
@@ -41,9 +64,7 @@ const DraftCard = memo(({
         {item.title || 'Untitled'}
       </Text>
       <Text style={styles.itemMeta}>
-        {[item.designerBrand, item.size, item.condition]
-          .filter(Boolean)
-          .join(' · ')}
+        {formatDraftMeta(item)}
       </Text>
     </View>
     <TouchableOpacity
@@ -170,7 +191,7 @@ export default function DraftsScreen() {
       </View>
       <FlatList
         data={drafts}
-        keyExtractor={(item) => item.itemNumber}
+        keyExtractor={keyExtractor}
         contentContainerStyle={{ paddingBottom: 24 }}
         renderItem={renderItem}
         getItemLayout={getItemLayout}
