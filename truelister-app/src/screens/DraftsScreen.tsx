@@ -12,6 +12,8 @@ import { RootStackNavProp } from '../navigation/types';
 import { getDrafts, deleteDraft, clearDrafts } from '../services/localStorage';
 import { CatalogItem } from '../types';
 
+const keyExtractor = (item: CatalogItem) => item.itemNumber;
+
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Zero-Allocation String Formatter
  * Formats draft item metadata without intermediate array allocations ([...].filter.join),

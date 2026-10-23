@@ -30,6 +30,7 @@ type ThumbnailSize = 'small' | 'medium' | 'large';
 const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
+const keyExtractor = (item: CatalogItem) => item.itemNumber;
 
 const GRID_DIMENSIONS: Record<ThumbnailSize, { itemWidth: number; itemHeight: number; thumbSize: number; frameStyle: { width: number; height: number } }> = {
   small: { itemWidth: 96, itemHeight: 128, thumbSize: 64, frameStyle: { width: 64, height: 64 } },
@@ -347,7 +348,7 @@ export default function HomeScreen() {
           key={viewMode}
           renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
           numColumns={viewMode === 'grid' ? 2 : 1}
-          keyExtractor={(item) => item.itemNumber}
+          keyExtractor={keyExtractor}
           getItemLayout={getItemLayout}
           initialNumToRender={12}
           maxToRenderPerBatch={10}
