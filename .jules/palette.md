@@ -57,3 +57,7 @@
 ## 2026-07-25 - [Settings Unsaved Navigation Protection and Auto-Save on Test]
 **Learning:** Users editing settings like API/script URLs often tap "Test Connection" to check new credentials without realizing the test executes against previously saved storage values. Automatically persisting changes before testing and pairing state-driven save button visual indicators ("Settings Up to Date" vs "Save Settings") with `usePreventRemove` navigation protection prevents data loss and avoids testing stale configurations.
 **Action:** Automatically persist dirty configurations before executing test actions, protect unsaved changes with `usePreventRemove` navigation prompts, and dynamically toggle action button state/labels ("Settings Up to Date") when unmodified.
+
+## 2026-07-26 - [Automated Field Title Suggestion and Web Dialog Fallback]
+**Learning:** Placeholders or dead-end "coming soon" buttons frustrate users trying to fill out listing details quickly. Automatically composing a title suggestion from filled metadata (brand, color, category, fabric, size) with character limits (80 chars) and cross-platform web dialog fallbacks (`window.confirm`/`window.alert`) turns a placeholder into an instant productivity boost.
+**Action:** Replace placeholder feature alerts with functional client-side assist helpers that aggregate existing input fields, enforce character limits, and support cross-platform dialog fallbacks.
