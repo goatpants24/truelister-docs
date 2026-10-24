@@ -93,8 +93,9 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
       result.confidence === 'medium' ? '#fbbf24' : '#f87171';
 
     /**
-     * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single Entry Evaluation
-     * Evaluates Object.entries once into a constant to prevent duplicate array allocations during conditional render.
+     * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-pass Entries Evaluation
+     * Evaluates Object.entries once into a constant to prevent duplicate array allocations
+     * during conditional rendering.
      */
     const parsedEntries = Object.entries(result.parsedFields);
 
@@ -269,29 +270,29 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
 }
 
 /**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Static Field Name Lookup Map
- * Maps standard catalog field keys to formatted titles for O(1) lookups,
- * bypassing regex execution during tag scan result rendering.
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: O(1) Field Name Map Lookup
+ * Module-level map of standard CatalogItem property keys to display labels.
+ * Bypasses regex evaluation during scan result rendering.
  */
 const FIELD_NAME_MAP: Record<string, string> = {
   designerBrand: 'Designer Brand',
   fabricMaterial: 'Fabric Material',
-  size: 'Size',
-  condition: 'Condition',
-  color: 'Color',
-  category: 'Category',
   notes: 'Notes',
-  measurements: 'Measurements',
-  itemNumber: 'Item Number',
-  title: 'Title',
+  size: 'Size',
+  category: 'Category',
+  color: 'Color',
+  condition: 'Condition',
   price: 'Price',
+  title: 'Title',
+  measurements: 'Measurements',
   saleStatus: 'Sale Status',
   marketplace: 'Marketplace',
   dateListed: 'Date Listed',
+  photoUrl: 'Photo URL',
 };
 
 function formatFieldName(key: string): string {
-  return FIELD_NAME_MAP[key] ?? key
+  return FIELD_NAME_MAP[key] || key
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, s => s.toUpperCase())
     .trim();

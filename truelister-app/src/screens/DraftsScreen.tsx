@@ -28,6 +28,10 @@ function formatDraftMeta(item: CatalogItem): string {
     if (meta) meta += ' · ';
     meta += item.condition;
   }
+  if (item.price) {
+    if (meta) meta += ' · ';
+    meta += `$${item.price}`;
+  }
   return meta;
 }
 
