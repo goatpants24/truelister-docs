@@ -1,3 +1,7 @@
+## 2026-08-28 - [Static Field Name Lookup Map & Single-Pass Entry Evaluation]
+**Learning:** Re-running regex transformations (`replace`) on standard object field keys during list rendering causes redundant CPU work and garbage collection overhead. Hoisting a static lookup map (`FIELD_NAME_MAP`) for known catalog attributes provides O(1) formatting. Additionally, evaluating `Object.entries` once into a local constant avoids duplicate array allocations in conditional JSX rendering (`length > 0 ? entries.map(...) : ...`).
+**Action:** Use static lookup maps for formatting known object keys and evaluate `Object.entries` once when rendering conditional lists.
+
 ## 2026-08-27 - [Pre-Computed Reducer Dirty Flag]
 **Learning:** Evaluating `shallowEqual(state.present, state.lastCommitted)` inside custom hooks during every component re-render pass introduces redundant $O(K)$ field comparisons on hot UI rendering paths (such as typing in form inputs). Pre-computing an `isDirty` boolean flag inside the state reducer during dispatch actions (`UPDATE`, `COMMIT`, `UNDO`, `REDO`, `RESET`) reduces `canUndo` checks to an $O(1)$ property lookup on every re-render.
 **Action:** In custom state hooks with history or dirty tracking, compute dirty/modified flags directly within the reducer during state updates rather than evaluating object comparisons on every render.

@@ -92,6 +92,12 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
       result.confidence === 'high' ? '#4ade80' :
       result.confidence === 'medium' ? '#fbbf24' : '#f87171';
 
+    /**
+     * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single Entry Evaluation
+     * Evaluates Object.entries once into a constant to prevent duplicate array allocations during conditional render.
+     */
+    const parsedEntries = Object.entries(result.parsedFields);
+
     return (
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.resultContainer}>
@@ -114,8 +120,8 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
 
           {/* Detected Fields */}
           <Text style={styles.sectionLabel}>Detected Fields</Text>
-          {Object.entries(result.parsedFields).length > 0 ? (
-            Object.entries(result.parsedFields).map(([key, value]) => (
+          {parsedEntries.length > 0 ? (
+            parsedEntries.map(([key, value]) => (
               <View key={key} style={styles.fieldRow}>
                 <Text style={styles.fieldKey}>{formatFieldName(key)}</Text>
                 <Text style={styles.fieldValue}>{String(value)}</Text>
@@ -262,8 +268,30 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
   );
 }
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Static Field Name Lookup Map
+ * Maps standard catalog field keys to formatted titles for O(1) lookups,
+ * bypassing regex execution during tag scan result rendering.
+ */
+const FIELD_NAME_MAP: Record<string, string> = {
+  designerBrand: 'Designer Brand',
+  fabricMaterial: 'Fabric Material',
+  size: 'Size',
+  condition: 'Condition',
+  color: 'Color',
+  category: 'Category',
+  notes: 'Notes',
+  measurements: 'Measurements',
+  itemNumber: 'Item Number',
+  title: 'Title',
+  price: 'Price',
+  saleStatus: 'Sale Status',
+  marketplace: 'Marketplace',
+  dateListed: 'Date Listed',
+};
+
 function formatFieldName(key: string): string {
-  return key
+  return FIELD_NAME_MAP[key] ?? key
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, s => s.toUpperCase())
     .trim();
