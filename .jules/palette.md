@@ -61,3 +61,7 @@
 ## 2026-07-26 - [Automated Field Title Suggestion and Web Dialog Fallback]
 **Learning:** Placeholders or dead-end "coming soon" buttons frustrate users trying to fill out listing details quickly. Automatically composing a title suggestion from filled metadata (brand, color, category, fabric, size) with character limits (80 chars) and cross-platform web dialog fallbacks (`window.confirm`/`window.alert`) turns a placeholder into an instant productivity boost.
 **Action:** Replace placeholder feature alerts with functional client-side assist helpers that aggregate existing input fields, enforce character limits, and support cross-platform dialog fallbacks.
+
+## 2026-07-27 - [Catalog Total Inventory Count Badge & Accessible Hints]
+**Learning:** Displaying a top-level section header with a total item count badge (e.g., "Catalog" + "12 items") gives mobile users immediate clarity on overall dataset size without requiring scrolling to the bottom of virtualized lists. Combining visual count badges with polite screen-reader announcements (`accessibilityRole="text"` + `accessibilityLabel="Total inventory: N items"`) and actionable `accessibilityHint` props on primary control buttons creates an intuitive and accessible browsing experience.
+**Action:** Pair visual collection count pill badges with state-aware screen reader announcements (`accessibilityLabel` & `accessibilityRole="text"`) at the top of primary list screens.

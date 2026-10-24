@@ -249,6 +249,20 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.topHeaderRow}>
+          <Text style={styles.catalogTitle} accessibilityRole="header">Catalog</Text>
+          <View
+            style={styles.countBadge}
+            accessible={true}
+            accessibilityRole="text"
+            accessibilityLabel={`Total inventory: ${items.length} ${items.length === 1 ? 'item' : 'items'}`}
+          >
+            <Text style={styles.countBadgeText}>
+              {items.length} {items.length === 1 ? 'item' : 'items'}
+            </Text>
+          </View>
+        </View>
+
         <View style={styles.headerRow}>
           <View style={styles.viewModeRow}>
             {VIEW_MODES.map((mode) => (
@@ -292,6 +306,7 @@ export default function HomeScreen() {
           onPress={handleExport}
           accessibilityRole="button"
           accessibilityLabel="Export catalog or use marketplace templates"
+          accessibilityHint="Opens menu to export catalog as CSV or HTML, or generate marketplace templates"
         >
           <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
             ⚙️ Export / Templates
@@ -309,7 +324,13 @@ export default function HomeScreen() {
           <Text style={styles.errorIcon} accessibilityElementsHidden={true} importantForAccessibility="no">⚠️</Text>
           <Text style={styles.errorTitle}>Connection Issue</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => loadItems()}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => loadItems()}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading catalog"
+            accessibilityHint="Attempts to re-fetch inventory from Google Sheets"
+          >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -329,6 +350,7 @@ export default function HomeScreen() {
             onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
             accessibilityRole="button"
             accessibilityLabel="Create first item"
+            accessibilityHint="Opens item form to create your first inventory item"
           >
             <Text style={styles.retryButtonText}>Create First Item</Text>
           </TouchableOpacity>
@@ -501,6 +523,30 @@ async function saveToFile(content: string, fileName: string, mimeType: string) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117' },
   header: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#2a2d3a' },
+  topHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  catalogTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#e8eaf6',
+  },
+  countBadge: {
+    backgroundColor: 'rgba(79, 110, 247, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(79, 110, 247, 0.35)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  countBadgeText: {
+    color: '#818cf8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   headerRow: { gap: 12 },
   viewModeRow: { flexDirection: 'row', gap: 8 },
   modeButton: { backgroundColor: '#1a1d27', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: '#2a2d3a' },

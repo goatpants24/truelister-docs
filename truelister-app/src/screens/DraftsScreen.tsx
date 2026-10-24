@@ -12,8 +12,6 @@ import { RootStackNavProp } from '../navigation/types';
 import { getDrafts, deleteDraft, clearDrafts } from '../services/localStorage';
 import { CatalogItem } from '../types';
 
-const keyExtractor = (item: CatalogItem) => item.itemNumber;
-
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Zero-Allocation String Formatter
  * Formats draft item metadata without intermediate array allocations ([...].filter.join),
@@ -29,6 +27,10 @@ function formatDraftMeta(item: CatalogItem): string {
   if (item.condition) {
     if (meta) meta += ' · ';
     meta += item.condition;
+  }
+  if (item.price) {
+    if (meta) meta += ' · ';
+    meta += `$${item.price}`;
   }
   return meta;
 }
