@@ -65,3 +65,7 @@
 ## 2026-07-27 - [Catalog Total Inventory Count Badge & Accessible Hints]
 **Learning:** Displaying a top-level section header with a total item count badge (e.g., "Catalog" + "12 items") gives mobile users immediate clarity on overall dataset size without requiring scrolling to the bottom of virtualized lists. Combining visual count badges with polite screen-reader announcements (`accessibilityRole="text"` + `accessibilityLabel="Total inventory: N items"`) and actionable `accessibilityHint` props on primary control buttons creates an intuitive and accessible browsing experience.
 **Action:** Pair visual collection count pill badges with state-aware screen reader announcements (`accessibilityLabel` & `accessibilityRole="text"`) at the top of primary list screens.
+
+## 2026-07-28 - [Multi-Photo Horizontal Gallery Preview]
+**Learning:** In multi-photo item capture workflows, restricting preview images to a single photo field (such as `photoUrlCard`) obscures secondary captured photos (Front, Back, Detail, Tabletop), causing user confusion over photo capture state. Providing a horizontal scrollable thumbnail gallery displaying all captured photos with field badges and accessible clear buttons (`✕`) gives immediate visual confirmation and management without consuming vertical form space.
+**Action:** Render a horizontal thumbnail gallery for multi-photo capture forms, showing field labels, accessible clear buttons with `hitSlop`, and state-aware screen reader hints.

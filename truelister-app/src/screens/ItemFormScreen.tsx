@@ -44,6 +44,17 @@ const PHOTO_ACTIONS: { field: PhotoField; label: string; icon: string }[] = [
   { field: 'photoUrlTabletopMeasure2', label: 'Measure 2', icon: '📖' },
 ];
 
+const PHOTO_LABELS: Record<PhotoField, string> = {
+  photoUrlCard: 'Card',
+  photoUrlFront: 'Front',
+  photoUrlBack: 'Back',
+  photoUrlDetail: 'Detail',
+  photoUrlTabletopWide: 'Tabletop',
+  photoUrlTabletopDetail: 'Detail 2',
+  photoUrlTabletopMeasure1: 'Measure 1',
+  photoUrlTabletopMeasure2: 'Measure 2',
+};
+
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   itemNumber: newItemNumber || 'TL-000',
   title: '',
@@ -421,6 +432,27 @@ export default function ItemFormScreen() {
    * Memoizing captureStatus at the top level strictly complies with React's Rules of
    * Hooks and prevents QuickActionsBar re-renders when editing non-photo form fields.
    */
+  const capturedPhotos = useMemo(() => {
+    const photos: { field: PhotoField; label: string; url: string }[] = [];
+    const fields = Object.keys(PHOTO_LABELS) as PhotoField[];
+    for (let i = 0; i < fields.length; i++) {
+      const f = fields[i];
+      if (item[f]) {
+        photos.push({ field: f, label: PHOTO_LABELS[f], url: item[f] as string });
+      }
+    }
+    return photos;
+  }, [
+    item.photoUrlCard,
+    item.photoUrlFront,
+    item.photoUrlBack,
+    item.photoUrlDetail,
+    item.photoUrlTabletopWide,
+    item.photoUrlTabletopDetail,
+    item.photoUrlTabletopMeasure1,
+    item.photoUrlTabletopMeasure2,
+  ]);
+
   const captureStatus = useMemo(() => ({
     photoUrlCard: !!item.photoUrlCard,
     photoUrlFront: !!item.photoUrlFront,
@@ -490,7 +522,33 @@ export default function ItemFormScreen() {
           onScanTag={handleScanTagTrigger}
         />
 
-        {item.photoUrlCard && <View style={styles.photoPreview}><Image source={{ uri: item.photoUrlCard }} style={styles.photoImage} resizeMode="cover" /></View>}
+        {capturedPhotos.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.photoGallery}
+            contentContainerStyle={styles.photoGalleryContent}
+          >
+            {capturedPhotos.map(({ field, label, url }) => (
+              <View key={field} style={styles.galleryCard}>
+                <Image source={{ uri: url }} style={styles.galleryImage} resizeMode="cover" />
+                <View style={styles.galleryBadge}>
+                  <Text style={styles.galleryBadgeText}>{label}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.galleryClearBtn}
+                  onPress={() => updateField(field, '', true)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${label.toLowerCase()} photo`}
+                  accessibilityHint={`Clears captured ${label.toLowerCase()} photo from this item`}
+                >
+                  <Text style={styles.galleryClearText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        )}
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionLabel}>Item Details</Text>
@@ -699,8 +757,14 @@ const styles = StyleSheet.create({
   actionLabel: { color: '#cbd5e1', fontSize: 11, fontWeight: '600' },
   actionLabelCaptured: { color: '#4ade80' },
   actionButtonCaptured: { borderColor: '#4ade80', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
-  photoPreview: { marginBottom: 16, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a' },
-  photoImage: { width: '100%', height: 200 },
+  photoGallery: { marginBottom: 16 },
+  photoGalleryContent: { gap: 10 },
+  galleryCard: { width: 120, height: 120, borderRadius: 12, overflow: 'hidden', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', position: 'relative' },
+  galleryImage: { width: '100%', height: '100%' },
+  galleryBadge: { position: 'absolute', bottom: 6, left: 6, backgroundColor: 'rgba(15, 17, 23, 0.85)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: '#2a2d3a' },
+  galleryBadgeText: { color: '#e8eaf6', fontSize: 10, fontWeight: '700' },
+  galleryClearBtn: { position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 11, backgroundColor: 'rgba(239, 68, 68, 0.9)', justifyContent: 'center', alignItems: 'center' },
+  galleryClearText: { color: '#fff', fontSize: 11, fontWeight: '800' },
   sectionHeader: { marginTop: 8, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   sectionLabel: { color: '#6b7280', fontSize: 11, fontWeight: '700', textTransform: 'uppercase' },
   field: { marginBottom: 14 },
