@@ -655,6 +655,33 @@ export default function ItemFormScreen() {
           <FormPicker label="Color" value={item.color} options={dropdowns.colors} onChange={handleColorChange} />
         </View>
 
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Fabric / Material</Text>
+            <TextInput
+              style={styles.input}
+              value={item.fabricMaterial}
+              onChangeText={(v) => updateField('fabricMaterial', v)}
+              placeholder="e.g. 100% Cotton"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Fabric or Material"
+              returnKeyType="next"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Measurements</Text>
+            <TextInput
+              style={styles.input}
+              value={item.measurements}
+              onChangeText={(v) => updateField('measurements', v)}
+              placeholder="e.g. Pit to pit 20in"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Measurements"
+              returnKeyType="next"
+            />
+          </View>
+        </View>
+
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Price</Text>
@@ -698,6 +725,7 @@ export default function ItemFormScreen() {
             onChangeText={(v) => updateField('notes', v)}
             multiline
             numberOfLines={3}
+            placeholder="e.g. Flaws, inventory location, or extra details..."
             placeholderTextColor="#4a5568"
             accessibilityLabel="Item Notes"
           />
