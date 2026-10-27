@@ -55,6 +55,13 @@ const PHOTO_LABELS: Record<PhotoField, string> = {
   photoUrlTabletopMeasure2: 'Measure 2',
 };
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Photo Fields Array
+ * Hoisting static Object.keys(PHOTO_LABELS) to module scope avoids redundant
+ * array allocations on every capturedPhotos memoization computation pass.
+ */
+const PHOTO_FIELDS = Object.keys(PHOTO_LABELS) as PhotoField[];
+
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   itemNumber: newItemNumber || 'TL-000',
   title: '',
@@ -434,9 +441,8 @@ export default function ItemFormScreen() {
    */
   const capturedPhotos = useMemo(() => {
     const photos: { field: PhotoField; label: string; url: string }[] = [];
-    const fields = Object.keys(PHOTO_LABELS) as PhotoField[];
-    for (let i = 0; i < fields.length; i++) {
-      const f = fields[i];
+    for (let i = 0; i < PHOTO_FIELDS.length; i++) {
+      const f = PHOTO_FIELDS[i];
       if (item[f]) {
         photos.push({ field: f, label: PHOTO_LABELS[f], url: item[f] as string });
       }
