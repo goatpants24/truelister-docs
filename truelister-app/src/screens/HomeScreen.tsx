@@ -118,13 +118,15 @@ export default function HomeScreen() {
 
   /**
    * Performance Impact: Stale-While-Revalidate pattern.
-   * Eliminates ~300ms of full-screen spinner flash on every focus event.
+   * Eliminates unnecessary re-renders and pull-to-refresh spinner triggers on screen focus.
+   * Background focus re-validations perform silent checks without triggering state updates unless data changes.
    */
   const loadItems = useCallback(async (isRefresh = false) => {
-    // SWR Pattern: skip full-screen loading if we already have data
-    if (isRefresh || hasLoadedOnce.current) {
+    // SWR Pattern: Only show pull-to-refresh spinner during manual pull refresh,
+    // and only show full-screen spinner on initial unpopulated load.
+    if (isRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (!hasLoadedOnce.current) {
       setLoading(true);
     }
     setError(null);
@@ -141,7 +143,7 @@ export default function HomeScreen() {
       lastSheetRef.current = sheetItems;
       lastDraftsRef.current = draftItems;
 
-      // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case).
+      // Bolt: Skip expensive O(N) merge logic if there are no drafts (common case).
       let combined = sheetItems;
       if (draftItems.length > 0) {
         const sheetNumbers = new Set<string>();
@@ -158,7 +160,9 @@ export default function HomeScreen() {
       hasLoadedOnce.current = true;
     } catch (err) {
       console.error('Error loading items:', err);
-      setError('Failed to connect to Google Sheets. Please check your settings.');
+      if (!hasLoadedOnce.current) {
+        setError('Failed to connect to Google Sheets. Please check your settings.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
