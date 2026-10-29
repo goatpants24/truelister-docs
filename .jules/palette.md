@@ -69,3 +69,7 @@
 ## 2026-07-28 - [Multi-Photo Horizontal Gallery Preview]
 **Learning:** In multi-photo item capture workflows, restricting preview images to a single photo field (such as `photoUrlCard`) obscures secondary captured photos (Front, Back, Detail, Tabletop), causing user confusion over photo capture state. Providing a horizontal scrollable thumbnail gallery displaying all captured photos with field badges and accessible clear buttons (`✕`) gives immediate visual confirmation and management without consuming vertical form space.
 **Action:** Render a horizontal thumbnail gallery for multi-photo capture forms, showing field labels, accessible clear buttons with `hitSlop`, and state-aware screen reader hints.
+
+## 2026-07-29 - [Quick-Clear Button on Text Inputs]
+**Learning:** In form-heavy mobile applications, forcing users to repeatedly tap backspace to clear long text inputs (e.g., item titles or search queries) causes user friction. Providing an inline quick-clear button (`✕`) when text is present—paired with `hitSlop`, explicit `accessibilityRole="button"`, and descriptive `accessibilityLabel`/`accessibilityHint` attributes—allows instant clearing in a single tap while maintaining screen reader clarity.
+**Action:** Always include an inline clear button on primary text inputs when non-empty, applying right-side input padding to prevent text overlap and generous `hitSlop` for touch target accessibility.
