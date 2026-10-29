@@ -569,19 +569,33 @@ export default function ItemFormScreen() {
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
             </TouchableOpacity>
           </View>
-          <TextInput
-            style={styles.input}
-            value={item.title}
-            onChangeText={(v) => updateField('title', v)}
-            placeholder="Vintage Levi 501"
-            placeholderTextColor="#4a5568"
-            maxLength={80}
-            autoFocus={!existingItem}
-            accessibilityLabel="Item Title"
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => brandRef.current?.focus()}
-          />
+          <View style={styles.clearableInputWrapper}>
+            <TextInput
+              style={[styles.input, styles.clearableInput]}
+              value={item.title}
+              onChangeText={(v) => updateField('title', v)}
+              placeholder="Vintage Levi 501"
+              placeholderTextColor="#4a5568"
+              maxLength={80}
+              autoFocus={!existingItem}
+              accessibilityLabel="Item Title"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => brandRef.current?.focus()}
+            />
+            {item.title.length > 0 && (
+              <TouchableOpacity
+                style={styles.inputClearBtn}
+                onPress={() => updateField('title', '', true)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Clear title text"
+                accessibilityHint="Clears the title text input"
+              >
+                <Text style={styles.inputClearText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.fieldFooter}>
             {!isTitleValid ? (
               <Text style={styles.validationError} accessibilityLiveRegion="polite">
@@ -773,7 +787,12 @@ const styles = StyleSheet.create({
   aiBadge: { backgroundColor: 'rgba(124, 58, 237, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.3)' },
   aiBadgeText: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
   researchLink: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
+  inputWrapperContainer: { position: 'relative' },
+  clearableInputWrapper: { position: 'relative', justifyContent: 'center' },
   input: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, color: '#e8eaf6', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
+  clearableInput: { paddingRight: 38 },
+  inputClearBtn: { position: 'absolute', right: 12, padding: 4, justifyContent: 'center', alignItems: 'center' },
+  inputClearText: { color: '#94a3b8', fontSize: 13, fontWeight: '700' },
   inputOcr: { borderColor: 'rgba(74, 222, 128, 0.4)', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   priceInputWrapper: {
