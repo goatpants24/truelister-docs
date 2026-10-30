@@ -569,19 +569,33 @@ export default function ItemFormScreen() {
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
             </TouchableOpacity>
           </View>
-          <TextInput
-            style={styles.input}
-            value={item.title}
-            onChangeText={(v) => updateField('title', v)}
-            placeholder="Vintage Levi 501"
-            placeholderTextColor="#4a5568"
-            maxLength={80}
-            autoFocus={!existingItem}
-            accessibilityLabel="Item Title"
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => brandRef.current?.focus()}
-          />
+          <View style={styles.inputWithClear}>
+            <TextInput
+              style={[styles.input, item.title ? styles.inputWithClearPadding : null]}
+              value={item.title}
+              onChangeText={(v) => updateField('title', v)}
+              placeholder="Vintage Levi 501"
+              placeholderTextColor="#4a5568"
+              maxLength={80}
+              autoFocus={!existingItem}
+              accessibilityLabel="Item Title"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => brandRef.current?.focus()}
+            />
+            {item.title ? (
+              <TouchableOpacity
+                style={styles.clearTitleBtn}
+                onPress={() => updateField('title', '')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Clear title text"
+                accessibilityHint="Clears the title text input"
+              >
+                <Text style={styles.clearTitleText}>✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <View style={styles.fieldFooter}>
             {!isTitleValid ? (
               <Text style={styles.validationError} accessibilityLiveRegion="polite">
@@ -655,6 +669,33 @@ export default function ItemFormScreen() {
           <FormPicker label="Color" value={item.color} options={dropdowns.colors} onChange={handleColorChange} />
         </View>
 
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Fabric / Material</Text>
+            <TextInput
+              style={styles.input}
+              value={item.fabricMaterial}
+              onChangeText={(v) => updateField('fabricMaterial', v)}
+              placeholder="e.g. 100% Cotton"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Fabric or Material"
+              returnKeyType="next"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Measurements</Text>
+            <TextInput
+              style={styles.input}
+              value={item.measurements}
+              onChangeText={(v) => updateField('measurements', v)}
+              placeholder="e.g. Pit to pit 20in"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Measurements"
+              returnKeyType="next"
+            />
+          </View>
+        </View>
+
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Price</Text>
@@ -698,6 +739,7 @@ export default function ItemFormScreen() {
             onChangeText={(v) => updateField('notes', v)}
             multiline
             numberOfLines={3}
+            placeholder="e.g. Flaws, inventory location, or extra details..."
             placeholderTextColor="#4a5568"
             accessibilityLabel="Item Notes"
           />
@@ -774,6 +816,10 @@ const styles = StyleSheet.create({
   aiBadgeText: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
   researchLink: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
   input: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, color: '#e8eaf6', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
+  inputWithClear: { position: 'relative', justifyContent: 'center' },
+  inputWithClearPadding: { paddingRight: 38 },
+  clearTitleBtn: { position: 'absolute', right: 12, padding: 4 },
+  clearTitleText: { color: '#94a3b8', fontSize: 14, fontWeight: '700' },
   inputOcr: { borderColor: 'rgba(74, 222, 128, 0.4)', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   priceInputWrapper: {
