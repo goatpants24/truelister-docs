@@ -69,3 +69,7 @@
 ## 2026-07-28 - [Multi-Photo Horizontal Gallery Preview]
 **Learning:** In multi-photo item capture workflows, restricting preview images to a single photo field (such as `photoUrlCard`) obscures secondary captured photos (Front, Back, Detail, Tabletop), causing user confusion over photo capture state. Providing a horizontal scrollable thumbnail gallery displaying all captured photos with field badges and accessible clear buttons (`✕`) gives immediate visual confirmation and management without consuming vertical form space.
 **Action:** Render a horizontal thumbnail gallery for multi-photo capture forms, showing field labels, accessible clear buttons with `hitSlop`, and state-aware screen reader hints.
+
+## 2026-07-29 - [Exposing OCR Scanned Properties in Form Inputs]
+**Learning:** Automated extraction features like OCR tag scanning populate metadata fields (such as fabric composition and garment measurements) into item models, but if those fields lack dedicated form inputs, users cannot review, verify, or correct auto-detected values. Exposing these properties in compact multi-column rows with descriptive placeholder examples and explicit `accessibilityLabel` attributes empowers users to inspect and refine OCR-extracted catalog details before saving or publishing.
+**Action:** Ensure all properties populated by automated extraction tools (OCR, AI, barcode scanners) have corresponding editable input fields with descriptive placeholders and clear accessibility labels.
