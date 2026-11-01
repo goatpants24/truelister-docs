@@ -238,6 +238,8 @@ export default function ItemFormScreen() {
 
   const brandRef = useRef<TextInput>(null);
   const sizeRef = useRef<TextInput>(null);
+  const fabricRef = useRef<TextInput>(null);
+  const measurementsRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
   const notesRef = useRef<TextInput>(null);
 
@@ -645,6 +647,39 @@ export default function ItemFormScreen() {
               accessibilityLabel="Item Size"
               returnKeyType="next"
               blurOnSubmit={false}
+              onSubmitEditing={() => fabricRef.current?.focus()}
+            />
+          </View>
+        </View>
+
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Fabric / Material</Text>
+            <TextInput
+              ref={fabricRef}
+              style={styles.input}
+              value={item.fabricMaterial}
+              onChangeText={(v) => updateField('fabricMaterial', v)}
+              placeholder="e.g. 100% Cotton"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Fabric and Material"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => measurementsRef.current?.focus()}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Measurements</Text>
+            <TextInput
+              ref={measurementsRef}
+              style={styles.input}
+              value={item.measurements}
+              onChangeText={(v) => updateField('measurements', v)}
+              placeholder="e.g. Pit to pit 20in"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Measurements"
+              returnKeyType="next"
+              blurOnSubmit={false}
               onSubmitEditing={() => priceRef.current?.focus()}
             />
           </View>
@@ -698,6 +733,7 @@ export default function ItemFormScreen() {
             onChangeText={(v) => updateField('notes', v)}
             multiline
             numberOfLines={3}
+            placeholder="e.g. Flaws, inventory location, or extra details..."
             placeholderTextColor="#4a5568"
             accessibilityLabel="Item Notes"
           />
