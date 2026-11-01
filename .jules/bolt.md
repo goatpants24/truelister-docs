@@ -1,3 +1,7 @@
+## 2026-10-29 - [Concurrent Image Inspection & File System Query Bypass]
+**Learning:** Sequential `await` calls for independent native inspection methods (`Image.getSize` and `FileSystem.getInfoAsync`) add unnecessary latency to image processing pipelines. Running them concurrently with `Promise.all` cuts native discovery latency down to the single slowest call. Furthermore, when resizing is bypassed because image dimensions are already compliant, the file size of the intermediate is identical to `originalSize`, making another `FileSystem.getInfoAsync` call completely redundant.
+**Action:** Parallelize independent image inspection calls using `Promise.all` and reuse existing size metadata when intermediate resizing operations are skipped.
+
 ## 2026-08-28 - [Static Field Name Lookup Map & Single-Pass Entry Evaluation]
 **Learning:** Re-running regex transformations (`replace`) on standard object field keys during list rendering causes redundant CPU work and garbage collection overhead. Hoisting a static lookup map (`FIELD_NAME_MAP`) for known catalog attributes provides O(1) formatting. Additionally, evaluating `Object.entries` once into a local constant avoids duplicate array allocations in conditional JSX rendering (`length > 0 ? entries.map(...) : ...`).
 **Action:** Use static lookup maps for formatting known object keys and evaluate `Object.entries` once when rendering conditional lists.
