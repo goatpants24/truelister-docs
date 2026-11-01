@@ -113,17 +113,20 @@ export default function PublishScreen({ route, navigation }: Props) {
   };
 
   /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass Results Summary
-   * Replaces dual `results?.filter()` array heap allocations with a single O(N) loop
-   * inside `useMemo`, computing success/fail counts in a single pass without intermediate arrays.
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass Result Counter
+   * Computes success and failure counts in a single O(N) pass inside useMemo using a single loop over results.
+   * Eliminates dual .filter() array heap allocations on every re-render pass.
    */
   const { successCount, failCount } = useMemo(() => {
-    if (!results || results.length === 0) return { successCount: 0, failCount: 0 };
+    if (!results) return { successCount: 0, failCount: 0 };
     let success = 0;
     let fail = 0;
     for (let i = 0; i < results.length; i++) {
-      if (results[i].success) success++;
-      else fail++;
+      if (results[i].success) {
+        success++;
+      } else {
+        fail++;
+      }
     }
     return { successCount: success, failCount: fail };
   }, [results]);
