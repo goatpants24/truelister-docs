@@ -113,8 +113,8 @@ export default function PublishScreen({ route, navigation }: Props) {
   };
 
   /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Zero-Allocation Single-Pass Result Counting
-   * Uses useMemo and a single for loop over results to compute successCount and failCount.
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass Result Counter
+   * Computes success and failure counts in a single O(N) pass inside useMemo using a single loop over results.
    * Eliminates dual .filter() array heap allocations on every re-render pass.
    */
   const { successCount, failCount } = useMemo(() => {
