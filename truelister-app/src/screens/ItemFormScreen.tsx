@@ -56,11 +56,59 @@ const PHOTO_LABELS: Record<PhotoField, string> = {
 };
 
 /**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Photo Fields Array
- * Hoisting static Object.keys(PHOTO_LABELS) to module scope avoids redundant
- * array allocations on every capturedPhotos memoization computation pass.
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Photo Fields List
+ * Static array of photo fields avoids repetitive Object.keys allocations during render passes.
  */
 const PHOTO_FIELDS = Object.keys(PHOTO_LABELS) as PhotoField[];
+
+interface CapturedPhoto {
+  field: PhotoField;
+  label: string;
+  url: string;
+}
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized PhotoGallery Component
+ * Wrapping the horizontal photo gallery in React.memo prevents expensive native <Image>
+ * reconciliation and unmount/remount passes when typing into text inputs (Title, Brand, Price, etc.).
+ */
+const PhotoGallery = memo(({
+  photos,
+  onRemovePhoto
+}: {
+  photos: CapturedPhoto[];
+  onRemovePhoto: (field: PhotoField) => void;
+}) => {
+  if (photos.length === 0) return null;
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.photoGallery}
+      contentContainerStyle={styles.photoGalleryContent}
+    >
+      {photos.map(({ field, label, url }) => (
+        <View key={field} style={styles.galleryCard}>
+          <Image source={{ uri: url }} style={styles.galleryImage} resizeMode="cover" />
+          <View style={styles.galleryBadge}>
+            <Text style={styles.galleryBadgeText}>{label}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.galleryClearBtn}
+            onPress={() => onRemovePhoto(field)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${label.toLowerCase()} photo`}
+            accessibilityHint={`Clears captured ${label.toLowerCase()} photo from this item`}
+          >
+            <Text style={styles.galleryClearText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+    </ScrollView>
+  );
+});
 
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   itemNumber: newItemNumber || 'TL-000',
@@ -245,6 +293,8 @@ export default function ItemFormScreen() {
 
   const brandRef = useRef<TextInput>(null);
   const sizeRef = useRef<TextInput>(null);
+  const fabricRef = useRef<TextInput>(null);
+  const measurementsRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
   const notesRef = useRef<TextInput>(null);
 
@@ -440,11 +490,12 @@ export default function ItemFormScreen() {
    * Hooks and prevents QuickActionsBar re-renders when editing non-photo form fields.
    */
   const capturedPhotos = useMemo(() => {
-    const photos: { field: PhotoField; label: string; url: string }[] = [];
+    const photos: CapturedPhoto[] = [];
     for (let i = 0; i < PHOTO_FIELDS.length; i++) {
       const f = PHOTO_FIELDS[i];
-      if (item[f]) {
-        photos.push({ field: f, label: PHOTO_LABELS[f], url: item[f] as string });
+      const url = item[f];
+      if (url) {
+        photos.push({ field: f, label: PHOTO_LABELS[f], url: url as string });
       }
     }
     return photos;
@@ -458,6 +509,10 @@ export default function ItemFormScreen() {
     item.photoUrlTabletopMeasure1,
     item.photoUrlTabletopMeasure2,
   ]);
+
+  const handleRemovePhoto = useCallback((field: PhotoField) => {
+    updateField(field, '', true);
+  }, [updateField]);
 
   const captureStatus = useMemo(() => ({
     photoUrlCard: !!item.photoUrlCard,
@@ -528,33 +583,10 @@ export default function ItemFormScreen() {
           onScanTag={handleScanTagTrigger}
         />
 
-        {capturedPhotos.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.photoGallery}
-            contentContainerStyle={styles.photoGalleryContent}
-          >
-            {capturedPhotos.map(({ field, label, url }) => (
-              <View key={field} style={styles.galleryCard}>
-                <Image source={{ uri: url }} style={styles.galleryImage} resizeMode="cover" />
-                <View style={styles.galleryBadge}>
-                  <Text style={styles.galleryBadgeText}>{label}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.galleryClearBtn}
-                  onPress={() => updateField(field, '', true)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove ${label.toLowerCase()} photo`}
-                  accessibilityHint={`Clears captured ${label.toLowerCase()} photo from this item`}
-                >
-                  <Text style={styles.galleryClearText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        )}
+        <PhotoGallery
+          photos={capturedPhotos}
+          onRemovePhoto={handleRemovePhoto}
+        />
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionLabel}>Item Details</Text>
@@ -575,19 +607,33 @@ export default function ItemFormScreen() {
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
             </TouchableOpacity>
           </View>
-          <TextInput
-            style={styles.input}
-            value={item.title}
-            onChangeText={(v) => updateField('title', v)}
-            placeholder="Vintage Levi 501"
-            placeholderTextColor="#4a5568"
-            maxLength={80}
-            autoFocus={!existingItem}
-            accessibilityLabel="Item Title"
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => brandRef.current?.focus()}
-          />
+          <View style={styles.inputWithClear}>
+            <TextInput
+              style={[styles.input, item.title ? styles.inputWithClearPadding : null]}
+              value={item.title}
+              onChangeText={(v) => updateField('title', v)}
+              placeholder="Vintage Levi 501"
+              placeholderTextColor="#4a5568"
+              maxLength={80}
+              autoFocus={!existingItem}
+              accessibilityLabel="Item Title"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => brandRef.current?.focus()}
+            />
+            {item.title ? (
+              <TouchableOpacity
+                style={styles.clearTitleBtn}
+                onPress={() => updateField('title', '')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Clear title text"
+                accessibilityHint="Clears the title text input"
+              >
+                <Text style={styles.clearTitleText}>✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <View style={styles.fieldFooter}>
             {!isTitleValid ? (
               <Text style={styles.validationError} accessibilityLiveRegion="polite">
@@ -651,6 +697,39 @@ export default function ItemFormScreen() {
               accessibilityLabel="Item Size"
               returnKeyType="next"
               blurOnSubmit={false}
+              onSubmitEditing={() => fabricRef.current?.focus()}
+            />
+          </View>
+        </View>
+
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Fabric / Material</Text>
+            <TextInput
+              ref={fabricRef}
+              style={styles.input}
+              value={item.fabricMaterial}
+              onChangeText={(v) => updateField('fabricMaterial', v)}
+              placeholder="e.g. 100% Cotton"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Fabric and Material"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => measurementsRef.current?.focus()}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Measurements</Text>
+            <TextInput
+              ref={measurementsRef}
+              style={styles.input}
+              value={item.measurements}
+              onChangeText={(v) => updateField('measurements', v)}
+              placeholder="e.g. Pit to pit 20in"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Measurements"
+              returnKeyType="next"
+              blurOnSubmit={false}
               onSubmitEditing={() => priceRef.current?.focus()}
             />
           </View>
@@ -659,6 +738,33 @@ export default function ItemFormScreen() {
         <View style={styles.row}>
           <FormPicker label="Condition" value={item.condition} options={dropdowns.conditions} onChange={handleConditionChange} />
           <FormPicker label="Color" value={item.color} options={dropdowns.colors} onChange={handleColorChange} />
+        </View>
+
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Fabric / Material</Text>
+            <TextInput
+              style={styles.input}
+              value={item.fabricMaterial}
+              onChangeText={(v) => updateField('fabricMaterial', v)}
+              placeholder="e.g. 100% Cotton"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Fabric / Material"
+              returnKeyType="next"
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Measurements</Text>
+            <TextInput
+              style={styles.input}
+              value={item.measurements}
+              onChangeText={(v) => updateField('measurements', v)}
+              placeholder="e.g. Pit to pit 20in"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Measurements"
+              returnKeyType="next"
+            />
+          </View>
         </View>
 
         <View style={styles.field}>
@@ -704,6 +810,7 @@ export default function ItemFormScreen() {
             onChangeText={(v) => updateField('notes', v)}
             multiline
             numberOfLines={3}
+            placeholder="e.g. Flaws, inventory location, or extra details..."
             placeholderTextColor="#4a5568"
             accessibilityLabel="Item Notes"
           />
@@ -779,7 +886,13 @@ const styles = StyleSheet.create({
   aiBadge: { backgroundColor: 'rgba(124, 58, 237, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.3)' },
   aiBadgeText: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
   researchLink: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
+  inputWrapperContainer: { position: 'relative' },
+  clearableInputWrapper: { position: 'relative', justifyContent: 'center' },
   input: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, color: '#e8eaf6', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
+  inputWithClear: { position: 'relative', justifyContent: 'center' },
+  inputWithClearPadding: { paddingRight: 38 },
+  clearTitleBtn: { position: 'absolute', right: 12, padding: 4 },
+  clearTitleText: { color: '#94a3b8', fontSize: 14, fontWeight: '700' },
   inputOcr: { borderColor: 'rgba(74, 222, 128, 0.4)', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   priceInputWrapper: {
