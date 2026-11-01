@@ -1,4 +1,4 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -112,8 +112,24 @@ export default function PublishScreen({ route, navigation }: Props) {
     }
   };
 
-  const successCount = results?.filter(r => r.success).length ?? 0;
-  const failCount = results?.filter(r => !r.success).length ?? 0;
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass Result Counter
+   * Computes success and failure counts in a single O(N) pass inside useMemo using a single loop over results.
+   * Eliminates dual .filter() array heap allocations on every re-render pass.
+   */
+  const { successCount, failCount } = useMemo(() => {
+    if (!results) return { successCount: 0, failCount: 0 };
+    let success = 0;
+    let fail = 0;
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].success) {
+        success++;
+      } else {
+        fail++;
+      }
+    }
+    return { successCount: success, failCount: fail };
+  }, [results]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
