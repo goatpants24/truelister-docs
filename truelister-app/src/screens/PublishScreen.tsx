@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, memo } from 'react';
+import React, { useState, useCallback, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -114,8 +114,8 @@ export default function PublishScreen({ route, navigation }: Props) {
 
   /**
    * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass Result Counter
-   * Computes success and failure counts in a single O(N) loop inside useMemo.
-   * Eliminates dual .filter() array allocations on every component re-render pass.
+   * Computes success and failure counts in a single O(N) pass inside useMemo using a single loop over results.
+   * Eliminates dual .filter() array heap allocations on every re-render pass.
    */
   const { successCount, failCount } = useMemo(() => {
     if (!results) return { successCount: 0, failCount: 0 };
