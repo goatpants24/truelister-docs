@@ -886,6 +886,8 @@ const styles = StyleSheet.create({
   aiBadge: { backgroundColor: 'rgba(124, 58, 237, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.3)' },
   aiBadgeText: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
   researchLink: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
+  inputWrapperContainer: { position: 'relative' },
+  clearableInputWrapper: { position: 'relative', justifyContent: 'center' },
   input: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, color: '#e8eaf6', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
   inputWithClear: { position: 'relative', justifyContent: 'center' },
   inputWithClearPadding: { paddingRight: 38 },
