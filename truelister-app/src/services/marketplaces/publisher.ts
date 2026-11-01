@@ -43,9 +43,10 @@ async function publishToEbay(
   }
 
   try {
+    const title = buildTitle(item);
     const body = {
       product: {
-        title: buildTitle(item),
+        title,
         description: buildDescription(item),
         aspects: {
           Brand: [item.designerBrand ?? 'Unbranded'],
@@ -89,7 +90,7 @@ async function publishToEbay(
         marketplace: 'ebay',
         success: true,
         listingId: item.itemNumber?.toString(),
-        listingUrl: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(buildTitle(item))}`,
+        listingUrl: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(title)}`,
       };
     }
 
