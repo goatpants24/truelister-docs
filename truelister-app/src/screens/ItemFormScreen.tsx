@@ -484,6 +484,13 @@ export default function ItemFormScreen() {
     ]);
   }, [updateField]);
 
+  const handleReactivateItem = useCallback(() => {
+    Alert.alert('Reactivate Item?', 'This will return status to Draft / Active.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reactivate', onPress: () => updateField('saleStatus', 'Draft', true) }
+    ]);
+  }, [updateField]);
+
   /**
    * ⚡ BOLT PERFORMANCE OPTIMIZATION: Top-level Memoization & Stabilized Callbacks
    * Memoizing captureStatus at the top level strictly complies with React's Rules of
@@ -574,7 +581,19 @@ export default function ItemFormScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-        <View style={styles.itemNumberBadge}><Text style={styles.itemNumberText}>{item.itemNumber}</Text></View>
+        <View style={styles.metaBadgeRow}>
+          <View style={styles.itemNumberBadge}><Text style={styles.itemNumberText}>{item.itemNumber}</Text></View>
+          {item.saleStatus === 'Sold' && (
+            <View
+              style={styles.soldBadge}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel="Item status: Sold"
+            >
+              <Text style={styles.soldBadgeText}>SOLD</Text>
+            </View>
+          )}
+        </View>
 
         <QuickActionsBar
           captureStatus={captureStatus}
@@ -740,33 +759,6 @@ export default function ItemFormScreen() {
           <FormPicker label="Color" value={item.color} options={dropdowns.colors} onChange={handleColorChange} />
         </View>
 
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Fabric / Material</Text>
-            <TextInput
-              style={styles.input}
-              value={item.fabricMaterial}
-              onChangeText={(v) => updateField('fabricMaterial', v)}
-              placeholder="e.g. 100% Cotton"
-              placeholderTextColor="#4a5568"
-              accessibilityLabel="Fabric / Material"
-              returnKeyType="next"
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Measurements</Text>
-            <TextInput
-              style={styles.input}
-              value={item.measurements}
-              onChangeText={(v) => updateField('measurements', v)}
-              placeholder="e.g. Pit to pit 20in"
-              placeholderTextColor="#4a5568"
-              accessibilityLabel="Item Measurements"
-              returnKeyType="next"
-            />
-          </View>
-        </View>
-
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Price</Text>
@@ -832,10 +824,24 @@ export default function ItemFormScreen() {
             <TouchableOpacity
               style={styles.soldButton}
               onPress={handleMarkAsSold}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               accessibilityRole="button"
               accessibilityLabel="Mark item as sold"
+              accessibilityHint="Updates sale status to Sold"
             >
               <Text style={styles.soldButtonText}>Mark Sold</Text>
+            </TouchableOpacity>
+          )}
+          {existingItem && item.saleStatus === 'Sold' && (
+            <TouchableOpacity
+              style={styles.reactivateButton}
+              onPress={handleReactivateItem}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              accessibilityRole="button"
+              accessibilityLabel="Reactivate item"
+              accessibilityHint="Reverts sale status from Sold back to Draft"
+            >
+              <Text style={styles.reactivateButtonText}>Reactivate</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -862,8 +868,11 @@ const styles = StyleSheet.create({
   headerSaveButton: { flexDirection: 'row', alignItems: 'center' },
   saveText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
-  itemNumberBadge: { alignSelf: 'center', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#4f6ef7', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6, marginVertical: 14 },
+  metaBadgeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginVertical: 14 },
+  itemNumberBadge: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#4f6ef7', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6 },
   itemNumberText: { color: '#818cf8', fontSize: 13, fontWeight: '700' },
+  soldBadge: { backgroundColor: 'rgba(248, 113, 113, 0.2)', borderWidth: 1, borderColor: '#f87171', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  soldBadgeText: { color: '#f87171', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
   quickActions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 16 },
   actionButton: { flex: 1, minWidth: '22%', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 12, paddingVertical: 12, alignItems: 'center', gap: 4 },
   actionIcon: { fontSize: 20 },
@@ -933,6 +942,8 @@ const styles = StyleSheet.create({
   saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
   soldButton: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#f87171', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 20 },
   soldButtonText: { color: '#f87171', fontSize: 16, fontWeight: '700' },
+  reactivateButton: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#22c55e', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 20 },
+  reactivateButtonText: { color: '#22c55e', fontSize: 16, fontWeight: '700' },
   publishButton: { backgroundColor: '#1a1d27', borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 10, borderWidth: 1.5, borderColor: '#4f6ef7' },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
 });

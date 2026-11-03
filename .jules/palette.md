@@ -73,3 +73,7 @@
 ## 2026-07-29 - [Exposing OCR Scanned Properties in Form Inputs]
 **Learning:** Automated extraction features like OCR tag scanning populate metadata fields (such as fabric composition and garment measurements) into item models, but if those fields lack dedicated form inputs, users cannot review, verify, or correct auto-detected values. Exposing these properties in compact multi-column rows with descriptive placeholder examples and explicit `accessibilityLabel` attributes empowers users to inspect and refine OCR-extracted catalog details before saving or publishing.
 **Action:** Ensure all properties populated by automated extraction tools (OCR, AI, barcode scanners) have corresponding editable input fields with descriptive placeholders and clear accessibility labels.
+
+## 2026-07-30 - [Item Sale Status Visibility & Reactivation]
+**Learning:** In inventory management forms, allowing users to mark an item as "Sold" without providing clear status visibility inside the form or a mechanism to reactivate the item leaves users stranded if a sale falls through or is marked accidentally. Pairing a header status badge with a dedicated, accessible "Reactivate" action restores full user agency over item lifecycle states.
+**Action:** Always provide explicit status badges in detail/form views when items enter terminal or inactive states, and pair state-transition actions with reversible pathways (such as reactivating a sold item).
