@@ -73,3 +73,7 @@
 ## 2026-07-29 - [Exposing OCR Scanned Properties in Form Inputs]
 **Learning:** Automated extraction features like OCR tag scanning populate metadata fields (such as fabric composition and garment measurements) into item models, but if those fields lack dedicated form inputs, users cannot review, verify, or correct auto-detected values. Exposing these properties in compact multi-column rows with descriptive placeholder examples and explicit `accessibilityLabel` attributes empowers users to inspect and refine OCR-extracted catalog details before saving or publishing.
 **Action:** Ensure all properties populated by automated extraction tools (OCR, AI, barcode scanners) have corresponding editable input fields with descriptive placeholders and clear accessibility labels.
+
+## 2026-07-30 - [Streamlined Single-Source Form Inputs & Focus Chaining]
+**Learning:** Duplicate inputs for the same model properties confuse both visual and screen-reader users, and disrupt natural soft-keyboard `returnKeyType="next"` focus traversal when the duplicate fields lack refs and submit handlers. Ensuring each property is bound to exactly one well-annotated input row maintains visual hierarchy and provides an intuitive keyboard navigation flow.
+**Action:** Audit forms to ensure each model property has exactly one canonical input element with complete focus transition refs and descriptive accessibility labels.
