@@ -87,9 +87,13 @@ function getImageDimensions(uri: string): Promise<{ width: number; height: numbe
  * - Avoids visual bugs (image stretching) by preserving original aspect ratio during resize.
  */
 export async function compressImage(uri: string): Promise<ImageResult> {
-  // 1. Zero-allocation pass to obtain original dimensions and size
-  const original = await getImageDimensions(uri);
-  const originalSize = await getFileSize(uri);
+  // 1. Zero-allocation pass to obtain original dimensions and size concurrently
+  // ⚡ BOLT PERFORMANCE OPTIMIZATION: Concurrent Dimension & Size Query
+  // Querying native dimensions and FileSystem size concurrently cuts initial I/O latency in half.
+  const [original, originalSize] = await Promise.all([
+    getImageDimensions(uri),
+    getFileSize(uri),
+  ]);
 
   // Fast-Path Bypass: If already under target size and within max dimension boundaries, return immediately
   if (originalSize <= TARGET_SIZE_BYTES && original.width <= MAX_WIDTH && original.height <= MAX_HEIGHT) {
@@ -121,8 +125,10 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     currentHeight = resized.height;
   }
 
-  // Get current size of intermediate
-  let resultSize = await getFileSize(intermediateUri);
+  // ⚡ BOLT PERFORMANCE OPTIMIZATION: Redundant Size Query Guard
+  // If no dimension resizing occurred, intermediateUri is still uri, so reuse originalSize
+  // rather than querying the filesystem again.
+  let resultSize = intermediateUri === uri ? originalSize : await getFileSize(intermediateUri);
 
   // If already under target size, we are done
   if (resultSize <= TARGET_SIZE_BYTES) {
