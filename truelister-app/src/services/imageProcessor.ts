@@ -108,6 +108,7 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   let intermediateUri = uri;
   let currentWidth = original.width;
   let currentHeight = original.height;
+  let resultSize = originalSize;
 
   if (original.width > MAX_WIDTH || original.height > MAX_HEIGHT) {
     const scale = Math.min(MAX_WIDTH / original.width, MAX_HEIGHT / original.height);
@@ -122,6 +123,8 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     intermediateUri = resized.uri;
     currentWidth = resized.width;
     currentHeight = resized.height;
+    // Query intermediate size only when image manipulation actually occurred
+    resultSize = await getFileSize(intermediateUri);
   }
 
   // Bolt: Reuse originalSize if resizing was skipped (intermediateUri === uri) to avoid redundant FileSystem stat call.
