@@ -54,6 +54,7 @@ const PlatformCard = memo(({
     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
     accessibilityRole="button"
     accessibilityLabel={marketplace.name}
+    accessibilityHint={`Toggles selection of ${marketplace.name} for publishing`}
     accessibilityState={{ selected: isSelected }}
     accessibilityHint={isSelected ? `Deselects ${marketplace.name} for publishing` : `Selects ${marketplace.name} for publishing`}
   >
@@ -177,6 +178,7 @@ export default function PublishScreen({ route, navigation }: Props) {
               : `Publish to ${selected.size} platform${selected.size !== 1 ? 's' : ''}`
           }
           accessibilityState={{ disabled: publishing || selected.size === 0 }}
+          accessibilityHint="Submits item listing to selected marketplace platforms"
         >
           {publishing ? (
             <ActivityIndicator color="#fff" />
