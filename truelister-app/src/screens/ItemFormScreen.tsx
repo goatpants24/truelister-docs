@@ -763,8 +763,11 @@ export default function ItemFormScreen() {
               placeholder="0.00"
               keyboardType="decimal-pad"
               placeholderTextColor="#4a5568"
-              accessibilityLabel="Item Price"
-              returnKeyType="done"
+              accessibilityLabel="Item Price in USD"
+              accessibilityHint="Enter item price in dollars"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => notesRef.current?.focus()}
             />
           </View>
         </View>
