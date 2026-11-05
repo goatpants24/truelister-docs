@@ -55,6 +55,61 @@ const PHOTO_LABELS: Record<PhotoField, string> = {
   photoUrlTabletopMeasure2: 'Measure 2',
 };
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Photo Fields List
+ * Static array of photo fields avoids repetitive Object.keys allocations during render passes.
+ */
+const PHOTO_FIELDS = Object.keys(PHOTO_LABELS) as PhotoField[];
+
+interface CapturedPhoto {
+  field: PhotoField;
+  label: string;
+  url: string;
+}
+
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized PhotoGallery Component
+ * Wrapping the horizontal photo gallery in React.memo prevents expensive native <Image>
+ * reconciliation and unmount/remount passes when typing into text inputs (Title, Brand, Price, etc.).
+ */
+const PhotoGallery = memo(({
+  photos,
+  onRemovePhoto
+}: {
+  photos: CapturedPhoto[];
+  onRemovePhoto: (field: PhotoField) => void;
+}) => {
+  if (photos.length === 0) return null;
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.photoGallery}
+      contentContainerStyle={styles.photoGalleryContent}
+    >
+      {photos.map(({ field, label, url }) => (
+        <View key={field} style={styles.galleryCard}>
+          <Image source={{ uri: url }} style={styles.galleryImage} resizeMode="cover" />
+          <View style={styles.galleryBadge}>
+            <Text style={styles.galleryBadgeText}>{label}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.galleryClearBtn}
+            onPress={() => onRemovePhoto(field)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${label.toLowerCase()} photo`}
+            accessibilityHint={`Clears captured ${label.toLowerCase()} photo from this item`}
+          >
+            <Text style={styles.galleryClearText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      ))}
+    </ScrollView>
+  );
+});
+
 const EMPTY_ITEM = (newItemNumber?: string): CatalogItem => ({
   itemNumber: newItemNumber || 'TL-000',
   title: '',
@@ -238,6 +293,8 @@ export default function ItemFormScreen() {
 
   const brandRef = useRef<TextInput>(null);
   const sizeRef = useRef<TextInput>(null);
+  const fabricRef = useRef<TextInput>(null);
+  const measurementsRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
   const notesRef = useRef<TextInput>(null);
 
@@ -427,18 +484,25 @@ export default function ItemFormScreen() {
     ]);
   }, [updateField]);
 
+  const handleReactivateItem = useCallback(() => {
+    Alert.alert('Reactivate Item?', 'This will return status to Draft / Active.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Reactivate', onPress: () => updateField('saleStatus', 'Draft', true) }
+    ]);
+  }, [updateField]);
+
   /**
    * ⚡ BOLT PERFORMANCE OPTIMIZATION: Top-level Memoization & Stabilized Callbacks
    * Memoizing captureStatus at the top level strictly complies with React's Rules of
    * Hooks and prevents QuickActionsBar re-renders when editing non-photo form fields.
    */
   const capturedPhotos = useMemo(() => {
-    const photos: { field: PhotoField; label: string; url: string }[] = [];
-    const fields = Object.keys(PHOTO_LABELS) as PhotoField[];
-    for (let i = 0; i < fields.length; i++) {
-      const f = fields[i];
-      if (item[f]) {
-        photos.push({ field: f, label: PHOTO_LABELS[f], url: item[f] as string });
+    const photos: CapturedPhoto[] = [];
+    for (let i = 0; i < PHOTO_FIELDS.length; i++) {
+      const f = PHOTO_FIELDS[i];
+      const url = item[f];
+      if (url) {
+        photos.push({ field: f, label: PHOTO_LABELS[f], url: url as string });
       }
     }
     return photos;
@@ -452,6 +516,10 @@ export default function ItemFormScreen() {
     item.photoUrlTabletopMeasure1,
     item.photoUrlTabletopMeasure2,
   ]);
+
+  const handleRemovePhoto = useCallback((field: PhotoField) => {
+    updateField(field, '', true);
+  }, [updateField]);
 
   const captureStatus = useMemo(() => ({
     photoUrlCard: !!item.photoUrlCard,
@@ -513,7 +581,19 @@ export default function ItemFormScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-        <View style={styles.itemNumberBadge}><Text style={styles.itemNumberText}>{item.itemNumber}</Text></View>
+        <View style={styles.metaBadgeRow}>
+          <View style={styles.itemNumberBadge}><Text style={styles.itemNumberText}>{item.itemNumber}</Text></View>
+          {item.saleStatus === 'Sold' && (
+            <View
+              style={styles.soldBadge}
+              accessible={true}
+              accessibilityRole="text"
+              accessibilityLabel="Item status: Sold"
+            >
+              <Text style={styles.soldBadgeText}>SOLD</Text>
+            </View>
+          )}
+        </View>
 
         <QuickActionsBar
           captureStatus={captureStatus}
@@ -522,33 +602,10 @@ export default function ItemFormScreen() {
           onScanTag={handleScanTagTrigger}
         />
 
-        {capturedPhotos.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.photoGallery}
-            contentContainerStyle={styles.photoGalleryContent}
-          >
-            {capturedPhotos.map(({ field, label, url }) => (
-              <View key={field} style={styles.galleryCard}>
-                <Image source={{ uri: url }} style={styles.galleryImage} resizeMode="cover" />
-                <View style={styles.galleryBadge}>
-                  <Text style={styles.galleryBadgeText}>{label}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.galleryClearBtn}
-                  onPress={() => updateField(field, '', true)}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove ${label.toLowerCase()} photo`}
-                  accessibilityHint={`Clears captured ${label.toLowerCase()} photo from this item`}
-                >
-                  <Text style={styles.galleryClearText}>✕</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-        )}
+        <PhotoGallery
+          photos={capturedPhotos}
+          onRemovePhoto={handleRemovePhoto}
+        />
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionLabel}>Item Details</Text>
@@ -569,19 +626,33 @@ export default function ItemFormScreen() {
               <Text style={styles.aiBadgeText}>🪄 AI Suggest</Text>
             </TouchableOpacity>
           </View>
-          <TextInput
-            style={styles.input}
-            value={item.title}
-            onChangeText={(v) => updateField('title', v)}
-            placeholder="Vintage Levi 501"
-            placeholderTextColor="#4a5568"
-            maxLength={80}
-            autoFocus={!existingItem}
-            accessibilityLabel="Item Title"
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => brandRef.current?.focus()}
-          />
+          <View style={styles.inputWithClear}>
+            <TextInput
+              style={[styles.input, item.title ? styles.inputWithClearPadding : null]}
+              value={item.title}
+              onChangeText={(v) => updateField('title', v)}
+              placeholder="Vintage Levi 501"
+              placeholderTextColor="#4a5568"
+              maxLength={80}
+              autoFocus={!existingItem}
+              accessibilityLabel="Item Title"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => brandRef.current?.focus()}
+            />
+            {item.title ? (
+              <TouchableOpacity
+                style={styles.clearTitleBtn}
+                onPress={() => updateField('title', '')}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Clear title text"
+                accessibilityHint="Clears the title text input"
+              >
+                <Text style={styles.clearTitleText}>✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           <View style={styles.fieldFooter}>
             {!isTitleValid ? (
               <Text style={styles.validationError} accessibilityLiveRegion="polite">
@@ -645,6 +716,39 @@ export default function ItemFormScreen() {
               accessibilityLabel="Item Size"
               returnKeyType="next"
               blurOnSubmit={false}
+              onSubmitEditing={() => fabricRef.current?.focus()}
+            />
+          </View>
+        </View>
+
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Fabric / Material</Text>
+            <TextInput
+              ref={fabricRef}
+              style={styles.input}
+              value={item.fabricMaterial}
+              onChangeText={(v) => updateField('fabricMaterial', v)}
+              placeholder="e.g. 100% Cotton"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Fabric and Material"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => measurementsRef.current?.focus()}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Measurements</Text>
+            <TextInput
+              ref={measurementsRef}
+              style={styles.input}
+              value={item.measurements}
+              onChangeText={(v) => updateField('measurements', v)}
+              placeholder="e.g. Pit to pit 20in"
+              placeholderTextColor="#4a5568"
+              accessibilityLabel="Item Measurements"
+              returnKeyType="next"
+              blurOnSubmit={false}
               onSubmitEditing={() => priceRef.current?.focus()}
             />
           </View>
@@ -678,8 +782,11 @@ export default function ItemFormScreen() {
               placeholder="0.00"
               keyboardType="decimal-pad"
               placeholderTextColor="#4a5568"
-              accessibilityLabel="Item Price"
-              returnKeyType="done"
+              accessibilityLabel="Item Price in USD"
+              accessibilityHint="Enter item price in dollars"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => notesRef.current?.focus()}
             />
           </View>
         </View>
@@ -698,6 +805,7 @@ export default function ItemFormScreen() {
             onChangeText={(v) => updateField('notes', v)}
             multiline
             numberOfLines={3}
+            placeholder="e.g. Flaws, inventory location, or extra details..."
             placeholderTextColor="#4a5568"
             accessibilityLabel="Item Notes"
           />
@@ -719,10 +827,24 @@ export default function ItemFormScreen() {
             <TouchableOpacity
               style={styles.soldButton}
               onPress={handleMarkAsSold}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               accessibilityRole="button"
               accessibilityLabel="Mark item as sold"
+              accessibilityHint="Updates sale status to Sold"
             >
               <Text style={styles.soldButtonText}>Mark Sold</Text>
+            </TouchableOpacity>
+          )}
+          {existingItem && item.saleStatus === 'Sold' && (
+            <TouchableOpacity
+              style={styles.reactivateButton}
+              onPress={handleReactivateItem}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              accessibilityRole="button"
+              accessibilityLabel="Reactivate item"
+              accessibilityHint="Reverts sale status from Sold back to Draft"
+            >
+              <Text style={styles.reactivateButtonText}>Reactivate</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -749,8 +871,11 @@ const styles = StyleSheet.create({
   headerSaveButton: { flexDirection: 'row', alignItems: 'center' },
   saveText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 40 },
-  itemNumberBadge: { alignSelf: 'center', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#4f6ef7', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6, marginVertical: 14 },
+  metaBadgeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginVertical: 14 },
+  itemNumberBadge: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#4f6ef7', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6 },
   itemNumberText: { color: '#818cf8', fontSize: 13, fontWeight: '700' },
+  soldBadge: { backgroundColor: 'rgba(248, 113, 113, 0.2)', borderWidth: 1, borderColor: '#f87171', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  soldBadgeText: { color: '#f87171', fontSize: 11, fontWeight: '800', letterSpacing: 0.5 },
   quickActions: { flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginBottom: 16 },
   actionButton: { flex: 1, minWidth: '22%', backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 12, paddingVertical: 12, alignItems: 'center', gap: 4 },
   actionIcon: { fontSize: 20 },
@@ -773,7 +898,13 @@ const styles = StyleSheet.create({
   aiBadge: { backgroundColor: 'rgba(124, 58, 237, 0.15)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.3)' },
   aiBadgeText: { color: '#a78bfa', fontSize: 11, fontWeight: '700' },
   researchLink: { color: '#60a5fa', fontSize: 11, fontWeight: '600' },
+  inputWrapperContainer: { position: 'relative' },
+  clearableInputWrapper: { position: 'relative', justifyContent: 'center' },
   input: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a', borderRadius: 10, color: '#e8eaf6', fontSize: 15, paddingHorizontal: 14, paddingVertical: 12 },
+  inputWithClear: { position: 'relative', justifyContent: 'center' },
+  inputWithClearPadding: { paddingRight: 38 },
+  clearTitleBtn: { position: 'absolute', right: 12, padding: 4 },
+  clearTitleText: { color: '#94a3b8', fontSize: 14, fontWeight: '700' },
   inputOcr: { borderColor: 'rgba(74, 222, 128, 0.4)', backgroundColor: 'rgba(74, 222, 128, 0.05)' },
   textArea: { minHeight: 80, textAlignVertical: 'top' },
   priceInputWrapper: {
@@ -814,6 +945,8 @@ const styles = StyleSheet.create({
   saveButtonText: { color: '#fff', fontSize: 17, fontWeight: '700' },
   soldButton: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#f87171', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 20 },
   soldButtonText: { color: '#f87171', fontSize: 16, fontWeight: '700' },
+  reactivateButton: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#22c55e', borderRadius: 14, paddingVertical: 16, paddingHorizontal: 20 },
+  reactivateButtonText: { color: '#22c55e', fontSize: 16, fontWeight: '700' },
   publishButton: { backgroundColor: '#1a1d27', borderRadius: 14, paddingVertical: 15, alignItems: 'center', marginTop: 10, borderWidth: 1.5, borderColor: '#4f6ef7' },
   publishButtonText: { color: '#4f6ef7', fontSize: 16, fontWeight: '700' },
 });
