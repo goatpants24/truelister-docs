@@ -740,33 +740,6 @@ export default function ItemFormScreen() {
           <FormPicker label="Color" value={item.color} options={dropdowns.colors} onChange={handleColorChange} />
         </View>
 
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Fabric / Material</Text>
-            <TextInput
-              style={styles.input}
-              value={item.fabricMaterial}
-              onChangeText={(v) => updateField('fabricMaterial', v)}
-              placeholder="e.g. 100% Cotton"
-              placeholderTextColor="#4a5568"
-              accessibilityLabel="Fabric / Material"
-              returnKeyType="next"
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Measurements</Text>
-            <TextInput
-              style={styles.input}
-              value={item.measurements}
-              onChangeText={(v) => updateField('measurements', v)}
-              placeholder="e.g. Pit to pit 20in"
-              placeholderTextColor="#4a5568"
-              accessibilityLabel="Item Measurements"
-              returnKeyType="next"
-            />
-          </View>
-        </View>
-
         <View style={styles.field}>
           <View style={styles.labelRow}>
             <Text style={styles.label}>Price</Text>
@@ -790,8 +763,11 @@ export default function ItemFormScreen() {
               placeholder="0.00"
               keyboardType="decimal-pad"
               placeholderTextColor="#4a5568"
-              accessibilityLabel="Item Price"
-              returnKeyType="done"
+              accessibilityLabel="Item Price in USD"
+              accessibilityHint="Enter item price in dollars"
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={() => notesRef.current?.focus()}
             />
           </View>
         </View>
