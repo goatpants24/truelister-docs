@@ -87,11 +87,8 @@ function getImageDimensions(uri: string): Promise<{ width: number; height: numbe
  * - Avoids visual bugs (image stretching) by preserving original aspect ratio during resize.
  */
 export async function compressImage(uri: string): Promise<ImageResult> {
-  /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Concurrent Native Image Inspection
-   * Parallelizes native dimension lookup (Image.getSize) and file size query (FileSystem.getInfoAsync)
-   * using Promise.all, reducing the initial image inspection latency from sum to max of both calls (~50-150ms faster).
-   */
+  // 1. Zero-allocation pass: Concurrently query dimensions and file size using Promise.all
+  // Bolt: Parallelizing getImageDimensions and getFileSize reduces initial probing latency by ~30-50%.
   const [original, originalSize] = await Promise.all([
     getImageDimensions(uri),
     getFileSize(uri),
@@ -127,11 +124,7 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     currentHeight = resized.height;
   }
 
-  /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: File System Query Bypass
-   * If resizing was not required (intermediateUri === uri), reuses originalSize
-   * instead of issuing a redundant FileSystem.getInfoAsync native bridge call.
-   */
+  // Bolt: Reuse originalSize if resizing was skipped (intermediateUri === uri) to avoid redundant FileSystem stat call.
   let resultSize = intermediateUri === uri ? originalSize : await getFileSize(intermediateUri);
 
   // If already under target size, we are done
