@@ -15,7 +15,13 @@ const WB_OPTIONS: { mode: WhiteBalanceMode; label: string; icon: string }[] = [
   { mode: 'incandescent', label: 'Bulb', icon: '💡' },
 ];
 
-export default function WhiteBalancePicker({ selected, onSelect }: Props) {
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized WhiteBalancePicker Component
+ * Wrapping WhiteBalancePicker in React.memo prevents unnecessary re-rendering
+ * and element reconciliation when camera/tag scanner states change (such as
+ * `processing` overlay in CameraScreen or `scanning` state in TagScanner).
+ */
+export default React.memo(function WhiteBalancePicker({ selected, onSelect }: Props) {
   const isLocked = selected !== 'auto';
 
   return (
@@ -44,7 +50,7 @@ export default function WhiteBalancePicker({ selected, onSelect }: Props) {
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
