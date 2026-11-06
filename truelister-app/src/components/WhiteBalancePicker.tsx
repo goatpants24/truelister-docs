@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { WhiteBalanceMode } from '../types';
 
@@ -15,7 +15,12 @@ const WB_OPTIONS: { mode: WhiteBalanceMode; label: string; icon: string }[] = [
   { mode: 'incandescent', label: 'Bulb', icon: '💡' },
 ];
 
-export default function WhiteBalancePicker({ selected, onSelect }: Props) {
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized WhiteBalancePicker Component
+ * Wrapping WhiteBalancePicker in memo prevents redundant re-rendering of the 5
+ * white balance mode buttons during camera processing states and parent form re-renders.
+ */
+function WhiteBalancePicker({ selected, onSelect }: Props) {
   const isLocked = selected !== 'auto';
 
   return (
@@ -45,6 +50,8 @@ export default function WhiteBalancePicker({ selected, onSelect }: Props) {
     </View>
   );
 }
+
+export default memo(WhiteBalancePicker);
 
 const styles = StyleSheet.create({
   container: {
