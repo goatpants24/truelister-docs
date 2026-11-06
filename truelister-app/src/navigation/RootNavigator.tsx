@@ -11,6 +11,7 @@ import OnboardingScreen from '../screens/OnboardingScreen';
 import ItemFormScreen from '../screens/ItemFormScreen';
 import DraftsScreen from '../screens/DraftsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import { getDraftItems } from '../services/localStorage';
 import MarketplacesScreen from '../screens/MarketplacesScreen';
 import PublishScreen from '../screens/PublishScreen';
 
@@ -48,8 +49,24 @@ function TabIcon({ label, focused }: { label: string; focused: boolean }) {
 const Tab = createBottomTabNavigator<TabParamList>();
 
 function MainTabs() {
+  const [draftCount, setDraftCount] = React.useState(0);
+
+  const updateDraftCount = React.useCallback(async () => {
+    const drafts = await getDraftItems();
+    setDraftCount(drafts.length);
+  }, []);
+
+  React.useEffect(() => {
+    updateDraftCount();
+  }, [updateDraftCount]);
+
   return (
     <Tab.Navigator
+      screenListeners={{
+        state: () => {
+          updateDraftCount();
+        },
+      }}
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarIcon: ({ focused }) => (
@@ -80,7 +97,19 @@ function MainTabs() {
       <Tab.Screen
         name="Drafts"
         component={DraftsScreen}
-        options={{ title: 'Drafts' }}
+        options={{
+          title: 'Drafts',
+          tabBarBadge: draftCount > 0 ? draftCount : undefined,
+          tabBarBadgeStyle: {
+            backgroundColor: '#4f6ef7',
+            color: '#ffffff',
+            fontSize: 10,
+            fontWeight: '700',
+          },
+          tabBarAccessibilityLabel: draftCount > 0
+            ? `Drafts, ${draftCount} saved draft${draftCount === 1 ? '' : 's'}`
+            : 'Drafts',
+        }}
       />
       <Tab.Screen
         name="Marketplaces"

@@ -77,3 +77,7 @@
 ## 2026-11-05 - [Continuous Keyboard Flow from Currency Inputs to Multiline Notes]
 **Learning:** Numeric or currency inputs (like item price) often default to `returnKeyType="done"`, abruptly terminating the mobile keyboard workflow and requiring a manual tap to reach subsequent text inputs such as Notes. Setting `returnKeyType="next"` with `blurOnSubmit={false}` and forwarding `onSubmitEditing` to downstream text fields keeps the user in a smooth, continuous data-entry rhythm while clear accessibility hints ("Enter item price in dollars") assist screen reader users.
 **Action:** Connect numeric/currency input submissions to downstream text input refs using `returnKeyType="next"` and explicit currency accessibility hints.
+
+## 2026-11-06 - [Navigational Badge and Accessible Label for Offline Draft Awareness]
+**Learning:** In offline-first apps where items can be staged or saved locally without syncing to Google Sheets, users easily lose track of pending unsynced drafts when navigating other sections of the app. Placing a dynamic notification badge on the Drafts tab item combined with a state-aware `tabBarAccessibilityLabel` (e.g. "Drafts, 2 saved drafts") ensures users and assistive screen readers receive immediate awareness of pending work without cluttering screen real estate.
+**Action:** Connect bottom navigation tabs to local storage counts with dynamic `tabBarBadge` and descriptive `tabBarAccessibilityLabel` announcements whenever items require offline visibility.
