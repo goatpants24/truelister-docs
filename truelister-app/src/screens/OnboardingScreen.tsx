@@ -73,6 +73,21 @@ export default function OnboardingScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Step progress indicator */}
+      <View
+        style={styles.progressContainer}
+        accessible={true}
+        accessibilityRole="progressbar"
+        accessibilityLabel={`Step ${step} of 2: ${step === 1 ? 'Connect your Catalog' : 'Enable Saving'}`}
+        accessibilityValue={{ min: 1, max: 2, now: step }}
+      >
+        <View style={[styles.progressTrack, step >= 1 && styles.progressTrackActive]} />
+        <View style={[styles.progressTrack, step >= 2 && styles.progressTrackActive]} />
+      </View>
+      <Text style={styles.stepIndicatorText} accessibilityElementsHidden={true} importantForAccessibility="no">
+        STEP {step} OF 2
+      </Text>
+
       <Text style={styles.emoji} accessibilityElementsHidden={true} importantForAccessibility="no">
         {step === 1 ? '📊' : '🚀'}
       </Text>
@@ -122,16 +137,27 @@ export default function OnboardingScreen() {
         <Text style={styles.buttonText}>{step === 1 ? 'Next' : 'Finish Setup'}</Text>
       </TouchableOpacity>
 
-      {step === 1 && (
+      {step === 1 ? (
         <TouchableOpacity
-          style={styles.skip}
+          style={styles.secondaryAction}
           onPress={() => setStep(2)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
           accessibilityLabel="Use default demo sheet"
           accessibilityHint="Skips URL configuration and uses demo catalog"
         >
-          <Text style={styles.skipText}>Use default demo sheet</Text>
+          <Text style={styles.secondaryActionText}>Use default demo sheet</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={styles.secondaryAction}
+          onPress={() => setStep(1)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Back to step 1"
+          accessibilityHint="Returns to catalog sheet configuration"
+        >
+          <Text style={styles.secondaryActionText}>← Back to Step 1</Text>
         </TouchableOpacity>
       )}
     </ScrollView>
@@ -141,6 +167,29 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117' },
   content: { padding: 40, alignItems: 'center', justifyContent: 'center', minHeight: '100%' },
+  progressContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    maxWidth: 240,
+    gap: 8,
+    marginBottom: 8,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#2a2d3a',
+  },
+  progressTrackActive: {
+    backgroundColor: '#4f6ef7',
+  },
+  stepIndicatorText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 16,
+  },
   emoji: { fontSize: 64, marginBottom: 24 },
   title: { fontSize: 28, fontWeight: '800', color: '#e8eaf6', textAlign: 'center', marginBottom: 12 },
   subtitle: { fontSize: 16, color: '#94a3b8', textAlign: 'center', marginBottom: 32, lineHeight: 24 },
@@ -186,6 +235,6 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: { color: 'white', fontSize: 16, fontWeight: '700' },
-  skip: { marginTop: 20 },
-  skipText: { color: '#6b7280', fontSize: 14, fontWeight: '500' },
+  secondaryAction: { marginTop: 20 },
+  secondaryActionText: { color: '#6b7280', fontSize: 14, fontWeight: '500' },
 });
