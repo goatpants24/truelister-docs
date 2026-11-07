@@ -126,9 +126,8 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     // Query intermediate size only when image manipulation actually occurred
     resultSize = await getFileSize(intermediateUri);
   }
-
-  // Bolt: Reuse originalSize if resizing was skipped (intermediateUri === uri) to avoid redundant FileSystem stat call.
-  let resultSize = intermediateUri === uri ? originalSize : await getFileSize(intermediateUri);
+  // Bolt: If resizing was skipped (intermediateUri === uri), resultSize already holds originalSize,
+  // avoiding a redundant FileSystem stat call.
 
   // If already under target size, we are done
   if (resultSize <= TARGET_SIZE_BYTES) {
