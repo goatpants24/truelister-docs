@@ -77,3 +77,7 @@
 ## 2026-11-05 - [Continuous Keyboard Flow from Currency Inputs to Multiline Notes]
 **Learning:** Numeric or currency inputs (like item price) often default to `returnKeyType="done"`, abruptly terminating the mobile keyboard workflow and requiring a manual tap to reach subsequent text inputs such as Notes. Setting `returnKeyType="next"` with `blurOnSubmit={false}` and forwarding `onSubmitEditing` to downstream text fields keeps the user in a smooth, continuous data-entry rhythm while clear accessibility hints ("Enter item price in dollars") assist screen reader users.
 **Action:** Connect numeric/currency input submissions to downstream text input refs using `returnKeyType="next"` and explicit currency accessibility hints.
+
+## 2026-11-06 - [Onboarding Progression and Bidirectional Navigation Flow]
+**Learning:** In multi-step onboarding wizards, omitting explicit progress indicators creates uncertainty about completion effort, while lacking a back button traps users who need to modify inputs from an earlier step (e.g. correcting a Google Sheet URL). Pairing a visual progress bar (`accessibilityRole="progressbar"`, dynamic `accessibilityValue`, and textual step announcement) with a bidirectional navigation option prevents dead-end frustration and ensures users know exactly where they are in the setup journey.
+**Action:** Always provide an accessible progress indicator (`accessibilityRole="progressbar"`) and an accessible back navigation control on non-initial steps in multi-step onboarding or setup flows.
