@@ -138,14 +138,25 @@ export default function OnboardingScreen() {
 
       {step === 1 ? (
         <TouchableOpacity
-          style={styles.skip}
+          style={styles.secondaryAction}
           onPress={() => setStep(2)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
           accessibilityLabel="Use default demo sheet"
           accessibilityHint="Skips URL configuration and uses demo catalog"
         >
-          <Text style={styles.skipText}>Use default demo sheet</Text>
+          <Text style={styles.secondaryActionText}>Use default demo sheet</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={styles.secondaryAction}
+          onPress={() => setStep(1)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Back to step 1"
+          accessibilityHint="Returns to catalog sheet configuration"
+        >
+          <Text style={styles.secondaryActionText}>← Back to Step 1</Text>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
