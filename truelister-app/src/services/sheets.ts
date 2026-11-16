@@ -37,6 +37,20 @@ const SHEETS_CSV_URL = (spreadsheetId: string, sheet: string) =>
   `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
 
 /**
+ * Helper to slice and trim a substring in a single pass without allocating
+ * intermediate untrimmed string objects or allocating for empty cells.
+ */
+function trimSlice(str: string, start: number, end: number): string {
+  while (start < end && str.charCodeAt(start) <= 32) {
+    start++;
+  }
+  while (end > start && str.charCodeAt(end - 1) <= 32) {
+    end--;
+  }
+  return start < end ? str.slice(start, end) : '';
+}
+
+/**
  * Optimized CSV parser that operates in a single pass over the raw string.
  * Bolt: Uses a fast-path scanner when no double quotes are present (!csv.includes('"')),
  * scanning line by line and slicing cell values directly without character-by-character
