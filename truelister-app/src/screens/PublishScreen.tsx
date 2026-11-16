@@ -1,4 +1,4 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useMemo } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,12 @@ const MARKETPLACE_MAP = new Map<MarketplaceId, MarketplaceMeta>(
 );
 
 /**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Module-level Marketplace IDs
+ * Hoisted array reference for bulk platform selection toggling.
+ */
+const ALL_MARKETPLACE_IDS: MarketplaceId[] = MARKETPLACES.map(m => m.id);
+
+/**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized PlatformCard Component
  * Prevents re-rendering all platform cards when a single platform is toggled.
  */
@@ -45,9 +51,11 @@ const PlatformCard = memo(({
     ]}
     onPress={() => onToggle(marketplace.id)}
     activeOpacity={0.7}
+    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
     accessibilityRole="button"
     accessibilityLabel={marketplace.name}
     accessibilityState={{ selected: isSelected }}
+    accessibilityHint={isSelected ? `Deselects ${marketplace.name} for publishing` : `Selects ${marketplace.name} for publishing`}
   >
     <Text style={[styles.platformName, isSelected && { color: marketplace.color }]}>
       {isSelected ? '✓ ' : ''}{marketplace.name}
@@ -69,9 +77,11 @@ export default function PublishScreen({ route, navigation }: Props) {
   const [publishing, setPublishing] = useState(false);
   const [results, setResults] = useState<ListingResult[] | null>(null);
 
+  const allSelected = selected.size === ALL_MARKETPLACE_IDS.length;
+
   /**
-   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Toggle Callback
-   * Wrapping toggleMarketplace in useCallback ensures PlatformCard referential stability.
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Stabilized Toggle Callbacks
+   * Wrapping toggleMarketplace and toggleSelectAll in useCallback ensures PlatformCard referential stability.
    */
   const toggleMarketplace = useCallback((id: MarketplaceId) => {
     setSelected(prev => {
@@ -81,7 +91,11 @@ export default function PublishScreen({ route, navigation }: Props) {
     });
   }, []);
 
-  const handlePublish = async () => {
+  const toggleSelectAll = useCallback(() => {
+    setSelected(allSelected ? new Set() : new Set(ALL_MARKETPLACE_IDS));
+  }, [allSelected]);
+
+  const handlePublish = useCallback(async () => {
     if (selected.size === 0) {
       Alert.alert('No Platforms Selected', 'Select at least one marketplace to publish to.');
       return;
@@ -96,10 +110,26 @@ export default function PublishScreen({ route, navigation }: Props) {
     } finally {
       setPublishing(false);
     }
-  };
+  }, [selected, item]);
 
-  const successCount = results?.filter(r => r.success).length ?? 0;
-  const failCount = results?.filter(r => !r.success).length ?? 0;
+  /**
+   * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass Result Counter
+   * Computes success and failure counts in a single O(N) pass inside useMemo using a single loop over results.
+   * Eliminates dual .filter() array heap allocations on every re-render pass.
+   */
+  const { successCount, failCount } = useMemo(() => {
+    if (!results) return { successCount: 0, failCount: 0 };
+    let success = 0;
+    let fail = 0;
+    for (let i = 0; i < results.length; i++) {
+      if (results[i].success) {
+        success++;
+      } else {
+        fail++;
+      }
+    }
+    return { successCount: success, failCount: fail };
+  }, [results]);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -107,7 +137,20 @@ export default function PublishScreen({ route, navigation }: Props) {
       <Text style={styles.itemTitle} numberOfLines={2}>{item.title ?? `Item #${item.itemNumber}`}</Text>
 
       {/* Platform selector */}
-      <Text style={styles.sectionLabel}>Select Platforms</Text>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionLabel}>Select Platforms</Text>
+        <TouchableOpacity
+          onPress={toggleSelectAll}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={allSelected ? "Deselect all platforms" : "Select all platforms"}
+          accessibilityHint={allSelected ? "Deselects all marketplaces at once" : "Selects all marketplaces at once for cross-listing"}
+        >
+          <Text style={styles.selectAllText}>
+            {allSelected ? 'Deselect All' : 'Select All'}
+          </Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.platformGrid}>
         {MARKETPLACES.map(m => (
           <PlatformCard
@@ -136,7 +179,10 @@ export default function PublishScreen({ route, navigation }: Props) {
           accessibilityState={{ disabled: publishing || selected.size === 0 }}
         >
           {publishing ? (
-            <ActivityIndicator color="#fff" />
+            <View style={styles.publishingContent}>
+              <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.publishBtnText}>Publishing…</Text>
+            </View>
           ) : (
             <Text style={styles.publishBtnText}>
               {selected.size === 0
@@ -167,15 +213,18 @@ export default function PublishScreen({ route, navigation }: Props) {
                   r.success ? styles.resultSuccess : styles.resultFail,
                 ]}
               >
-                <Text style={[styles.resultName, { color: meta.color }]}>{meta.name}</Text>
+                <Text style={[styles.resultName, { color: meta ? meta.color : '#e8eaf6' }]}>
+                  {meta ? meta.name : r.marketplace}
+                </Text>
                 {r.success ? (
                   <>
                     <Text style={styles.resultOk}>✓ Published as draft</Text>
                     {r.listingUrl && (
                       <TouchableOpacity
                         onPress={() => Linking.openURL(r.listingUrl!)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         accessibilityRole="link"
-                        accessibilityLabel={`View listing on ${meta.name}`}
+                        accessibilityLabel={`View listing on ${meta ? meta.name : r.marketplace}`}
                         accessibilityHint="Opens in your browser"
                       >
                         <Text style={styles.resultLink}>View listing ↗</Text>
@@ -192,8 +241,10 @@ export default function PublishScreen({ route, navigation }: Props) {
           <TouchableOpacity
             style={styles.doneBtn}
             onPress={() => navigation.goBack()}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Done publishing, return to previous screen"
+            accessibilityHint="Returns to the previous screen"
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
@@ -208,7 +259,14 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 48 },
   pageTitle: { fontSize: 26, fontWeight: '800', color: '#e8eaf6', marginBottom: 4 },
   itemTitle: { fontSize: 15, color: '#6b7280', marginBottom: 24 },
-  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#6b7280', marginBottom: 10, letterSpacing: 0.5, textTransform: 'uppercase' },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sectionLabel: { fontSize: 13, fontWeight: '700', color: '#6b7280', letterSpacing: 0.5, textTransform: 'uppercase' },
+  selectAllText: { fontSize: 13, fontWeight: '600', color: '#60a5fa' },
   platformGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
   platformBtn: {
     width: '47%',
@@ -228,6 +286,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   publishBtnDisabled: { opacity: 0.6 },
+  publishingContent: { flexDirection: 'row', alignItems: 'center' },
   publishBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   resultsSection: { gap: 12 },
   resultsSummary: {

@@ -41,3 +41,43 @@
 ## 2026-07-21 - [Dynamic Proactive Feedback for Action Buttons]
 **Learning:** In multi-selection actions (like marketplace publishing), disabling the action button when 0 items are selected and dynamically updating its label to actionable instructions (e.g. "Select a Platform to Publish") guides users proactively and eliminates unnecessary alert modals.
 **Action:** Disable action buttons when prerequisites are missing, dynamically update their text to describe the required action, and pair with appropriate `accessibilityState={{ disabled: boolean }}` and `accessibilityLabel` attributes.
+
+## 2026-07-22 - [Dynamic Accessibility Hints for Platform Selection]
+**Learning:** In grid-based platform selection cards, pairing state-dependent `accessibilityHint` strings (e.g. "Selects eBay for publishing" vs "Deselects eBay for publishing") with `hitSlop` expanded touch targets provides screen reader users clear expectations of toggle outcomes while reducing tap accuracy friction on mobile screens.
+**Action:** Provide dynamic state-dependent `accessibilityHint` descriptions for toggleable cards or chips, and always apply `hitSlop` to small or grid-aligned touch targets.
+
+## 2026-07-23 - [Single-Tap Bulk Toggling for Multi-Platform Selection]
+**Learning:** When users cross-list items across multiple platforms, toggling individual platform chips one by one can be tedious. Adding a single-tap "Select All / Deselect All" header action with state-aware text and screen reader labels provides an efficient shortcut while keeping selection state clear.
+**Action:** Provide a bulk "Select All / Deselect All" toggle action alongside multi-select section headers, using a module-level constant for target IDs to avoid allocations and providing descriptive state-aware `accessibilityHint` props.
+
+## 2026-07-24 - [Inline Credential Visibility Toggle for Secure Inputs]
+**Learning:** Entering complex API tokens, passwords, or secret keys on mobile devices without visual confirmation often leads to frustration from mistyped characters. Providing an inline visibility toggle button (👁️ / 🙈) with state-aware `accessibilityLabel`, `accessibilityHint`, and expanded `hitSlop` gives users control and confidence while maintaining accessibility standards.
+**Action:** Include inline password/secret visibility toggle buttons on all secure input fields, using dynamic `accessibilityLabel` ("Show/Hide [Field]") and `accessibilityHint` to clarify action outcomes for assistive technologies.
+
+## 2026-07-25 - [Settings Unsaved Navigation Protection and Auto-Save on Test]
+**Learning:** Users editing settings like API/script URLs often tap "Test Connection" to check new credentials without realizing the test executes against previously saved storage values. Automatically persisting changes before testing and pairing state-driven save button visual indicators ("Settings Up to Date" vs "Save Settings") with `usePreventRemove` navigation protection prevents data loss and avoids testing stale configurations.
+**Action:** Automatically persist dirty configurations before executing test actions, protect unsaved changes with `usePreventRemove` navigation prompts, and dynamically toggle action button state/labels ("Settings Up to Date") when unmodified.
+
+## 2026-07-26 - [Automated Field Title Suggestion and Web Dialog Fallback]
+**Learning:** Placeholders or dead-end "coming soon" buttons frustrate users trying to fill out listing details quickly. Automatically composing a title suggestion from filled metadata (brand, color, category, fabric, size) with character limits (80 chars) and cross-platform web dialog fallbacks (`window.confirm`/`window.alert`) turns a placeholder into an instant productivity boost.
+**Action:** Replace placeholder feature alerts with functional client-side assist helpers that aggregate existing input fields, enforce character limits, and support cross-platform dialog fallbacks.
+
+## 2026-07-27 - [Catalog Total Inventory Count Badge & Accessible Hints]
+**Learning:** Displaying a top-level section header with a total item count badge (e.g., "Catalog" + "12 items") gives mobile users immediate clarity on overall dataset size without requiring scrolling to the bottom of virtualized lists. Combining visual count badges with polite screen-reader announcements (`accessibilityRole="text"` + `accessibilityLabel="Total inventory: N items"`) and actionable `accessibilityHint` props on primary control buttons creates an intuitive and accessible browsing experience.
+**Action:** Pair visual collection count pill badges with state-aware screen reader announcements (`accessibilityLabel` & `accessibilityRole="text"`) at the top of primary list screens.
+
+## 2026-07-28 - [Multi-Photo Horizontal Gallery Preview]
+**Learning:** In multi-photo item capture workflows, restricting preview images to a single photo field (such as `photoUrlCard`) obscures secondary captured photos (Front, Back, Detail, Tabletop), causing user confusion over photo capture state. Providing a horizontal scrollable thumbnail gallery displaying all captured photos with field badges and accessible clear buttons (`✕`) gives immediate visual confirmation and management without consuming vertical form space.
+**Action:** Render a horizontal thumbnail gallery for multi-photo capture forms, showing field labels, accessible clear buttons with `hitSlop`, and state-aware screen reader hints.
+
+## 2026-07-29 - [Exposing OCR Scanned Properties in Form Inputs]
+**Learning:** Automated extraction features like OCR tag scanning populate metadata fields (such as fabric composition and garment measurements) into item models, but if those fields lack dedicated form inputs, users cannot review, verify, or correct auto-detected values. Exposing these properties in compact multi-column rows with descriptive placeholder examples and explicit `accessibilityLabel` attributes empowers users to inspect and refine OCR-extracted catalog details before saving or publishing.
+**Action:** Ensure all properties populated by automated extraction tools (OCR, AI, barcode scanners) have corresponding editable input fields with descriptive placeholders and clear accessibility labels.
+
+## 2026-11-05 - [Continuous Keyboard Flow from Currency Inputs to Multiline Notes]
+**Learning:** Numeric or currency inputs (like item price) often default to `returnKeyType="done"`, abruptly terminating the mobile keyboard workflow and requiring a manual tap to reach subsequent text inputs such as Notes. Setting `returnKeyType="next"` with `blurOnSubmit={false}` and forwarding `onSubmitEditing` to downstream text fields keeps the user in a smooth, continuous data-entry rhythm while clear accessibility hints ("Enter item price in dollars") assist screen reader users.
+**Action:** Connect numeric/currency input submissions to downstream text input refs using `returnKeyType="next"` and explicit currency accessibility hints.
+
+## 2026-11-06 - [Onboarding Step Progress Bar and Back Navigation]
+**Learning:** Multi-step setup wizards without explicit progress disclosure create uncertainty about completion length, and lacking a back navigation control traps users if they make a mistake in prior steps. Providing a dual-segment progress bar with `accessibilityRole="progressbar"`, dynamic `accessibilityValue={{ min: 1, max: 2, now: step }}`, and a back button with `accessibilityRole="button"`, `hitSlop`, and descriptive `accessibilityHint` prevents dead-end trap states and clarifies wizard progression for all users.
+**Action:** Always include a visual and screen-reader accessible progress bar (`accessibilityRole="progressbar"`) and a clear back navigation path in multi-step onboarding flows.
