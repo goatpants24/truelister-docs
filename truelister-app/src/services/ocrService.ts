@@ -136,16 +136,21 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   }
 
   // ── Fabric/Material Detection ──
-  const fabricMatches: string[] = [];
-  let percentMatch;
-  PERCENT_PATTERN.lastIndex = 0;
-  while ((percentMatch = PERCENT_PATTERN.exec(text)) !== null) {
-    fabricMatches.push(`${percentMatch[1]}% ${percentMatch[2]}`);
+  // Bolt: Fast-path check using String.prototype.includes('%') to skip regex execution when no percentages exist.
+  if (text.includes('%')) {
+    const fabricMatches: string[] = [];
+    let percentMatch;
+    PERCENT_PATTERN.lastIndex = 0;
+    while ((percentMatch = PERCENT_PATTERN.exec(text)) !== null) {
+      fabricMatches.push(`${percentMatch[1]}% ${percentMatch[2]}`);
+    }
+
+    if (fabricMatches.length > 0) {
+      result.fabricMaterial = fabricMatches.join(', ');
+    }
   }
 
-  if (fabricMatches.length > 0) {
-    result.fabricMaterial = fabricMatches.join(', ');
-  } else {
+  if (!result.fabricMaterial) {
     /**
      * Bolt Performance Optimization: Zero-Allocation Global Match Scanner
      * Replaces String.prototype.match(FABRIC_REGEX) with an iterative FABRIC_REGEX.exec() loop.
@@ -166,9 +171,12 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   }
 
   // ── Country of Origin ──
-  const madeInMatch = MADE_IN_REGEX.exec(text);
-  if (madeInMatch) {
-    result.notes = `Made in ${madeInMatch[1].trim()}`;
+  // Bolt: Zero-allocation fast-path check using /made/i.test(text) to skip MADE_IN_REGEX evaluation when 'made' is absent.
+  if (/made/i.test(text)) {
+    const madeInMatch = MADE_IN_REGEX.exec(text);
+    if (madeInMatch) {
+      result.notes = `Made in ${madeInMatch[1].trim()}`;
+    }
   }
 
   // ── Care Instructions ──
