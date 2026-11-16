@@ -74,16 +74,17 @@ export default function OnboardingScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View
-        style={styles.progressBarContainer}
+        style={styles.progressContainer}
         accessible={true}
         accessibilityRole="progressbar"
-        accessibilityLabel={`Step ${step} of 2`}
         accessibilityValue={{ min: 1, max: 2, now: step }}
+        accessibilityLabel={`Step ${step} of 2`}
       >
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: step === 1 ? '50%' : '100%' }]} />
+        <Text style={styles.stepText}>STEP {step} OF 2</Text>
+        <View style={styles.progressBar}>
+          <View style={[styles.progressSegment, styles.progressSegmentActive]} />
+          <View style={[styles.progressSegment, step === 2 && styles.progressSegmentActive]} />
         </View>
-        <Text style={styles.progressText}>STEP {step} OF 2</Text>
       </View>
 
       <Text style={styles.emoji} accessibilityElementsHidden={true} importantForAccessibility="no">
@@ -148,14 +149,14 @@ export default function OnboardingScreen() {
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
-          style={styles.skip}
+          style={styles.backButton}
           onPress={() => setStep(1)}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           accessibilityRole="button"
           accessibilityLabel="Back to step 1"
           accessibilityHint="Returns to step 1 to modify Google Sheet URL"
         >
-          <Text style={styles.skipText}>← Back to Step 1</Text>
+          <Text style={styles.backButtonText}>← Back to Step 1</Text>
         </TouchableOpacity>
       )}
     </ScrollView>
@@ -165,10 +166,11 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117' },
   content: { padding: 40, alignItems: 'center', justifyContent: 'center', minHeight: '100%' },
-  progressBarContainer: { width: '100%', alignItems: 'center', marginBottom: 20 },
-  progressTrack: { width: '100%', height: 4, backgroundColor: '#2a2d3a', borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#4f6ef7', borderRadius: 2 },
-  progressText: { color: '#6b7280', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginTop: 8 },
+  progressContainer: { width: '100%', alignItems: 'center', marginBottom: 20 },
+  stepText: { color: '#818cf8', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 8 },
+  progressBar: { flexDirection: 'row', width: 120, height: 4, gap: 6 },
+  progressSegment: { flex: 1, height: '100%', borderRadius: 2, backgroundColor: '#2a2d3a' },
+  progressSegmentActive: { backgroundColor: '#4f6ef7' },
   emoji: { fontSize: 64, marginBottom: 24 },
   title: { fontSize: 28, fontWeight: '800', color: '#e8eaf6', textAlign: 'center', marginBottom: 12 },
   subtitle: { fontSize: 16, color: '#94a3b8', textAlign: 'center', marginBottom: 32, lineHeight: 24 },
@@ -216,4 +218,6 @@ const styles = StyleSheet.create({
   buttonText: { color: 'white', fontSize: 16, fontWeight: '700' },
   skip: { marginTop: 20 },
   skipText: { color: '#6b7280', fontSize: 14, fontWeight: '500' },
+  backButton: { marginTop: 20, padding: 8 },
+  backButtonText: { color: '#94a3b8', fontSize: 14, fontWeight: '600' },
 });
