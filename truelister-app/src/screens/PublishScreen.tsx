@@ -213,7 +213,9 @@ export default function PublishScreen({ route, navigation }: Props) {
                   r.success ? styles.resultSuccess : styles.resultFail,
                 ]}
               >
-                <Text style={[styles.resultName, { color: meta.color }]}>{meta.name}</Text>
+                <Text style={[styles.resultName, { color: meta ? meta.color : '#e8eaf6' }]}>
+                  {meta ? meta.name : r.marketplace}
+                </Text>
                 {r.success ? (
                   <>
                     <Text style={styles.resultOk}>✓ Published as draft</Text>
@@ -222,7 +224,7 @@ export default function PublishScreen({ route, navigation }: Props) {
                         onPress={() => Linking.openURL(r.listingUrl!)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         accessibilityRole="link"
-                        accessibilityLabel={`View listing on ${meta.name}`}
+                        accessibilityLabel={`View listing on ${meta ? meta.name : r.marketplace}`}
                         accessibilityHint="Opens in your browser"
                       >
                         <Text style={styles.resultLink}>View listing ↗</Text>
