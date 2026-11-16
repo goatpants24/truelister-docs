@@ -179,7 +179,10 @@ export default function PublishScreen({ route, navigation }: Props) {
           accessibilityState={{ disabled: publishing || selected.size === 0 }}
         >
           {publishing ? (
-            <ActivityIndicator color="#fff" />
+            <View style={styles.publishingContent}>
+              <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+              <Text style={styles.publishBtnText}>Publishing…</Text>
+            </View>
           ) : (
             <Text style={styles.publishBtnText}>
               {selected.size === 0
@@ -281,6 +284,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   publishBtnDisabled: { opacity: 0.6 },
+  publishingContent: { flexDirection: 'row', alignItems: 'center' },
   publishBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   resultsSection: { gap: 12 },
   resultsSummary: {
