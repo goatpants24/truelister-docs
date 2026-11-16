@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -39,24 +39,36 @@ function StatusBadge({ status }: { status: MarketplaceMeta['apiStatus'] }) {
 
 // ── Single Marketplace Card ───────────────────────────────────────────────────
 
-function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized MarketplaceCard Component
+ * Prevents re-rendering all marketplace cards when an individual card's form value
+ * or credentials state changes.
+ */
+const MarketplaceCard = React.memo(function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const [showSecure, setShowSecure] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [secureVisible, setSecureVisible] = useState<Record<string, boolean>>({});
+
+  const fieldKeys = React.useMemo(
+    () => marketplace.credentialFields.map(f => f.key),
+    [marketplace.credentialFields]
+  );
 
   useEffect(() => {
     (async () => {
-      const creds = await loadCredentials(
-        marketplace.id,
-        marketplace.credentialFields.map(f => f.key)
-      );
+      const creds = await loadCredentials(marketplace.id, fieldKeys);
       setValues(creds);
       setLoading(false);
     })();
-  }, [marketplace.id]);
+  }, [marketplace.id, fieldKeys]);
 
   const handleSave = async () => {
+    setSaving(true);
     await saveCredentials(marketplace.id, values);
+    setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -75,6 +87,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
             const empty: Record<string, string> = {};
             marketplace.credentialFields.forEach(f => { empty[f.key] = ''; });
             setValues(empty);
+            setShowSecure({});
           },
         },
       ]
@@ -100,6 +113,7 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
       {/* Docs link */}
       <TouchableOpacity
         onPress={() => Linking.openURL(marketplace.docsUrl)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         accessibilityRole="link"
         accessibilityLabel={`View API documentation for ${marketplace.name}`}
         accessibilityHint="Opens in your browser"
@@ -145,48 +159,73 @@ function MarketplaceCard({ marketplace }: { marketplace: MarketplaceMeta }) {
       )}
 
       {/* Credential fields */}
-      {marketplace.credentialFields.map(field => (
-        <View key={field.key} style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>{field.label}</Text>
-          {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
-          <TextInput
-            style={styles.input}
-            value={values[field.key] ?? ''}
-            onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
-            placeholder={field.placeholder}
-            placeholderTextColor="#4a4d60"
-            autoCapitalize="none"
-            autoCorrect={false}
-            secureTextEntry={field.secure}
-            keyboardType={field.key === 'email' ? 'email-address' : 'default'}
-            accessibilityLabel={field.label}
-            accessibilityHint={field.hint || undefined}
-          />
-        </View>
-      ))}
+      {marketplace.credentialFields.map(field => {
+        const isVisible = !!secureVisible[field.key];
+        return (
+          <View key={field.key} style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>{field.label}</Text>
+            {field.hint && <Text style={styles.fieldHint}>{field.hint}</Text>}
+            <View style={field.secure ? styles.secureInputContainer : undefined}>
+              <TextInput
+                style={[styles.input, field.secure && styles.secureInput]}
+                value={values[field.key] ?? ''}
+                onChangeText={v => setValues(prev => ({ ...prev, [field.key]: v }))}
+                placeholder={field.placeholder}
+                placeholderTextColor="#4a4d60"
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={field.secure && !isVisible}
+                keyboardType={field.key === 'email' ? 'email-address' : 'default'}
+                accessibilityLabel={field.label}
+                accessibilityHint={field.hint || undefined}
+              />
+              {field.secure && (
+                <TouchableOpacity
+                  style={styles.secureToggleBtn}
+                  onPress={() => setSecureVisible(prev => ({ ...prev, [field.key]: !prev[field.key] }))}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={isVisible ? `Hide ${field.label}` : `Show ${field.label}`}
+                  accessibilityHint={isVisible ? "Masks credential text" : "Reveals credential text"}
+                >
+                  <Text style={styles.secureToggleIcon}>{isVisible ? '🙈' : '👁️'}</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        );
+      })}
 
       {/* Actions */}
       <View style={styles.cardActions}>
         <TouchableOpacity
-          style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
+          style={[styles.saveBtn, saved && styles.saveBtnSuccess, (saving || saved) && { opacity: 0.8 }]}
           onPress={handleSave}
+          disabled={saving || saved}
           accessibilityRole="button"
-          accessibilityLabel={saved ? `Saved ${marketplace.name} credentials` : `Save ${marketplace.name} credentials`}
+          accessibilityLabel={saving ? `Saving ${marketplace.name} credentials` : saved ? `Saved ${marketplace.name} credentials` : `Save ${marketplace.name} credentials`}
+          accessibilityHint={`Saves API credentials for ${marketplace.name} locally`}
+          accessibilityState={{ disabled: saving || saved }}
         >
-          <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
+          {saving ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save'}</Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.clearBtn}
           onPress={handleClear}
           accessibilityRole="button"
           accessibilityLabel={`Clear ${marketplace.name} credentials`}
+          accessibilityHint={`Removes saved credentials for ${marketplace.name}`}
         >
           <Text style={styles.clearBtnText}>Clear</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
-}
+});
 
 // ── Main Screen ───────────────────────────────────────────────────────────────
 
@@ -285,6 +324,10 @@ const styles = StyleSheet.create({
   fieldGroup: { marginBottom: 12 },
   fieldLabel: { fontSize: 13, fontWeight: '600', color: '#c8cae0', marginBottom: 3 },
   fieldHint: { fontSize: 11, color: '#4a4d60', marginBottom: 5, lineHeight: 15 },
+  inputWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   input: {
     backgroundColor: '#0f1117',
     borderRadius: 10,
@@ -295,6 +338,23 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#e8eaf6',
     fontFamily: 'Courier',
+  },
+  secureInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  secureInput: {
+    flex: 1,
+    paddingRight: 40,
+  },
+  secureToggleBtn: {
+    position: 'absolute',
+    right: 12,
+    padding: 4,
+  },
+  secureToggleIcon: {
+    fontSize: 16,
   },
   cardActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
   saveBtn: {

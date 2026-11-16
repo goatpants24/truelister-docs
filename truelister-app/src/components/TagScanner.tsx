@@ -92,6 +92,13 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
       result.confidence === 'high' ? '#4ade80' :
       result.confidence === 'medium' ? '#fbbf24' : '#f87171';
 
+    /**
+     * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-pass Entries Evaluation
+     * Evaluates Object.entries once into a constant to prevent duplicate array allocations
+     * during conditional rendering.
+     */
+    const parsedEntries = Object.entries(result.parsedFields);
+
     return (
       <View style={styles.container}>
         <ScrollView contentContainerStyle={styles.resultContainer}>
@@ -104,12 +111,18 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
             </Text>
           </View>
 
-          <Image source={{ uri: result.imageUri }} style={styles.tagPreview} resizeMode="contain" />
+          <Image
+            source={{ uri: result.imageUri }}
+            style={styles.tagPreview}
+            resizeMode="contain"
+            accessible={true}
+            accessibilityLabel="Preview of scanned clothing tag"
+          />
 
           {/* Detected Fields */}
           <Text style={styles.sectionLabel}>Detected Fields</Text>
-          {Object.entries(result.parsedFields).length > 0 ? (
-            Object.entries(result.parsedFields).map(([key, value]) => (
+          {parsedEntries.length > 0 ? (
+            parsedEntries.map(([key, value]) => (
               <View key={key} style={styles.fieldRow}>
                 <Text style={styles.fieldKey}>{formatFieldName(key)}</Text>
                 <Text style={styles.fieldValue}>{String(value)}</Text>
@@ -126,10 +139,24 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
           </View>
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.buttonSecondary} onPress={handleRescan}>
+            <TouchableOpacity
+              style={styles.buttonSecondary}
+              onPress={handleRescan}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Rescan tag photo"
+              accessibilityHint="Returns to camera to take a new photo of the tag"
+            >
               <Text style={styles.buttonSecondaryText}>Rescan</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={handleAccept}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleAccept}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel="Use detected fields in item form"
+              accessibilityHint="Populates item form fields with auto-detected values"
+            >
               <Text style={styles.buttonText}>Use These Fields</Text>
             </TouchableOpacity>
           </View>
@@ -143,10 +170,24 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
     return (
       <View style={styles.container}>
         <Text style={styles.permissionText}>Camera access needed to scan tags.</Text>
-        <TouchableOpacity style={styles.button} onPress={requestPermission}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={requestPermission}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Grant camera permission"
+          accessibilityHint="Requests camera permission to scan clothing tags"
+        >
           <Text style={styles.buttonText}>Grant Permission</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.buttonSecondary} onPress={onCancel}>
+        <TouchableOpacity
+          style={styles.buttonSecondary}
+          onPress={onCancel}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel tag scan"
+          accessibilityHint="Exits tag scanner and returns to item form"
+        >
           <Text style={styles.buttonSecondaryText}>Cancel</Text>
         </TouchableOpacity>
       </View>
@@ -160,6 +201,8 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
           onPress={onCancel}
           accessibilityRole="button"
           accessibilityLabel="Cancel tag scan"
+          accessibilityHint="Exits tag scanner and returns to item form"
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
@@ -192,20 +235,27 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
         <WhiteBalancePicker selected={whiteBalance} onSelect={setWhiteBalance} />
         <View style={styles.captureRow}>
           <TouchableOpacity
-            style={styles.libraryButton}
+            style={[styles.libraryButton, scanning && { opacity: 0.5 }]}
             onPress={handlePickImage}
+            disabled={scanning}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
             accessibilityLabel="Open photo library"
+            accessibilityHint="Selects an existing tag image from your device photo library"
+            accessibilityState={{ disabled: scanning }}
           >
             <Text style={styles.libraryIcon}>🖼</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.captureButton}
+            style={[styles.captureButton, scanning && { opacity: 0.5 }]}
             onPress={handleCapture}
             disabled={scanning}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Capture photo and scan tag"
+            accessibilityLabel={scanning ? 'Scanning tag photo...' : 'Capture photo and scan tag'}
+            accessibilityHint="Captures a photo of the clothing tag and runs OCR field extraction"
+            accessibilityState={{ disabled: scanning }}
           >
             <View style={styles.captureInner}>
               <Text style={styles.captureLabel}>SCAN</Text>
@@ -219,8 +269,30 @@ export default function TagScanner({ onFieldsDetected, onCancel }: Props) {
   );
 }
 
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: O(1) Field Name Map Lookup
+ * Module-level map of standard CatalogItem property keys to display labels.
+ * Bypasses regex evaluation during scan result rendering.
+ */
+const FIELD_NAME_MAP: Record<string, string> = {
+  designerBrand: 'Designer Brand',
+  fabricMaterial: 'Fabric Material',
+  notes: 'Notes',
+  size: 'Size',
+  category: 'Category',
+  color: 'Color',
+  condition: 'Condition',
+  price: 'Price',
+  title: 'Title',
+  measurements: 'Measurements',
+  saleStatus: 'Sale Status',
+  marketplace: 'Marketplace',
+  dateListed: 'Date Listed',
+  photoUrl: 'Photo URL',
+};
+
 function formatFieldName(key: string): string {
-  return key
+  return FIELD_NAME_MAP[key] || key
     .replace(/([A-Z])/g, ' $1')
     .replace(/^./, s => s.toUpperCase())
     .trim();
