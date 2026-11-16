@@ -95,7 +95,7 @@ export default function PublishScreen({ route, navigation }: Props) {
     setSelected(allSelected ? new Set() : new Set(ALL_MARKETPLACE_IDS));
   }, [allSelected]);
 
-  const handlePublish = async () => {
+  const handlePublish = useCallback(async () => {
     if (selected.size === 0) {
       Alert.alert('No Platforms Selected', 'Select at least one marketplace to publish to.');
       return;
@@ -110,7 +110,7 @@ export default function PublishScreen({ route, navigation }: Props) {
     } finally {
       setPublishing(false);
     }
-  };
+  }, [selected, item]);
 
   /**
    * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass Result Counter
