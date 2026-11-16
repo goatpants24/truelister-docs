@@ -32,6 +32,10 @@
 **Learning:** In React Native/Expo, simply disabling a button using the `disabled` prop does not automatically inform screen readers (VoiceOver or TalkBack) that the button is interactive/inactive. Providing an explicit `accessibilityState={{ disabled: isBtnDisabled }}` ensures that assistive technologies correctly announce the button's current state to users.
 **Action:** Always accompany `disabled` props on touchable elements with matching `accessibilityState={{ disabled }}` attributes to maintain high accessibility.
 
-## 2026-07-28 - Zero-Selection Action Button Guidance
-**Learning:** When multi-selection controls govern a primary submit action button, disabling the button when 0 items/platforms are selected and dynamically updating its text (e.g., 'Select a Platform to Publish') clearly guides users on required prior steps without relying on error alerts after invalid taps.
-**Action:** Pair multi-select controls with conditionally disabled submit buttons and descriptive label text when zero options are selected.
+## 2026-07-28 - Undo/Redo History Counter and Touch Target UX
+**Learning:** Compact toolbar controls like Undo/Redo buttons often suffer from small touch targets on mobile displays and non-descriptive screen reader output for numerical badge counters. Adding `hitSlop` touch expansion, `accessibilityHint` descriptors, and `accessible={true}` text labels to history counts makes undo/redo controls significantly more accessible and forgiving to tap.
+**Action:** Always add `hitSlop` to small toolbar action buttons and ensure numeric history/counter badges are wrapped with explicit `accessibilityLabel` attributes for screen reader clarity.
+
+## 2026-08-02 - Tag Scanner Feedback and Touch Target Expansion
+**Learning:** In camera and scanning flows, async processes (like OCR tag reading) need clear visual dimming (`opacity: 0.5`) and explicit screen reader status announcements (`accessibilityState={{ disabled: scanning }}` and dynamic labels like 'Scanning tag photo...'). Expanding header cancel buttons with `hitSlop` ensures reliable touch targets during camera modes.
+**Action:** Always dim and disable secondary controls during async image operations and add `hitSlop` to camera header close/cancel controls.
