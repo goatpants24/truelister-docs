@@ -15,7 +15,7 @@ const FABRIC_KEYWORDS = [
   'chiffon', 'satin', 'velvet', 'fleece', 'jersey', 'tweed', 'organza',
 ];
 
-const CARE_KEYWORDS_BASE = [
+const CARE_KEYWORDS = [
   'machine wash', 'hand wash', 'dry clean', 'tumble dry', 'bleach',
   'iron', 'cold', 'warm', 'hot', 'hang dry', 'lay flat to dry',
   'low heat', 'no bleach', 'gentle cycle', 'wash inside out',
@@ -23,11 +23,16 @@ const CARE_KEYWORDS_BASE = [
   'warm water', 'cold water', 'separate colors',
 ];
 
+/**
+ * Bolt: Reorder SIZE_PATTERNS regexes so specific multi-dimensional (32x30)
+ * and prefixed (EU 40) sizing patterns are evaluated before generic 1-2 digit rules.
+ * This prevents premature matching exits and ensures accurate size extraction.
+ */
 const SIZE_PATTERNS = [
   /\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/i,
-  /\b(size\s*)?(\d{1,2})\b/i,
   /\b(\d{2})\s*[xX×]\s*(\d{2})\b/,
   /\b(EU|EUR)\s*(\d{2})\b/i,
+  /\b(size\s*)?(\d{1,2})\b/i,
 ];
 
 /**
@@ -76,15 +81,14 @@ const FABRIC_REGEX = new RegExp('\\b(' + [...FABRIC_KEYWORDS].sort((a, b) => b.l
 
 const PERCENT_PATTERN = /(\d{1,3})\s*%\s*([a-zA-Z]+)/g;
 
-const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\s]+)/i;
+/**
+ * Bolt: Restrict country extraction capturing group to horizontal whitespace ([\\t ]) instead of \\s.
+ * Restricts country extraction strictly to the current line, preventing multi-line regex backtracking
+ * across large OCR texts and avoiding line bleed into result.notes.
+ */
+const MADE_IN_REGEX = /made\s+in\s+([A-Za-z\t ]+)/i;
 
-const CARE_KEYWORDS = [
-  ...CARE_KEYWORDS_BASE,
-  'line dry', 'do not bleach', 'iron low', 'iron medium', 'iron high', 'warm water',
-  'cold water', 'separate colors',
-];
-
-const CARE_REGEX = new RegExp('\\b(' + [...CARE_KEYWORDS].sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
+const CARE_REGEX = new RegExp('\\b(' + Array.from(new Set(CARE_KEYWORDS)).sort((a, b) => b.length - a.length).join('|') + ')\\b', 'gi');
 
 // ── OCR Text Extraction ──────────────────────────────────────────────────────
 
@@ -108,16 +112,19 @@ export async function extractTextFromImage(imageUri: string): Promise<string> {
 export function parseTagText(rawText: string): Partial<CatalogItem> {
   const text = rawText.trim();
   const result: Partial<CatalogItem> = {};
+  /** Bolt: Early exit guard avoids unnecessary regex executions on empty/blank OCR text */
+  if (!text) return result;
 
   // ── Brand Detection ──
-  const brandMatch = text.match(BRAND_REGEX);
+  // Bolt: Use RegExp.prototype.exec(text) directly on non-global regexes to avoid String.prototype.match wrapper overhead.
+  const brandMatch = BRAND_REGEX.exec(text);
   if (brandMatch) {
     result.designerBrand = BRAND_CONFIG[brandMatch[0].toLowerCase()];
   }
 
   // ── Size Detection ──
   for (let i = 0; i < SIZE_PATTERNS.length; i++) {
-    const match = text.match(SIZE_PATTERNS[i]);
+    const match = SIZE_PATTERNS[i].exec(text);
     if (match) {
       if (match[0].includes('x') || match[0].includes('X') || match[0].includes('×')) {
         result.size = match[0].toUpperCase();
@@ -129,34 +136,65 @@ export function parseTagText(rawText: string): Partial<CatalogItem> {
   }
 
   // ── Fabric/Material Detection ──
-  const fabricMatches: string[] = [];
-  let percentMatch;
-  PERCENT_PATTERN.lastIndex = 0;
-  while ((percentMatch = PERCENT_PATTERN.exec(text)) !== null) {
-    fabricMatches.push(`${percentMatch[1]}% ${percentMatch[2]}`);
+  // Bolt: Fast-path check using String.prototype.includes('%') to skip regex execution when no percentages exist.
+  if (text.includes('%')) {
+    const fabricMatches: string[] = [];
+    let percentMatch;
+    PERCENT_PATTERN.lastIndex = 0;
+    while ((percentMatch = PERCENT_PATTERN.exec(text)) !== null) {
+      fabricMatches.push(`${percentMatch[1]}% ${percentMatch[2]}`);
+    }
+
+    if (fabricMatches.length > 0) {
+      result.fabricMaterial = fabricMatches.join(', ');
+    }
   }
 
-  if (fabricMatches.length > 0) {
-    result.fabricMaterial = fabricMatches.join(', ');
-  } else {
-    const found = text.match(FABRIC_REGEX);
-    if (found) {
-      const unique = Array.from(new Set(found.map(f => f.toLowerCase())));
-      result.fabricMaterial = unique.map(f => f.charAt(0).toUpperCase() + f.slice(1)).join(', ');
+  if (!result.fabricMaterial) {
+    /**
+     * Bolt Performance Optimization: Zero-Allocation Global Match Scanner
+     * Replaces String.prototype.match(FABRIC_REGEX) with an iterative FABRIC_REGEX.exec() loop.
+     * Eliminates intermediate match array allocations returned by .match() and lazily
+     * allocates the Set only when matches are present.
+     */
+    FABRIC_REGEX.lastIndex = 0;
+    let fabricMatch;
+    let uniqueFabrics: Set<string> | null = null;
+    while ((fabricMatch = FABRIC_REGEX.exec(text)) !== null) {
+      if (!uniqueFabrics) uniqueFabrics = new Set<string>();
+      const f = fabricMatch[0].toLowerCase();
+      uniqueFabrics.add(f.charAt(0).toUpperCase() + f.slice(1));
+    }
+    if (uniqueFabrics) {
+      result.fabricMaterial = Array.from(uniqueFabrics).join(', ');
     }
   }
 
   // ── Country of Origin ──
-  const madeInMatch = text.match(MADE_IN_REGEX);
-  if (madeInMatch) {
-    result.notes = `Made in ${madeInMatch[1].trim()}`;
+  // Bolt: Zero-allocation fast-path check using /made/i.test(text) to skip MADE_IN_REGEX evaluation when 'made' is absent.
+  if (/made/i.test(text)) {
+    const madeInMatch = MADE_IN_REGEX.exec(text);
+    if (madeInMatch) {
+      result.notes = `Made in ${madeInMatch[1].trim()}`;
+    }
   }
 
   // ── Care Instructions ──
-  const careFound = text.match(CARE_REGEX);
-  if (careFound) {
-    const unique = Array.from(new Set(careFound.map(c => c.toLowerCase())));
-    const careNote = `Care: ${unique.join(', ')}`;
+  /**
+   * Bolt Performance Optimization: Zero-Allocation Global Match Scanner
+   * Replaces String.prototype.match(CARE_REGEX) with an iterative CARE_REGEX.exec() loop.
+   * Eliminates intermediate match array allocations returned by .match() and lazily
+   * allocates the Set only when matches are present.
+   */
+  CARE_REGEX.lastIndex = 0;
+  let careMatch;
+  let uniqueCare: Set<string> | null = null;
+  while ((careMatch = CARE_REGEX.exec(text)) !== null) {
+    if (!uniqueCare) uniqueCare = new Set<string>();
+    uniqueCare.add(careMatch[0].toLowerCase());
+  }
+  if (uniqueCare) {
+    const careNote = `Care: ${Array.from(uniqueCare).join(', ')}`;
     result.notes = result.notes ? `${result.notes}. ${careNote}` : careNote;
   }
 
@@ -172,7 +210,17 @@ export async function scanTag(imageUri: string): Promise<{
   if (!rawText) return { rawText: '', parsedFields: {}, confidence: 'low' };
 
   const parsedFields = parseTagText(rawText);
-  const fieldCount = Object.keys(parsedFields).filter(k => (parsedFields as any)[k]).length;
+  /**
+   * Bolt Performance Optimization: Zero-allocation Field Counter
+   * Replaces Object.keys(parsedFields).filter(...) with a for...in loop.
+   * Eliminates intermediate array allocations (Object.keys array and .filter array) during tag scans.
+   */
+  let fieldCount = 0;
+  for (const k in parsedFields) {
+    if (Object.prototype.hasOwnProperty.call(parsedFields, k) && (parsedFields as any)[k]) {
+      fieldCount++;
+    }
+  }
   const confidence = fieldCount >= 3 ? 'high' : fieldCount >= 1 ? 'medium' : 'low';
 
   return { rawText, parsedFields, confidence };

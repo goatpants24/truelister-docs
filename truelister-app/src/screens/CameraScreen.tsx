@@ -119,13 +119,20 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             {preview.compressed.width} x {preview.compressed.height}
           </Text>
         </View>
-        <Image source={{ uri: preview.compressed.uri }} style={styles.previewImage} resizeMode="contain" />
+        <Image
+          source={{ uri: preview.compressed.uri }}
+          style={styles.previewImage}
+          resizeMode="contain"
+          accessible={true}
+          accessibilityLabel={`Captured photo preview for item ${itemNumber}`}
+        />
         <View style={styles.previewActions}>
           <TouchableOpacity
             style={styles.buttonSecondary}
             onPress={handleRetake}
             accessibilityRole="button"
             accessibilityLabel="Retake photo"
+            accessibilityHint="Discards photo and returns to active camera"
           >
             <Text style={styles.buttonSecondaryText}>Retake</Text>
           </TouchableOpacity>
@@ -134,6 +141,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             onPress={handleConfirm}
             accessibilityRole="button"
             accessibilityLabel="Use this photo"
+            accessibilityHint="Attaches photo to item and returns to form"
           >
             <Text style={styles.buttonText}>Use Photo</Text>
           </TouchableOpacity>
@@ -150,6 +158,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
           onPress={onCancel}
           accessibilityRole="button"
           accessibilityLabel="Cancel photo capture"
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
@@ -176,20 +185,25 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
 
         <View style={styles.captureRow}>
           <TouchableOpacity
-            style={styles.libraryButton}
+            style={[styles.libraryButton, processing && { opacity: 0.5 }]}
             onPress={handlePickFromLibrary}
+            disabled={processing}
             accessibilityRole="button"
             accessibilityLabel="Open photo library"
+            accessibilityHint="Opens device photo gallery to select an image"
+            accessibilityState={{ disabled: processing }}
           >
             <Text style={styles.libraryIcon}>🖼</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.captureButton}
+            style={[styles.captureButton, processing && { opacity: 0.5 }]}
             onPress={handleCapture}
             disabled={processing}
             accessibilityRole="button"
-            accessibilityLabel="Capture photo"
+            accessibilityLabel={processing ? 'Processing photo...' : 'Capture photo'}
+            accessibilityHint="Takes a photo using current camera view"
+            accessibilityState={{ disabled: processing }}
           >
             <View style={styles.captureInner} />
           </TouchableOpacity>
