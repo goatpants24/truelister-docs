@@ -119,13 +119,20 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             {preview.compressed.width} x {preview.compressed.height}
           </Text>
         </View>
-        <Image source={{ uri: preview.compressed.uri }} style={styles.previewImage} resizeMode="contain" />
+        <Image
+          source={{ uri: preview.compressed.uri }}
+          style={styles.previewImage}
+          resizeMode="contain"
+          accessible={true}
+          accessibilityLabel={`Captured photo preview for item ${itemNumber}`}
+        />
         <View style={styles.previewActions}>
           <TouchableOpacity
             style={styles.buttonSecondary}
             onPress={handleRetake}
             accessibilityRole="button"
             accessibilityLabel="Retake photo"
+            accessibilityHint="Discards photo and returns to active camera"
           >
             <Text style={styles.buttonSecondaryText}>Retake</Text>
           </TouchableOpacity>
@@ -134,6 +141,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             onPress={handleConfirm}
             accessibilityRole="button"
             accessibilityLabel="Use this photo"
+            accessibilityHint="Attaches photo to item and returns to form"
           >
             <Text style={styles.buttonText}>Use Photo</Text>
           </TouchableOpacity>
@@ -182,6 +190,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             disabled={processing}
             accessibilityRole="button"
             accessibilityLabel="Open photo library"
+            accessibilityHint="Opens device photo gallery to select an image"
             accessibilityState={{ disabled: processing }}
           >
             <Text style={styles.libraryIcon}>🖼</Text>
@@ -193,6 +202,7 @@ export default function CameraScreen({ onCapture, onCancel, itemNumber }: Props)
             disabled={processing}
             accessibilityRole="button"
             accessibilityLabel={processing ? 'Processing photo...' : 'Capture photo'}
+            accessibilityHint="Takes a photo using current camera view"
             accessibilityState={{ disabled: processing }}
           >
             <View style={styles.captureInner} />
