@@ -108,6 +108,9 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   let intermediateUri = uri;
   let currentWidth = original.width;
   let currentHeight = original.height;
+  // Bolt Performance Optimization:
+  // resultSize is initialized to originalSize and only updated via getFileSize if resizing actually occurred.
+  // This avoids duplicate variable declarations and eliminates redundant asynchronous FileSystem stat calls.
   let resultSize = originalSize;
 
   if (original.width > MAX_WIDTH || original.height > MAX_HEIGHT) {
