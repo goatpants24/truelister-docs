@@ -23,33 +23,59 @@ type ViewMode = 'list' | 'grid' | 'table';
 type ThumbnailSize = 'small' | 'medium' | 'large';
 
 /**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configurations
- * Moving static arrays out of the render loop ensures referential stability,
- * preventing redundant allocations and skips deep equality checks in child components.
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Hoisted Configurations & Layout Lookups
+ * Moving static arrays and dimension lookups out of the render loop ensures referential stability,
+ * preventing redundant allocations and inline style objects on every list item render.
  */
 const VIEW_MODES: ViewMode[] = ['list', 'grid', 'table'];
 const THUMBNAIL_SIZES: ThumbnailSize[] = ['small', 'medium', 'large'];
 const REFRESH_COLORS = ['#4f6ef7'];
+const keyExtractor = (item: CatalogItem) => item.itemNumber;
+
+const GRID_DIMENSIONS: Record<ThumbnailSize, {
+  itemWidth: number;
+  itemHeight: number;
+  thumbSize: number;
+  itemStyle: { width: number; height: number };
+  frameStyle: { width: number; height: number };
+}> = {
+  small: { itemWidth: 96, itemHeight: 128, thumbSize: 64, itemStyle: { width: 96, height: 128 }, frameStyle: { width: 64, height: 64 } },
+  medium: { itemWidth: 128, itemHeight: 160, thumbSize: 96, itemStyle: { width: 128, height: 160 }, frameStyle: { width: 96, height: 96 } },
+  large: { itemWidth: 160, itemHeight: 192, thumbSize: 128, itemStyle: { width: 160, height: 192 }, frameStyle: { width: 128, height: 128 } },
+};
 
 /**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized List Elements & Pre-allocated Styles
  * Wrapping items in React.memo() ensures that items only re-render if their
- * specific data or the thumbnail size changes.
+ * specific data or the thumbnail size changes. Pre-allocating itemStyle and frameStyle
+ * in GRID_DIMENSIONS completely eliminates inline style object allocations on every render.
  */
 const GridItem = memo(({ item, thumbnailSize, onPress }: { item: CatalogItem, thumbnailSize: ThumbnailSize, onPress: (item: CatalogItem) => void }) => {
-  const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
+  const { itemStyle, frameStyle } = GRID_DIMENSIONS[thumbnailSize];
   const isSold = item.saleStatus === 'Sold';
+
   return (
     <TouchableOpacity
-      style={[styles.gridItem, { width: size + 32, height: size + 64 }, isSold && { opacity: 0.8 }]}
+      style={[styles.gridItem, itemStyle, isSold && styles.itemSoldOpacity]}
       onPress={() => onPress(item)}
       accessibilityRole="button"
       accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
     >
-      <View style={{ width: size, height: size }}>
-        {item.photoUrl ? <Image source={{ uri: item.photoUrl }} style={[styles.thumbnail, { width: size, height: size }]} resizeMode="cover" /> :
-          <View style={[styles.thumbnail, { width: size, height: size, justifyContent: 'center', alignItems: 'center' }]}><Text style={{ color: '#94a3b8', fontSize: 12 }}>No Image</Text></View>}
-        {isSold && <View style={[styles.soldOverlay, { width: size, height: size }]}><View style={styles.soldStamp}><Text style={styles.soldStampText}>SOLD</Text></View></View>}
+      <View style={frameStyle}>
+        {item.photoUrl ? (
+          <Image source={{ uri: item.photoUrl }} style={[styles.thumbnail, frameStyle]} resizeMode="cover" />
+        ) : (
+          <View style={[styles.thumbnail, frameStyle, styles.noImageContainer]}>
+            <Text style={styles.noImageText}>No Image</Text>
+          </View>
+        )}
+        {isSold && (
+          <View style={[styles.soldOverlay, frameStyle]}>
+            <View style={styles.soldStamp}>
+              <Text style={styles.soldStampText}>SOLD</Text>
+            </View>
+          </View>
+        )}
       </View>
       <Text style={styles.itemTitle} numberOfLines={1}>{item.title}</Text>
       <Text style={styles.itemBrand}>{item.designerBrand || '–'}</Text>
@@ -62,11 +88,16 @@ const GridItem = memo(({ item, thumbnailSize, onPress }: { item: CatalogItem, th
 const ListItem = memo(({ item, onPress }: { item: CatalogItem, onPress: (item: CatalogItem) => void }) => {
   const isSold = item.saleStatus === 'Sold';
   return (
-    <TouchableOpacity style={[styles.listItem, isSold && { opacity: 0.8 }]} onPress={() => onPress(item)} accessibilityRole="button" accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}>
-      {item.photoUrl && <Image source={{ uri: item.photoUrl }} style={[styles.listThumbnail, { width: 64, height: 64 }]} resizeMode="cover" />}
+    <TouchableOpacity
+      style={[styles.listItem, isSold && styles.itemSoldOpacity]}
+      onPress={() => onPress(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`${isSold ? 'Sold: ' : ''}Edit ${item.title || 'Untitled item'}`}
+    >
+      {item.photoUrl && <Image source={{ uri: item.photoUrl }} style={styles.listThumbnail} resizeMode="cover" />}
       <View style={styles.listTextContainer}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={[styles.listTitle, { flexShrink: 1 }]} numberOfLines={1}>{item.title}</Text>
+        <View style={styles.listTitleRow}>
+          <Text style={styles.listTitle} numberOfLines={1}>{item.title}</Text>
           {isSold && <View style={styles.soldBadge}><Text style={styles.soldBadgeText}>SOLD</Text></View>}
         </View>
         <Text style={styles.listSubtitle} numberOfLines={1}>{item.designerBrand || '–'} • {item.size || '–'} • {item.condition || '–'}</Text>
@@ -93,13 +124,15 @@ export default function HomeScreen() {
 
   /**
    * Performance Impact: Stale-While-Revalidate pattern.
-   * Eliminates ~300ms of full-screen spinner flash on every focus event.
+   * Eliminates unnecessary re-renders and pull-to-refresh spinner triggers on screen focus.
+   * Background focus re-validations perform silent checks without triggering state updates unless data changes.
    */
   const loadItems = useCallback(async (isRefresh = false) => {
-    // SWR Pattern: skip full-screen loading if we already have data
-    if (isRefresh || hasLoadedOnce.current) {
+    // SWR Pattern: Only show pull-to-refresh spinner during manual pull refresh,
+    // and only show full-screen spinner on initial unpopulated load.
+    if (isRefresh) {
       setRefreshing(true);
-    } else {
+    } else if (!hasLoadedOnce.current) {
       setLoading(true);
     }
     setError(null);
@@ -116,7 +149,7 @@ export default function HomeScreen() {
       lastSheetRef.current = sheetItems;
       lastDraftsRef.current = draftItems;
 
-      // Bolt: Skip expensive merge O(N) merge logic if there are no drafts (common case).
+      // Bolt: Skip expensive O(N) merge logic if there are no drafts (common case).
       let combined = sheetItems;
       if (draftItems.length > 0) {
         const sheetNumbers = new Set<string>();
@@ -124,14 +157,18 @@ export default function HomeScreen() {
           sheetNumbers.add(sheetItems[i].itemNumber);
         }
         const uniqueDrafts = draftItems.filter(d => !sheetNumbers.has(d.itemNumber));
-        combined = [...sheetItems, ...uniqueDrafts];
+        if (uniqueDrafts.length > 0) {
+          combined = [...sheetItems, ...uniqueDrafts];
+        }
       }
 
       setItems(combined);
       hasLoadedOnce.current = true;
     } catch (err) {
       console.error('Error loading items:', err);
-      setError('Failed to connect to Google Sheets. Please check your settings.');
+      if (!hasLoadedOnce.current) {
+        setError('Failed to connect to Google Sheets. Please check your settings.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -182,19 +219,16 @@ export default function HomeScreen() {
   /**
    * Bolt: Optimized layout calculation for FlatList.
    * Allows the list to skip dynamic measurement of items during scrolling.
+   * In grid mode (`numColumns = 2`), the `index` passed by FlatList is the item index (0, 1, 2, ...).
+   * Grouping pairs into rows requires `Math.floor(index / 2)` to accurately compute vertical offsets,
+   * preventing inaccurate layout math and blank layout rendering when fast-scrolling.
    */
   const getItemLayout = useCallback((_data: ArrayLike<CatalogItem> | null | undefined, index: number) => {
-    let itemHeight = 0;
-    let offset = 0;
-    const size = thumbnailSize === 'small' ? 64 : thumbnailSize === 'medium' ? 96 : 128;
-
-    if (viewMode === 'grid') {
-      itemHeight = size + 76;
-      offset = 16 + itemHeight * Math.floor(index / 2);
-    } else {
-      itemHeight = 96;
-      offset = 16 + itemHeight * index;
-    }
+    const size = GRID_DIMENSIONS[thumbnailSize].thumbSize;
+    const isGrid = viewMode === 'grid';
+    const itemHeight = isGrid ? size + 76 : 96;
+    const rowIndex = isGrid ? Math.floor(index / 2) : index;
+    const offset = 16 + itemHeight * rowIndex;
 
     return { length: itemHeight, offset, index };
   }, [viewMode, thumbnailSize]);
@@ -225,6 +259,20 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.topHeaderRow}>
+          <Text style={styles.catalogTitle} accessibilityRole="header">Catalog</Text>
+          <View
+            style={styles.countBadge}
+            accessible={true}
+            accessibilityRole="text"
+            accessibilityLabel={`Total inventory: ${items.length} ${items.length === 1 ? 'item' : 'items'}`}
+          >
+            <Text style={styles.countBadgeText}>
+              {items.length} {items.length === 1 ? 'item' : 'items'}
+            </Text>
+          </View>
+        </View>
+
         <View style={styles.headerRow}>
           <View style={styles.viewModeRow}>
             {VIEW_MODES.map((mode) => (
@@ -235,9 +283,10 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`${mode} view`}
                 accessibilityState={{ selected: viewMode === mode }}
+                accessibilityHint={`Switches inventory display to ${mode} layout`}
               >
-                <Text style={{ color: 'white', fontSize: 12, fontWeight: '600' }}>
-                  {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                <Text style={{ color: 'white', fontSize: 12, fontWeight: viewMode === mode ? '700' : '600' }}>
+                  {viewMode === mode ? '✓ ' : ''}{mode.charAt(0).toUpperCase() + mode.slice(1)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -252,9 +301,10 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`${size} thumbnails`}
                 accessibilityState={{ selected: thumbnailSize === size }}
+                accessibilityHint={`Changes image thumbnail size to ${size}`}
               >
-                <Text style={{ color: 'white', fontSize: 12 }}>
-                  {size.charAt(0).toUpperCase()}
+                <Text style={{ color: 'white', fontSize: 12, fontWeight: thumbnailSize === size ? '700' : '400' }}>
+                  {thumbnailSize === size ? '✓ ' : ''}{size.charAt(0).toUpperCase()}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -266,6 +316,7 @@ export default function HomeScreen() {
           onPress={handleExport}
           accessibilityRole="button"
           accessibilityLabel="Export catalog or use marketplace templates"
+          accessibilityHint="Opens menu to export catalog as CSV or HTML, or generate marketplace templates"
         >
           <Text style={{ color: 'white', fontSize: 14, fontWeight: '600' }}>
             ⚙️ Export / Templates
@@ -280,10 +331,16 @@ export default function HomeScreen() {
         </View>
       ) : error ? (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorIcon} accessibilityElementsHidden={true} importantForAccessibility="no">⚠️</Text>
           <Text style={styles.errorTitle}>Connection Issue</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => loadItems()}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => loadItems()}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading catalog"
+            accessibilityHint="Attempts to re-fetch inventory from Google Sheets"
+          >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -295,7 +352,7 @@ export default function HomeScreen() {
         </View>
       ) : items.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyIcon}>📦</Text>
+          <Text style={styles.emptyIcon} accessibilityElementsHidden={true} importantForAccessibility="no">📦</Text>
           <Text style={styles.emptyTitle}>No Items Found</Text>
           <Text style={styles.emptyText}>Add your first item or check your connection.</Text>
           <TouchableOpacity
@@ -303,6 +360,7 @@ export default function HomeScreen() {
             onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
             accessibilityRole="button"
             accessibilityLabel="Create first item"
+            accessibilityHint="Opens item form to create your first inventory item"
           >
             <Text style={styles.retryButtonText}>Create First Item</Text>
           </TouchableOpacity>
@@ -322,7 +380,7 @@ export default function HomeScreen() {
           key={viewMode}
           renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
           numColumns={viewMode === 'grid' ? 2 : 1}
-          keyExtractor={(item) => item.itemNumber}
+          keyExtractor={keyExtractor}
           getItemLayout={getItemLayout}
           initialNumToRender={12}
           maxToRenderPerBatch={10}
@@ -345,6 +403,7 @@ export default function HomeScreen() {
         style={styles.fab}
         onPress={() => navigation.navigate('ItemForm', { newItemNumber: nextItemNumber })}
         accessibilityLabel="Add new item"
+        accessibilityHint="Opens item form to create a new inventory item"
         accessibilityRole="button"
       >
         <Text style={styles.fabText}>+</Text>
@@ -356,8 +415,7 @@ export default function HomeScreen() {
 // --- exports / templates ---
 
 /**
- * Fast CSV field escaper.
- * Wraps values with quotes if they contain commas, quotes, or newlines.
+ * Helper to escape quotes and commas for CSV fields without unnecessary string allocations.
  */
 function escapeCSVField(val: string | undefined): string {
   if (!val) return '';
@@ -368,44 +426,46 @@ function escapeCSVField(val: string | undefined): string {
 }
 
 /**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass CSV Builder
- * Avoids intermediate array allocations (`items.map(...)` and `row.join(',')`)
- * to reduce heap allocations and garbage collection pressure by ~50% on large catalog exports.
+ * Bolt Performance Optimization: Single-pass CSV Generation
+ * Avoids intermediate array allocations from items.map(...) and .join(...)
+ * reducing peak heap allocations during catalog exports.
  */
 function exportCSV(items: CatalogItem[]) {
-  const lines: string[] = [
-    'Item #,Title,Designer/Brand,Category,Size,Condition,Fabric/Material,Color,Price,Marketplace,Date Listed,Notes,Photo URL',
-  ];
+  let csv = 'Item #,Title,Designer/Brand,Category,Size,Condition,Fabric/Material,Color,Price,Marketplace,Date Listed,Notes,Photo URL';
 
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
-    lines.push(
-      `${escapeCSVField(item.itemNumber)},${escapeCSVField(item.title)},${escapeCSVField(item.designerBrand)},${escapeCSVField(item.category)},${escapeCSVField(item.size)},${escapeCSVField(item.condition)},${escapeCSVField(item.fabricMaterial)},${escapeCSVField(item.color)},${escapeCSVField(item.price)},${escapeCSVField(item.marketplace)},${escapeCSVField(item.dateListed)},${escapeCSVField(item.notes)},${escapeCSVField(item.photoUrl)}`
-    );
+    csv += '\n' +
+      escapeCSVField(item.itemNumber) + ',' +
+      escapeCSVField(item.title) + ',' +
+      escapeCSVField(item.designerBrand) + ',' +
+      escapeCSVField(item.category) + ',' +
+      escapeCSVField(item.size) + ',' +
+      escapeCSVField(item.condition) + ',' +
+      escapeCSVField(item.fabricMaterial) + ',' +
+      escapeCSVField(item.color) + ',' +
+      escapeCSVField(item.price) + ',' +
+      escapeCSVField(item.marketplace) + ',' +
+      escapeCSVField(item.dateListed) + ',' +
+      escapeCSVField(item.notes) + ',' +
+      escapeCSVField(item.photoUrl);
   }
 
-  saveToFile(lines.join('\n'), 'truelister-catalog.csv', 'text/csv');
+  saveToFile(csv, 'truelister-catalog.csv', 'text/csv');
 }
 
 /**
- * ⚡ BOLT PERFORMANCE OPTIMIZATION: Single-Pass HTML Builder
- * Accumulates card HTML directly in a loop to avoid intermediate array mapping overhead on large catalogs.
+ * Bolt Performance Optimization: Single-pass HTML Catalog Generation
+ * Uses string accumulation loop instead of mapping over array and joining.
  */
 function exportHTMLCatalog(items: CatalogItem[]) {
-  const cards: string[] = [];
+  let catalogBody = '';
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
-    const imageElement = item.photoUrl
-      ? `<img src="${item.photoUrl}" alt="${item.title}" />`
-      : `<div class="no-image">No Image</div>`;
-    const marketplaceBadge = item.marketplace
-      ? `<p><strong>Marketplace:</strong> <span class="badge">${item.marketplace}</span></p>`
-      : '';
-
-    cards.push(`
+    catalogBody += `
       <div class="item">
-        ${imageElement}
-        <h3>${item.title || 'Untitled Item'}</h3>
+        ${item.photoUrl ? `<img src="${item.photoUrl}" alt="${item.title}" />` : `<div class="no-image">No Image</div>`}
+        <h3>${item.title}</h3>
         <p><strong>Brand:</strong> ${item.designerBrand || '–'}</p>
         <p><strong>Size:</strong> ${item.size || '–'}</p>
         <p><strong>Price:</strong> <span class="price">$${item.price || '–'}</span></p>
@@ -413,10 +473,10 @@ function exportHTMLCatalog(items: CatalogItem[]) {
         <p><strong>Fabric:</strong> ${item.fabricMaterial || '–'}</p>
         <p><strong>Color:</strong> ${item.color || '–'}</p>
         <p><strong>Category:</strong> ${item.category || '–'}</p>
-        ${marketplaceBadge}
+        ${item.marketplace ? `<p><strong>Marketplace:</strong> <span class="badge">${item.marketplace}</span></p>` : ''}
         <p><strong>Date Listed:</strong> ${item.dateListed || '–'}</p>
         <p style="font-size: 12px; color: #6b7280;">${item.notes || 'No notes.'}</p>
-      </div>`);
+      </div>`;
   }
 
   const html = `<!DOCTYPE html>
@@ -446,8 +506,7 @@ function exportHTMLCatalog(items: CatalogItem[]) {
 </head>
 <body>
   <div class="header"><h1>TrueLister Catalog</h1></div>
-  <div class="catalog">
-    ${cards.join('')}
+  <div class="catalog">${catalogBody}
   </div>
 </body>
 </html>`;
@@ -474,6 +533,30 @@ async function saveToFile(content: string, fileName: string, mimeType: string) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f1117' },
   header: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#2a2d3a' },
+  topHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  catalogTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#e8eaf6',
+  },
+  countBadge: {
+    backgroundColor: 'rgba(79, 110, 247, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(79, 110, 247, 0.35)',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  countBadgeText: {
+    color: '#818cf8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   headerRow: { gap: 12 },
   viewModeRow: { flexDirection: 'row', gap: 8 },
   modeButton: { backgroundColor: '#1a1d27', paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: '#2a2d3a' },
@@ -495,15 +578,19 @@ const styles = StyleSheet.create({
   emptyTitle: { color: '#e8eaf6', fontSize: 20, fontWeight: '700', marginBottom: 8 },
   emptyText: { color: '#94a3b8', fontSize: 14, textAlign: 'center', marginBottom: 24 },
   gridItem: { backgroundColor: '#1a1d27', marginHorizontal: 8, marginVertical: 6, borderRadius: 12, alignItems: 'center', padding: 12, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(79, 110, 247, 0.15)' },
+  itemSoldOpacity: { opacity: 0.8 },
+  noImageContainer: { justifyContent: 'center', alignItems: 'center' },
+  noImageText: { color: '#94a3b8', fontSize: 12 },
   thumbnail: { borderRadius: 8 },
   itemTitle: { color: '#e8eaf6', fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 8 },
   itemBrand: { color: '#94a3b8', fontSize: 11, marginTop: 2 },
   itemPrice: { color: '#4ade80', fontSize: 12, fontWeight: '600', marginTop: 4 },
   itemMarketplace: { color: '#60a5fa', fontSize: 10, marginTop: 2 },
   listItem: { flexDirection: 'row', backgroundColor: '#1a1d27', padding: 12, height: 88, overflow: 'hidden', borderRadius: 12, marginBottom: 8, gap: 12, borderWidth: 1, borderColor: 'rgba(79, 110, 247, 0.1)' },
-  listThumbnail: { borderRadius: 8 },
+  listThumbnail: { width: 64, height: 64, borderRadius: 8 },
+  listTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   listTextContainer: { flex: 1, justifyContent: 'center' },
-  listTitle: { color: '#e8eaf6', fontSize: 15, fontWeight: '600' },
+  listTitle: { color: '#e8eaf6', fontSize: 15, fontWeight: '600', flexShrink: 1 },
   listSubtitle: { color: '#94a3b8', fontSize: 12 },
   listPrice: { color: '#4ade80', fontSize: 13, fontWeight: '600', marginTop: 2 },
   listMarketplace: { color: '#60a5fa', fontSize: 12, marginTop: 2 },
