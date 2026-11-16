@@ -510,6 +510,7 @@ function exportHTMLCatalog(items: CatalogItem[]) {
   </div>
 </body>
 </html>`;
+
   saveToFile(html, 'truelister-catalog.html', 'text/html');
 }
 
