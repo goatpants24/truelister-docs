@@ -57,6 +57,12 @@ function trimSlice(str: string, start: number, end: number): string {
  * quote state tracking or string accumulation.
  * Fallback to character-by-character quote state tracking for CSVs containing quotes.
  */
+/**
+ * Optimized CSV parser that operates in a single pass over the raw string.
+ * Bolt: Includes a fast-path quote scanner. When no double quotes are present in the CSV payload
+ * (!csv.includes('"')), line and comma parsing use fast string methods (indexOf & split) without per-character
+ * quote state checks. Falls back to index-based character scanning when quotes are detected.
+ */
 function parseCSV(csv: string, onRow: (row: string[]) => void): void {
   const len = csv.length;
   if (!len) return;
