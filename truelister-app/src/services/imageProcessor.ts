@@ -108,8 +108,9 @@ export async function compressImage(uri: string): Promise<ImageResult> {
   let intermediateUri = uri;
   let currentWidth = original.width;
   let currentHeight = original.height;
-  // Bolt: Initialize resultSize with originalSize so that if resizing is bypassed (intermediateUri === uri),
-  // we reuse originalSize and avoid redundant FileSystem stat queries.
+  // Bolt Performance Optimization:
+  // resultSize is initialized to originalSize and only updated via getFileSize if resizing actually occurred.
+  // This avoids duplicate variable declarations and eliminates redundant asynchronous FileSystem stat calls.
   let resultSize = originalSize;
 
   if (original.width > MAX_WIDTH || original.height > MAX_HEIGHT) {
@@ -125,7 +126,9 @@ export async function compressImage(uri: string): Promise<ImageResult> {
     intermediateUri = resized.uri;
     currentWidth = resized.width;
     currentHeight = resized.height;
-    // Query intermediate size only when image manipulation actually occurred
+    // Bolt: Query intermediate size only when image manipulation actually occurred.
+    // If resizing is bypassed (intermediateUri === uri), resultSize retains originalSize,
+    // avoiding a redundant FileSystem stat call.
     resultSize = await getFileSize(intermediateUri);
   }
 

@@ -77,3 +77,7 @@
 ## 2026-11-05 - [Continuous Keyboard Flow from Currency Inputs to Multiline Notes]
 **Learning:** Numeric or currency inputs (like item price) often default to `returnKeyType="done"`, abruptly terminating the mobile keyboard workflow and requiring a manual tap to reach subsequent text inputs such as Notes. Setting `returnKeyType="next"` with `blurOnSubmit={false}` and forwarding `onSubmitEditing` to downstream text fields keeps the user in a smooth, continuous data-entry rhythm while clear accessibility hints ("Enter item price in dollars") assist screen reader users.
 **Action:** Connect numeric/currency input submissions to downstream text input refs using `returnKeyType="next"` and explicit currency accessibility hints.
+
+## 2026-11-06 - [Onboarding Step Progress Bar and Back Navigation]
+**Learning:** Multi-step setup wizards without explicit progress disclosure create uncertainty about completion length, and lacking a back navigation control traps users if they make a mistake in prior steps. Providing a dual-segment progress bar with `accessibilityRole="progressbar"`, dynamic `accessibilityValue={{ min: 1, max: 2, now: step }}`, and a back button with `accessibilityRole="button"`, `hitSlop`, and descriptive `accessibilityHint` prevents dead-end trap states and clarifies wizard progression for all users.
+**Action:** Always include a visual and screen-reader accessible progress bar (`accessibilityRole="progressbar"`) and a clear back navigation path in multi-step onboarding flows.

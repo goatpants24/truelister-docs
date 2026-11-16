@@ -17,10 +17,11 @@ const WB_OPTIONS: { mode: WhiteBalanceMode; label: string; icon: string }[] = [
 
 /**
  * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized WhiteBalancePicker Component
- * Wrapping WhiteBalancePicker in memo prevents redundant re-rendering of the 5
- * white balance mode buttons during camera processing states and parent form re-renders.
+ * Wrapping WhiteBalancePicker in React.memo prevents redundant re-rendering
+ * when the parent CameraScreen or TagScanner updates frequent UI state
+ * (such as `processing` spinner, `scanning` state, or preview transitions).
  */
-function WhiteBalancePicker({ selected, onSelect }: Props) {
+const WhiteBalancePicker = memo(function WhiteBalancePicker({ selected, onSelect }: Props) {
   const isLocked = selected !== 'auto';
 
   return (
@@ -49,7 +50,9 @@ function WhiteBalancePicker({ selected, onSelect }: Props) {
       </View>
     </View>
   );
-}
+});
+
+export default WhiteBalancePicker;
 
 export default memo(WhiteBalancePicker);
 
