@@ -54,6 +54,8 @@ const WhiteBalancePicker = memo(function WhiteBalancePicker({ selected, onSelect
 
 export default WhiteBalancePicker;
 
+export default memo(WhiteBalancePicker);
+
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 8,
