@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,9 @@ import {
   StyleSheet,
   Alert,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
+import { usePreventRemove, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { testConnection } from '../services/sheets';
 import {
@@ -21,10 +23,14 @@ import {
 import { invalidateCredentialsCache } from '../services/marketplaces/credentialsStore';
 
 export default function SettingsScreen() {
+  const navigation = useNavigation();
   const [appsScriptUrl, setAppsScriptUrl] = useState('');
   const [driveFolderId, setDriveFolderId] = useState('');
+  const [initialScriptUrl, setInitialScriptUrl] = useState('');
+  const [initialDriveFolderId, setInitialDriveFolderId] = useState('');
   const [saved, setSaved] = useState(false);
-  const [testing, setTesting] = useState(false);
+  const [testingSheet, setTestingSheet] = useState(false);
+  const [testingScript, setTestingScript] = useState(false);
 
   const driveFolderIdRef = useRef<TextInput>(null);
 
@@ -36,17 +42,30 @@ export default function SettingsScreen() {
       ]);
       setAppsScriptUrl(url);
       setDriveFolderId(folder);
+      setInitialScriptUrl(url);
+      setInitialDriveFolderId(folder);
     })();
   }, []);
 
-  const handleSave = async () => {
+  const isDirty = appsScriptUrl !== initialScriptUrl || driveFolderId !== initialDriveFolderId;
+
+  usePreventRemove(isDirty && !saved, ({ data }) => {
+    Alert.alert('Unsaved Settings', 'Discard changes to your settings and leave?', [
+      { text: 'Keep Editing', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: () => navigation.dispatch(data.action) },
+    ]);
+  });
+
+  const handleSave = useCallback(async () => {
     await Promise.all([
       setStoredAppsScriptUrl(appsScriptUrl),
       setStoredDriveFolderId(driveFolderId),
     ]);
+    setInitialScriptUrl(appsScriptUrl);
+    setInitialDriveFolderId(driveFolderId);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-  };
+  }, [appsScriptUrl, driveFolderId]);
 
   const handleClearData = () => {
     Alert.alert(
@@ -87,18 +106,19 @@ export default function SettingsScreen() {
                 'https://docs.google.com/spreadsheets/d/1QHrXKkuh-6bNUyeYgp8jZrdP3t8MzBSyx-8k-GjFOcI/edit'
               )
             }
-            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="link"
             accessibilityLabel="Open inventory sheet in browser"
             accessibilityHint="Opens in your browser"
           >
             <Text style={styles.linkBtnText}>Open Sheet ↗</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.testBtn, testing && { opacity: 0.5 }]}
+            style={[styles.testBtn, testingSheet && { opacity: 0.5 }]}
             onPress={async () => {
-              setTesting(true);
+              setTestingSheet(true);
               const result = await testConnection('sheet');
-              setTesting(false);
+              setTestingSheet(false);
               Alert.alert(
                 result.success ? 'Success!' : 'Connection Failed',
                 result.success
@@ -106,12 +126,14 @@ export default function SettingsScreen() {
                   : `Error: ${result.error}\n\nCheck if the sheet is "Published to the Web" as a CSV.`
               );
             }}
-            disabled={testing}
+            disabled={testingSheet}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Test connection to Google Sheet"
-            accessibilityState={{ disabled: testing }}
+            accessibilityLabel={testingSheet ? "Testing Google Sheet connection" : "Test connection to Google Sheet"}
+            accessibilityState={{ disabled: testingSheet }}
           >
-            <Text style={styles.testBtnText}>Test Connection</Text>
+            {testingSheet && <ActivityIndicator size="small" color="#22c55e" style={{ marginRight: 6 }} />}
+            <Text style={styles.testBtnText}>{testingSheet ? 'Testing…' : 'Test Connection'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -140,28 +162,31 @@ export default function SettingsScreen() {
         />
         <View style={styles.buttonRow}>
           <TouchableOpacity
-            style={[styles.testBtn, testing && { opacity: 0.5 }]}
+            style={[styles.testBtn, testingScript && { opacity: 0.5 }]}
             onPress={async () => {
               if (!appsScriptUrl) {
                 Alert.alert('Required', 'Please paste your Apps Script URL first.');
                 return;
               }
-              setTesting(true);
+              await handleSave();
+              setTestingScript(true);
               const result = await testConnection('script');
-              setTesting(false);
+              setTestingScript(false);
               Alert.alert(
                 result.success ? 'Success!' : 'Connection Failed',
                 result.success
-                  ? 'Your Apps Script is responding correctly.'
+                  ? 'Your Apps Script is responding correctly and settings were saved.'
                   : `Error: ${result.error}`
               );
             }}
-            disabled={testing}
+            disabled={testingScript}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Test Apps Script connection"
-            accessibilityState={{ disabled: testing }}
+            accessibilityLabel={testingScript ? "Testing Apps Script connection" : "Test Apps Script connection"}
+            accessibilityState={{ disabled: testingScript }}
           >
-            <Text style={styles.testBtnText}>Test Script Connection</Text>
+            {testingScript && <ActivityIndicator size="small" color="#22c55e" style={{ marginRight: 6 }} />}
+            <Text style={styles.testBtnText}>{testingScript ? 'Testing…' : 'Test Script Connection'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -204,12 +229,21 @@ export default function SettingsScreen() {
 
       {/* Save */}
       <TouchableOpacity
-        style={[styles.saveBtn, saved && styles.saveBtnSuccess]}
+        style={[
+          styles.saveBtn,
+          saved && styles.saveBtnSuccess,
+          !isDirty && !saved && styles.saveBtnDisabled,
+        ]}
         onPress={handleSave}
+        disabled={saved || !isDirty}
         accessibilityRole="button"
-        accessibilityLabel="Save settings"
+        accessibilityLabel={saved ? 'Settings saved successfully' : !isDirty ? 'Settings up to date' : 'Save settings'}
+        accessibilityState={{ disabled: saved || !isDirty }}
+        accessibilityHint="Saves Google Apps Script URL and Drive Folder ID locally"
       >
-        <Text style={styles.saveBtnText}>{saved ? '✓ Saved' : 'Save Settings'}</Text>
+        <Text style={styles.saveBtnText}>
+          {saved ? '✓ Saved' : isDirty ? 'Save Settings' : 'Settings Up to Date'}
+        </Text>
       </TouchableOpacity>
 
       {/* Danger zone */}
@@ -220,6 +254,7 @@ export default function SettingsScreen() {
           onPress={handleClearData}
           accessibilityRole="button"
           accessibilityLabel="Clear all local data and reset app"
+          accessibilityHint="Permanently removes all saved drafts, settings, and credentials from this device"
         >
           <Text style={styles.dangerBtnText}>Clear All Local Data</Text>
         </TouchableOpacity>
@@ -253,6 +288,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1e2235',
     borderWidth: 1,
     borderColor: '#22c55e',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   testBtnText: { fontSize: 13, color: '#22c55e', fontWeight: '600' },
   input: {
@@ -299,6 +336,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   saveBtnSuccess: { backgroundColor: '#22c55e' },
+  saveBtnDisabled: { backgroundColor: '#1a1d27', borderWidth: 1, borderColor: '#2a2d3a' },
   saveBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
   dangerSection: {
     backgroundColor: '#1a1117',

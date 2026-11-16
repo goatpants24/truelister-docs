@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { WhiteBalanceMode } from '../types';
 
@@ -15,7 +15,13 @@ const WB_OPTIONS: { mode: WhiteBalanceMode; label: string; icon: string }[] = [
   { mode: 'incandescent', label: 'Bulb', icon: '💡' },
 ];
 
-export default function WhiteBalancePicker({ selected, onSelect }: Props) {
+/**
+ * ⚡ BOLT PERFORMANCE OPTIMIZATION: Memoized WhiteBalancePicker Component
+ * Wrapping WhiteBalancePicker in React.memo prevents redundant re-rendering
+ * when the parent CameraScreen or TagScanner updates frequent UI state
+ * (such as `processing` spinner, `scanning` state, or preview transitions).
+ */
+const WhiteBalancePicker = memo(function WhiteBalancePicker({ selected, onSelect }: Props) {
   const isLocked = selected !== 'auto';
 
   return (
@@ -29,8 +35,10 @@ export default function WhiteBalancePicker({ selected, onSelect }: Props) {
             key={mode}
             style={[styles.option, selected === mode && styles.optionSelected]}
             onPress={() => onSelect(mode)}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
             accessibilityRole="button"
             accessibilityLabel={`Set white balance to ${label}`}
+            accessibilityHint={selected === mode ? 'Currently active mode' : `Selects ${label} white balance mode`}
             accessibilityState={{ selected: selected === mode }}
           >
             <Text style={styles.icon}>{icon}</Text>
@@ -42,7 +50,11 @@ export default function WhiteBalancePicker({ selected, onSelect }: Props) {
       </View>
     </View>
   );
-}
+});
+
+export default WhiteBalancePicker;
+
+export default memo(WhiteBalancePicker);
 
 const styles = StyleSheet.create({
   container: {
